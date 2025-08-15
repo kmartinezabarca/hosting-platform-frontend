@@ -46,11 +46,3 @@ function ClientLayout() {
 }
 
 export default ClientLayout;
-</main>
-    </div>
-  );
-}
-
-export default ClientLayout;
-
-
