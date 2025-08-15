@@ -1,58 +1,376 @@
 @import "tailwindcss";
 
-/* Configuración de colores para modo claro y oscuro */
+/* Paleta de colores premium ROKE Industries */
 @theme {
-  --color-background: 0 0% 100%;
-  --color-foreground: 222.2 84% 4.9%;
-  --color-card: 0 0% 100%;
-  --color-card-foreground: 222.2 84% 4.9%;
-  --color-popover: 0 0% 100%;
-  --color-popover-foreground: 222.2 84% 4.9%;
-  --color-primary: 222.2 47.4% 11.2%;
-  --color-primary-foreground: 210 40% 98%;
-  --color-secondary: 210 40% 96.1%;
-  --color-secondary-foreground: 222.2 47.4% 11.2%;
-  --color-muted: 210 40% 96.1%;
-  --color-muted-foreground: 215.4 16.3% 46.9%;
-  --color-accent: 210 40% 96.1%;
-  --color-accent-foreground: 222.2 47.4% 11.2%;
-  --color-destructive: 0 84.2% 60.2%;
-  --color-destructive-foreground: 210 40% 98%;
-  --color-border: 214.3 31.8% 91.4%;
-  --color-input: 214.3 31.8% 91.4%;
-  --color-ring: 222.2 84% 4.9%;
-  --radius: 0.5rem;
+  /* Colores principales de la paleta ROKE Industries */
+  --color-dark-charcoal: 0 0% 13.3%; /* #222222 - Dark Charcoal Gray */
+  --color-light-gray: 150 20% 92.2%; /* #EAEFEA - Cool Light Gray */
+  --color-pure-white: 0 0% 100%; /* #FFFFFF - Pure White */
+  
+  /* Colores del sistema premium */
+  --color-primary: 220 100% 50%; /* #0066FF - Azul tecnológico ROKE */
+  --color-primary-dark: 220 100% 40%; /* #0052CC - Azul oscuro */
+  --color-primary-light: 220 100% 85%; /* #CCE5FF - Azul claro */
+  --color-secondary: 240 5% 26%; /* #424242 - Gris secundario */
+  --color-accent: 280 100% 70%; /* #B366FF - Púrpura accent */
+  --color-success: 142 76% 36%; /* #16A34A - Verde éxito */
+  --color-warning: 38 92% 50%; /* #F59E0B - Amarillo advertencia */
+  --color-error: 0 84% 60%; /* #EF4444 - Rojo error */
+  --color-info: 200 100% 50%; /* #00BFFF - Azul información */
+  
+  /* Modo claro - ROKE Industries */
+  --color-background: var(--color-pure-white);
+  --color-foreground: var(--color-dark-charcoal);
+  --color-card: var(--color-pure-white);
+  --color-card-foreground: var(--color-dark-charcoal);
+  --color-popover: var(--color-pure-white);
+  --color-popover-foreground: var(--color-dark-charcoal);
+  --color-primary: 220 100% 50%;
+  --color-primary-foreground: var(--color-pure-white);
+  --color-secondary: var(--color-light-gray);
+  --color-secondary-foreground: var(--color-dark-charcoal);
+  --color-muted: var(--color-light-gray);
+  --color-muted-foreground: 240 5% 45%;
+  --color-accent: 220 100% 96%;
+  --color-accent-foreground: var(--color-dark-charcoal);
+  --color-destructive: var(--color-error);
+  --color-destructive-foreground: var(--color-pure-white);
+  --color-border: 220 13% 91%;
+  --color-input: 220 13% 98%;
+  --color-ring: var(--color-primary);
+  --radius: 0.75rem;
 }
 
 @theme dark {
-  --color-background: 222.2 84% 4.9%;
-  --color-foreground: 210 40% 98%;
-  --color-card: 222.2 84% 4.9%;
-  --color-card-foreground: 210 40% 98%;
-  --color-popover: 222.2 84% 4.9%;
-  --color-popover-foreground: 210 40% 98%;
-  --color-primary: 210 40% 98%;
-  --color-primary-foreground: 222.2 47.4% 11.2%;
-  --color-secondary: 217.2 32.6% 17.5%;
-  --color-secondary-foreground: 210 40% 98%;
-  --color-muted: 217.2 32.6% 17.5%;
-  --color-muted-foreground: 215 20.2% 65.1%;
-  --color-accent: 217.2 32.6% 17.5%;
-  --color-accent-foreground: 210 40% 98%;
-  --color-destructive: 0 62.8% 30.6%;
-  --color-destructive-foreground: 210 40% 98%;
-  --color-border: 217.2 32.6% 17.5%;
-  --color-input: 217.2 32.6% 17.5%;
-  --color-ring: 212.7 26.8% 83.9%;
+  /* Modo oscuro - ROKE Industries */
+  --color-background: var(--color-dark-charcoal);
+  --color-foreground: var(--color-light-gray);
+  --color-card: 0 0% 16%; /* #2a2a2a */
+  --color-card-foreground: var(--color-light-gray);
+  --color-popover: 0 0% 16%;
+  --color-popover-foreground: var(--color-light-gray);
+  --color-primary: 220 100% 50%;
+  --color-primary-foreground: var(--color-pure-white);
+  --color-secondary: 240 5% 17%;
+  --color-secondary-foreground: var(--color-light-gray);
+  --color-muted: 240 5% 17%;
+  --color-muted-foreground: 240 5% 65%;
+  --color-accent: 240 5% 17%;
+  --color-accent-foreground: var(--color-light-gray);
+  --color-destructive: var(--color-error);
+  --color-destructive-foreground: var(--color-pure-white);
+  --color-border: 240 5% 17%;
+  --color-input: 240 5% 17%;
+  --color-ring: 220 100% 50%;
 }
 
-/* Estilos base */
-* {
-  border-color: hsl(var(--color-border));
-}
+/* Tipografía premium */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 body {
+  font-family: 'Inter', 'FF DIN', 'Proxima Nova', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-feature-settings: "rlig" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   background-color: hsl(var(--color-background));
   color: hsl(var(--color-foreground));
+}
+
+/* Animaciones premium */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+/* Clases de utilidad premium */
+.animate-fade-in {
+  animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-slide-in {
+  animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-pulse-premium {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Efectos de hover premium */
+.hover-lift {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.hover-scale {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-scale:hover {
+  transform: scale(1.02);
+}
+
+/* Gradientes premium ROKE Industries */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, hsl(var(--color-primary)) 0%, hsl(var(--color-primary-dark)) 100%);
+}
+
+.bg-gradient-secondary {
+  background: linear-gradient(135deg, #0066FF 0%, #B366FF 100%);
+}
+
+.bg-gradient-success {
+  background: linear-gradient(135deg, #16A34A 0%, #00BFFF 100%);
+}
+
+.bg-gradient-hero {
+  background: linear-gradient(135deg, hsl(var(--color-primary)) 0%, #B366FF 50%, #0052CC 100%);
+}
+
+.bg-gradient-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+}
+
+.bg-gradient-roke {
+  background: linear-gradient(135deg, #222222 0%, #0066FF 50%, #B366FF 100%);
+}
+
+/* Utilidades personalizadas con sintaxis Tailwind v4 */
+@utility shadow-premium {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+@utility shadow-premium-sm {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+@utility shadow-premium-lg {
+  box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.3);
+}
+
+/* Contenedores responsivos */
+.container-premium {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .container-premium {
+    padding: 0 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-premium {
+    padding: 0 3rem;
+  }
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--color-muted));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--color-primary));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--color-primary-dark));
+}
+
+/* Transiciones globales suaves */
+* {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* Botones premium */
+.btn-premium {
+  @apply px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-primary/50 shadow-premium-sm;
+}
+
+.btn-primary {
+  @apply bg-gradient-primary text-white hover:shadow-lg focus:ring-blue-500;
+}
+
+.btn-secondary {
+  @apply bg-white text-gray-900 border border-gray-300 hover:bg-gray-50 focus:ring-gray-500;
+}
+
+.btn-ghost {
+  @apply bg-transparent hover:bg-accent text-foreground;
+}
+
+/* Cards premium */
+.card-premium {
+  @apply bg-card rounded-2xl border border-border shadow-premium-sm hover-lift backdrop-blur-sm;
+}
+
+.card-glass {
+  @apply bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-premium-lg;
+}
+
+/* Inputs premium */
+.input-premium {
+  @apply w-full px-4 py-3 rounded-xl border border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200;
+}
+
+/* Layout grid responsivo */
+.layout-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .layout-grid {
+    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .layout-grid {
+    gap: 2.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  }
+}
+
+/* Estados de carga premium */
+.loading-skeleton {
+  @apply bg-muted animate-pulse rounded;
+}
+
+.loading-shimmer {
+  @apply bg-gradient-to-r from-muted via-muted/50 to-muted animate-shimmer;
+}
+
+/* Efectos de glassmorphism */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Utilidades de espaciado premium */
+.section-padding {
+  @apply py-16 px-4;
+}
+
+@media (min-width: 768px) {
+  .section-padding {
+    @apply py-24 px-6;
+  }
+}
+
+@media (min-width: 1024px) {
+  .section-padding {
+    @apply py-32 px-8;
+  }
+}
+
+/* Efectos de texto premium */
+.text-gradient {
+  background: linear-gradient(135deg, hsl(var(--color-primary)), #667eea);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Bordes con gradiente */
+.border-gradient {
+  border: 2px solid transparent;
+  background: linear-gradient(white, white) padding-box, 
+              linear-gradient(135deg, hsl(var(--color-primary)), #667eea) border-box;
+}
+
+/* Estados de focus mejorados */
+.focus-premium:focus {
+  @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+}
+
+/* Navegación premium */
+.nav-premium {
+  @apply backdrop-blur-md bg-background/80 border-b border-border/50;
+}
+
+/* Efectos de hover para iconos */
+.icon-hover {
+  @apply transition-all duration-200 hover:scale-110 hover:text-primary;
+}
+
+/* Badges premium */
+.badge-premium {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+}
+
+.badge-success {
+  @apply bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400;
+}
+
+.badge-warning {
+  @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400;
+}
+
+.badge-error {
+  @apply bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400;
+}
+
+/* Efectos de partículas de fondo */
+.particles-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.particles-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                    radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+  pointer-events: none;
 }
 
