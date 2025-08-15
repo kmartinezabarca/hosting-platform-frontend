@@ -37,7 +37,7 @@ export const authService = {
   },
 
   // Register user
-  async register(name, email, password, passwordConfirmation) {
+  async register(userData) {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
@@ -45,17 +45,17 @@ export const authService = {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          password_confirmation: passwordConfirmation,
-        }),
+        body: JSON.stringify(userData),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        // Extract validation errors if available
+        if (data.errors) {
+          const errorMessages = Object.values(data.errors).flat();
+          throw new Error(errorMessages.join(' '));
+        }
         throw new Error(data.message || 'Registration failed');
       }
 

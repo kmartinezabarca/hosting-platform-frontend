@@ -1,58 +1,102 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
-/* Configuración de colores para modo claro y oscuro */
+/* Paleta de colores premium ROKE Industries */
 @theme {
-  --color-background: 0 0% 100%;
-  --color-foreground: 222.2 84% 4.9%;
-  --color-card: 0 0% 100%;
-  --color-card-foreground: 222.2 84% 4.9%;
-  --color-popover: 0 0% 100%;
-  --color-popover-foreground: 222.2 84% 4.9%;
-  --color-primary: 222.2 47.4% 11.2%;
-  --color-primary-foreground: 210 40% 98%;
-  --color-secondary: 210 40% 96.1%;
-  --color-secondary-foreground: 222.2 47.4% 11.2%;
-  --color-muted: 210 40% 96.1%;
-  --color-muted-foreground: 215.4 16.3% 46.9%;
-  --color-accent: 210 40% 96.1%;
-  --color-accent-foreground: 222.2 47.4% 11.2%;
-  --color-destructive: 0 84.2% 60.2%;
-  --color-destructive-foreground: 210 40% 98%;
-  --color-border: 214.3 31.8% 91.4%;
-  --color-input: 214.3 31.8% 91.4%;
-  --color-ring: 222.2 84% 4.9%;
-  --radius: 0.5rem;
+  /* Colores principales de la paleta ROKE Industries */
+  --color-dark-charcoal: 0 0% 13.3%; /* #222222 - Dark Charcoal Gray */
+  --color-light-gray: 150 20% 92.2%; /* #EAEFEA - Cool Light Gray */
+  --color-pure-white: 0 0% 100%; /* #FFFFFF - Pure White */
+  
+  /* Colores del sistema premium */
+  --color-primary: 220 100% 50%; /* #0066FF - Azul tecnológico ROKE */
+  --color-primary-dark: 220 100% 40%; /* #0052CC - Azul oscuro */
+  --color-primary-light: 220 100% 85%; /* #CCE5FF - Azul claro */
+  --color-secondary: 240 5% 26%; /* #424242 - Gris secundario */
+  --color-accent: 280 100% 70%; /* #B366FF - Púrpura accent */
+  --color-success: 142 76% 36%; /* #16A34A - Verde éxito */
+  --color-warning: 38 92% 50%; /* #F59E0B - Amarillo advertencia */
+  --color-error: 0 84% 60%; /* #EF4444 - Rojo error */
+  --color-info: 200 100% 50%; /* #00BFFF - Azul información */
+  
+  /* Modo claro - ROKE Industries */
+  --color-background: var(--color-pure-white);
+  --color-foreground: var(--color-dark-charcoal);
+  --color-card: var(--color-pure-white);
+  --color-card-foreground: var(--color-dark-charcoal);
+  --color-popover: var(--color-pure-white);
+  --color-popover-foreground: var(--color-dark-charcoal);
+  --color-primary: 220 100% 50%;
+  --color-primary-foreground: var(--color-pure-white);
+  --color-secondary: var(--color-light-gray);
+  --color-secondary-foreground: var(--color-dark-charcoal);
+  --color-muted: var(--color-light-gray);
+  --color-muted-foreground: 240 5% 45%;
+  --color-accent: 220 100% 96%;
+  --color-accent-foreground: var(--color-dark-charcoal);
+  --color-destructive: var(--color-error);
+  --color-destructive-foreground: var(--color-pure-white);
+  --color-border: 220 13% 91%;
+  --color-input: 220 13% 98%;
+  --color-ring: var(--color-primary);
+  --radius: 0.75rem;
 }
 
 @theme dark {
-  --color-background: 222.2 84% 4.9%;
-  --color-foreground: 210 40% 98%;
-  --color-card: 222.2 84% 4.9%;
-  --color-card-foreground: 210 40% 98%;
-  --color-popover: 222.2 84% 4.9%;
-  --color-popover-foreground: 210 40% 98%;
-  --color-primary: 210 40% 98%;
-  --color-primary-foreground: 222.2 47.4% 11.2%;
-  --color-secondary: 217.2 32.6% 17.5%;
-  --color-secondary-foreground: 210 40% 98%;
-  --color-muted: 217.2 32.6% 17.5%;
-  --color-muted-foreground: 215 20.2% 65.1%;
-  --color-accent: 217.2 32.6% 17.5%;
-  --color-accent-foreground: 210 40% 98%;
-  --color-destructive: 0 62.8% 30.6%;
-  --color-destructive-foreground: 210 40% 98%;
-  --color-border: 217.2 32.6% 17.5%;
-  --color-input: 217.2 32.6% 17.5%;
-  --color-ring: 212.7 26.8% 83.9%;
-}
-
-/* Estilos base */
-* {
-  border-color: hsl(var(--color-border));
+  /* Modo oscuro - ROKE Industries */
+  --color-background: var(--color-dark-charcoal);
+  --color-foreground: var(--color-light-gray);
+  --color-card: 0 0% 16%; /* #2a2a2a */
+  --color-card-foreground: var(--color-light-gray);
+  --color-popover: 0 0% 16%;
+  --color-popover-foreground: var(--color-light-gray);
+  --color-primary: 220 100% 50%;
+  --color-primary-foreground: var(--color-pure-white);
+  --color-secondary: 240 5% 17%;
+  --color-secondary-foreground: var(--color-light-gray);
+  --color-muted: 240 5% 17%;
+  --color-muted-foreground: 240 5% 65%;
+  --color-accent: 240 5% 17%;
+  --color-accent-foreground: var(--color-light-gray);
+  --color-destructive: var(--color-error);
+  --color-destructive-foreground: var(--color-pure-white);
+  --color-border: 240 5% 17%;
+  --color-input: 240 5% 17%;
+  --color-ring: 220 100% 50%;
 }
 
 body {
+  font-family: 'Inter', 'FF DIN', 'Proxima Nova', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-feature-settings: "rlig" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   background-color: hsl(var(--color-background));
   color: hsl(var(--color-foreground));
 }
 
+/* Animaciones premium */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}

@@ -15,11 +15,5 @@ export default defineConfig({
     host: true,
     port: 5173,
     strictPort: true,
-    hmr: {
-      clientPort: 443
-    },
-    allowedHosts: [
-      '5173-igm4vwr0nt4viyb64vsyf-88a528e0.manusvm.computer'
-    ]
   }
 })
