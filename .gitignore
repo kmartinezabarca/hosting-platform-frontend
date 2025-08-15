@@ -53,3 +53,8 @@ coverage/
 # ESLint cache
 .eslintcache
 
+
+
+.env
+
+
