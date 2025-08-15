@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet, Routes, Route } from 'react-router-dom';
 import ClientDashboardPage from '../pages/client/ClientDashboardPage';
+import NewDashboard from '../pages/client/NewDashboard';
 import ClientServicesPage from '../pages/client/ClientServicesPage';
 import ClientInvoicesPage from '../pages/client/ClientInvoicesPage';
 import ClientTicketsPage from '../pages/client/ClientTicketsPage';
@@ -14,7 +15,7 @@ function ClientLayout() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="bg-card shadow">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Client Area</h1>
+          <img src="/logo.png" alt="ROKE Industries Logo" className="h-10" />
           <Button onClick={toggleTheme} variant="outline">
             Switch to {theme === 'light' ? 'Dark' : 'Light'} Mode
           </Button>
@@ -32,11 +33,11 @@ function ClientLayout() {
           </nav>
           <div className="px-4 py-6 sm:px-0">
             <Routes>
-              <Route path="dashboard" element={<ClientDashboardPage />} />
+              <Route path="dashboard" element={<NewDashboard />} />
               <Route path="services" element={<ClientServicesPage />} />
               <Route path="invoices" element={<ClientInvoicesPage />} />
               <Route path="tickets" element={<ClientTicketsPage />} />
-              <Route path="*" element={<ClientDashboardPage />} />
+              <Route path="*" element={<NewDashboard />} />
             </Routes>
           </div>
         </div>
