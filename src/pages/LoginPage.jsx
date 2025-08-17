@@ -155,7 +155,7 @@ const LoginPage = () => {
         >
           <div className="p-8 space-y-6 rounded-2xl border border-white/20"
             style={{
-              background: 'rgba(255, 255, 255, 0.1)',
+              background: 'rgba(255, 255, 255, 0.8)',
               backdropFilter: 'blur(10px)',
               boxShadow: '0 35px 60px -12px rgba(0, 0, 0, 0.3)'
             }}
@@ -191,7 +191,7 @@ const LoginPage = () => {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all duration-200"
+                    className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all duration-200"
                     placeholder="tu@email.com"
                   />
                 </div>
@@ -211,7 +211,7 @@ const LoginPage = () => {
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    className="w-full pl-10 pr-12 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all duration-200"
+                    className="w-full pl-10 pr-12 py-3 bg-white/10 border border-white/20 rounded-xl text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent transition-all duration-200"
                     placeholder="Tu contraseña"
                   />
                   <button
