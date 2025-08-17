@@ -179,7 +179,7 @@ const LoginPage = () => {
               
               {/* Campo Email */}
               <div className="space-y-2">
-                <label htmlFor="email" className="block text-sm font-medium text-white">
+                <label htmlFor="email" className="block text-sm font-medium text-white font-semibold drop-shadow-lg">
                   Correo Electrónico
                 </label>
                 <div className="relative">
@@ -199,7 +199,7 @@ const LoginPage = () => {
 
               {/* Campo Contraseña */}
               <div className="space-y-2">
-                <label htmlFor="password" className="block text-sm font-medium text-white">
+                <label htmlFor="password" className="block text-sm font-medium text-white font-semibold drop-shadow-lg">
                   Contraseña
                 </label>
                 <div className="relative">
