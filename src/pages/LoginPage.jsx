@@ -95,7 +95,7 @@ const LoginPage = () => {
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
-          className="hidden lg:block text-white space-y-8"
+          className="hidden lg:block text-black space-y-8"
         >
           <div className="space-y-4">
             <img 
@@ -107,7 +107,7 @@ const LoginPage = () => {
               Bienvenido a<br />
               <span style={{ background: 'linear-gradient(135deg, hsl(var(--color-primary)), #667eea)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>ROKE Industries</span>
             </h1>
-            <p className="text-xl text-white/80 leading-relaxed">
+            <p className="text-xl text-black/80 leading-relaxed">
               Tu plataforma de hosting tecnológica y moderna. Gestiona tus servicios, 
               servidores y dominios desde un solo lugar.
             </p>
@@ -120,7 +120,7 @@ const LoginPage = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Seguridad Avanzada</h3>
-                <p className="text-white/70">Protección 24/7 con autenticación de doble factor</p>
+                <p className="text-black/70">Protección 24/7 con autenticación de doble factor</p>
               </div>
             </div>
             
@@ -130,7 +130,7 @@ const LoginPage = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Rendimiento Óptimo</h3>
-                <p className="text-white/70">Servidores de alta velocidad y disponibilidad</p>
+                <p className="text-black/70">Servidores de alta velocidad y disponibilidad</p>
               </div>
             </div>
             
@@ -140,7 +140,7 @@ const LoginPage = () => {
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Alcance Global</h3>
-                <p className="text-white/70">Infraestructura distribuida mundialmente</p>
+                <p className="text-black/70">Infraestructura distribuida mundialmente</p>
               </div>
             </div>
           </div>
@@ -170,8 +170,8 @@ const LoginPage = () => {
                   className="h-12 w-auto mx-auto"
                 />
               </div>
-              <h2 className="text-3xl font-bold text-white">Iniciar Sesión</h2>
-              <p className="text-white/70">Accede a tu panel de control</p>
+              <h2 className="text-3xl font-bold text-black">Iniciar Sesión</h2>
+              <p className="text-black/70">Accede a tu panel de control</p>
             </div>
 
             {/* Formulario */}
@@ -179,11 +179,11 @@ const LoginPage = () => {
               
               {/* Campo Email */}
               <div className="space-y-2">
-                <label htmlFor="email" className="block text-sm font-medium text-white font-semibold drop-shadow-lg">
+                <label htmlFor="email" className="block text-sm font-medium text-black font-semibold drop-shadow-lg">
                   Correo Electrónico
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/50" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black/50" />
                   <input
                     id="email"
                     name="email"
@@ -199,11 +199,11 @@ const LoginPage = () => {
 
               {/* Campo Contraseña */}
               <div className="space-y-2">
-                <label htmlFor="password" className="block text-sm font-medium text-white font-semibold drop-shadow-lg">
+                <label htmlFor="password" className="block text-sm font-medium text-black font-semibold drop-shadow-lg">
                   Contraseña
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/50" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black/50" />
                   <input
                     id="password"
                     name="password"
@@ -217,7 +217,7 @@ const LoginPage = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black/50 hover:text-black transition-colors"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -237,7 +237,7 @@ const LoginPage = () => {
 
               {/* Recordar y Olvidé contraseña */}
               <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center space-x-2 text-white/70">
+                <label className="flex items-center space-x-2 text-black/70">
                   <input 
                     type="checkbox" 
                     className="rounded border-white/20 bg-white/10 text-primary focus:ring-white/50"
@@ -246,7 +246,7 @@ const LoginPage = () => {
                 </label>
                 <Link 
                   to="/forgot-password" 
-                  className="text-white/70 hover:text-white transition-colors"
+                  className="text-black/70 hover:text-black transition-colors"
                 >
                   ¿Olvidaste tu contraseña?
                 </Link>
@@ -276,7 +276,7 @@ const LoginPage = () => {
                   <div className="w-full border-t border-white/20" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-transparent text-white/70">o continúa con</span>
+                  <span className="px-2 bg-transparent text-black/70">o continúa con</span>
                 </div>
               </div>
 
@@ -286,7 +286,7 @@ const LoginPage = () => {
                 onClick={handleGoogleLogin}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full bg-white/10 border border-white/20 text-white py-3 px-6 rounded-xl font-semibold hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200 flex items-center justify-center space-x-2"
+                className="w-full bg-white/10 border border-white/20 text-black py-3 px-6 rounded-xl font-semibold hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200 flex items-center justify-center space-x-2"
               >
                 <Chrome className="w-5 h-5" />
                 <span>Continuar con Google</span>
@@ -294,11 +294,11 @@ const LoginPage = () => {
             </form>
 
             {/* Link de registro */}
-            <div className="text-center text-sm text-white/70">
+            <div className="text-center text-sm text-black/70">
               ¿No tienes una cuenta?{' '}
               <Link 
                 to="/register" 
-                className="text-white font-semibold hover:underline transition-all duration-200"
+                className="text-black font-semibold hover:underline transition-all duration-200"
               >
                 Regístrate aquí
               </Link>
@@ -306,7 +306,7 @@ const LoginPage = () => {
           </div>
 
           {/* Footer */}
-          <div className="mt-8 text-center text-white/50 text-xs">
+          <div className="mt-8 text-center text-black/50 text-xs">
             <p>© 2025 ROKE Industries. Todos los derechos reservados.</p>
           </div>
         </motion.div>
