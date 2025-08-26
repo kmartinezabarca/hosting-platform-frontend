@@ -1,3 +1,4 @@
+// src/pages/client/CheckoutPage.jsx
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CreditCard, Lock, Check, ArrowLeft, Shield, Zap, Loader2 } from "lucide-react";
@@ -82,7 +83,7 @@ const CheckoutPage = () => {
   const [touched, setTouched] = useState({});
   const [processing, setProcessing] = useState(false);
   const [step, setStep] = useState(1);
-  
+
   // Dynamic data states
   const [billingCycles, setBillingCycles] = useState({});
   const [loading, setLoading] = useState(true);
@@ -107,8 +108,8 @@ const CheckoutPage = () => {
           setBillingCycles(cyclesMap);
         }
       } catch (err) {
-        console.error('Error loading billing cycles:', err);
-        setDataError('Error al cargar los ciclos de facturación');
+        console.error("Error loading billing cycles:", err);
+        setDataError("Error al cargar los ciclos de facturación");
         // Fallback to static data
         setBillingCycles({
           monthly: { name: "Mensual", discount: 0 },
@@ -303,7 +304,7 @@ const CheckoutPage = () => {
         }
       });
     } catch (error) {
-      console.error('Payment processing error:', error);
+      console.error("Payment processing error:", error);
       setErrors(prev => ({ 
         ...prev, 
         submit: "Error al procesar el pago. Por favor, intenta de nuevo." 
