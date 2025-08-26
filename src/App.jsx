@@ -6,6 +6,7 @@ import AdminLayout from './components/AdminLayout';
 import ClientLayout from './components/ClientLayout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import Verify2FAPage from './pages/Verify2FAPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
         {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/verify-2fa" element={<Verify2FAPage />} />
 
         {/* Client Routes - Protected */}
         <Route 
@@ -38,9 +40,9 @@ function App() {
 
         {/* Default Route */}
         <Route path="/" element={
-          <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+          <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100  dark:to-gray-800 flex items-center justify-center">
             <div className="text-center">
-              <img src="/logo.png" alt="ROKE Industries" className="h-20 mx-auto mb-8" />
+              <img src="/logo.png" alt="ROKE Industries" className="h-40 mx-auto mb-8" />
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
                 Bienvenido a ROKE Industries
               </h1>

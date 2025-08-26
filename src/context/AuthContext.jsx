@@ -21,6 +21,20 @@ export const AuthProvider = ({ children }) => {
     return response;
   };
 
+  const loginWithGoogle = async (googleUserData) => {
+    const response = await AuthService.loginWithGoogle(googleUserData);
+    setUser(response.user);
+    return response;
+  };
+
+  const verifyTwoFactor = async (email, code) => {
+    const response = await AuthService.verifyTwoFactor(email, code);
+    if (response.user) {
+      setUser(response.user);
+    }
+    return response;
+  };
+
   const logout = () => {
     AuthService.logout();
     setUser(null);
@@ -28,13 +42,12 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     const response = await AuthService.register(userData);
-    // Optionally log in after registration
     setUser(response.user);
     return response;
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, register }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, register, loginWithGoogle, verifyTwoFactor }}>
       {children}
     </AuthContext.Provider>
   );
