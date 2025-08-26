@@ -84,6 +84,16 @@ const LoginPage = () => {
     }
   };
 
+  function normalizeAuthResponse(resp) {
+    return {
+      token: resp.token || resp.access_token || null,
+      tokenType: resp.token_type || "Bearer",
+      twoFactorRequired: !!resp.two_factor_required,
+      email: resp.email || resp.user?.email || null,
+      user: resp.user ?? null,
+    };
+  }
+
  const handleGoogleLoginSuccess = async (tokenResponse) => {
     setIsLoading(true);
     setError("");
@@ -107,10 +117,12 @@ const LoginPage = () => {
       const backendResponse = await loginWithGoogle(googleUserInfo);
       console.log("Respuesta del backend:", backendResponse);
 
-      if (backendResponse.two_factor_required) {
+      const { token, tokenType, twoFactorRequired, email, user } = normalizeAuthResponse(backendResponse);
+
+      if (twoFactorRequired) {
         console.log("2FA requerido. Redirigiendo a la página de verificación...");
-        navigate("/verify-2fa", { state: { email: backendResponse.email } });
-      } else if (backendResponse.token) {
+        navigate("/verify-2fa", { state: { email: email } });
+      } else if (token) {
         console.log("Login con Google exitoso. Redirigiendo al dashboard...");
         navigate("/client/dashboard");
       } else {
