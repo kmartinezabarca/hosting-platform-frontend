@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { CreditCard, Lock, Check, ArrowLeft, Shield, Zap } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import StripeCheckout from "../../components/StripeCheckout";
 import {
   emailRx,
   phoneRx,
@@ -251,21 +252,27 @@ const CheckoutPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateStep(2)) return;
-    setProcessing(true);
-    try {
-      await new Promise((r) => setTimeout(r, 1200));
-      navigate("/client/checkout/success", {
-        state: {
-          plan,
-          category,
-          billingCycle,
-          total: calculateTotal(),
-          serviceName: formData.serviceName,
-        },
-      });
-    } finally {
-      setProcessing(false);
-    }
+    setStep(3); // Move to payment step
+  };
+
+  const handlePaymentSuccess = (result) => {
+    navigate("/client/checkout/success", {
+      state: {
+        plan,
+        category,
+        billingCycle,
+        total: calculateTotal(),
+        serviceName: formData.serviceName,
+        paymentIntent: result.paymentIntent,
+        service: result.service
+      },
+    });
+  };
+
+  const handlePaymentError = (error) => {
+    console.error('Payment error:', error);
+    // You could show an error message to the user here
+    alert(`Error en el pago: ${error}`);
   };
 
   /* -------- clases visuales por campo -------- */
@@ -613,7 +620,7 @@ const CheckoutPage = () => {
             {/* Paso 3 */}
             {step === 3 && (
               <div className="space-y-8">
-                <h2 className="text-2xl font-semibold text-foreground">Confirmar Pedido</h2>
+                <h2 className="text-2xl font-semibold text-foreground">Confirmar Pedido y Pagar</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="rounded-xl border border-black/10 dark:border-white/10 p-4">
@@ -661,15 +668,31 @@ const CheckoutPage = () => {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3 p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 dark:bg-emerald-500/15">
-                  <Lock className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mt-0.5" />
-                  <div>
-                    <h4 className="font-medium text-foreground">Pago Seguro</h4>
-                    <p className="text-muted-foreground text-sm">
-                      Tu información está protegida con encriptación SSL de 256 bits.
-                    </p>
-                  </div>
-                </div>
+                {/* Stripe Checkout Component */}
+                <StripeCheckout
+                  amount={calculateTotal()}
+                  currency="usd"
+                  serviceData={{
+                    plan_id: plan.id,
+                    serviceName: formData.serviceName,
+                    billingCycle: billingCycle,
+                    domain: formData.domain,
+                    firstName: formData.firstName,
+                    lastName: formData.lastName,
+                    email: formData.email,
+                    phone: formData.phone,
+                    address: formData.address,
+                    city: formData.city,
+                    state: formData.state,
+                    zipCode: formData.zipCode,
+                    country: formData.country,
+                    backupService: formData.backupService,
+                    prioritySupport: formData.prioritySupport,
+                    autoRenew: formData.autoRenew
+                  }}
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                />
 
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
@@ -677,20 +700,6 @@ const CheckoutPage = () => {
                     className="sm:flex-1 rounded-xl px-5 py-3 border border-black/10 dark:border-white/10 bg-transparent text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition"
                   >
                     Volver
-                  </button>
-                  <button
-                    onClick={handleSubmit}
-                    disabled={processing}
-                    className="sm:flex-1 rounded-xl px-5 py-3 bg-foreground text-background font-semibold hover:opacity-90 transition disabled:opacity-60"
-                  >
-                    {processing ? (
-                      <span className="inline-flex items-center gap-2">
-                        <span className="w-4 h-4 rounded-full border-2 border-background border-t-transparent animate-spin" />
-                        Procesando…
-                      </span>
-                    ) : (
-                      `Pagar $${calculateTotal().toFixed(2)}`
-                    )}
                   </button>
                 </div>
               </div>
