@@ -10,54 +10,80 @@ import { paymentService } from '../services/payments';
 import { servicesService } from '../services/services';
 
 // Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_51S0FlDJY7gjOIiThIYJFXVqfYCYwyZvewSW8mXtNOcKzpv4TCUoNNAIY7rHjB71YJuUC4DjzbQPnP23gv3qvUiRs00FQLerEgT');
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
-const CheckoutForm = ({ 
-  amount, 
-  currency = 'usd', 
-  serviceData, 
-  onSuccess, 
+const CheckoutForm = ({
+  amount,
+  currency = 'mxn',
+  serviceData,
+  onSuccess,
   onError,
   processing,
-  setProcessing 
+  setProcessing
 }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [clientSecret, setClientSecret] = useState('');
 
+  // --- helper: construir objeto de factura (opcional) ---
+  const buildInvoice = () => {
+    if (!serviceData?.requireInvoice) return null;
+
+    // Si desde el contenedor ya te llega como invoice, lo respetamos;
+    // si no, tomamos los campos planos (invoiceRfc, invoiceName, etc.)
+    const inv = serviceData.invoice || {};
+    const get = (k, fb = '') =>
+      inv[k] ??
+      serviceData[`invoice${k[0].toUpperCase()}${k.slice(1)}`] ??
+      fb;
+
+    const constancia =
+      inv.constancia ||
+      (serviceData.invoiceConstanciaB64
+        ? {
+            filename: serviceData.invoiceConstanciaName,
+            mime: serviceData.invoiceConstanciaMime,
+            content_b64: serviceData.invoiceConstanciaB64,
+          }
+        : null);
+
+    return {
+      rfc: get('rfc'),
+      name: get('name'),
+      zip: get('zip'),
+      regimen: get('regimen'),
+      uso_cfdi: get('usoCfdi') || get('uso_cfdi') || 'G03',
+      constancia, // puede ser null si no adjuntó archivo
+    };
+  };
+
   useEffect(() => {
-    // Create payment intent when component mounts
     const createPaymentIntent = async () => {
       try {
         const response = await paymentService.createPaymentIntent({
-          amount: amount,
-          currency: currency,
+          amount,
+          currency,
           service_id: serviceData?.service_id,
           description: `Payment for ${serviceData?.serviceName || 'service'}`
         });
 
-        if (response.success) {
+        if (response?.success) {
           setClientSecret(response.data.client_secret);
         } else {
-          onError(response.message || 'Error creating payment intent');
+          onError?.(response?.message || 'Error creating payment intent');
         }
       } catch (error) {
         console.error('Error creating payment intent:', error);
-        onError('Error setting up payment');
+        onError?.('Error setting up payment');
       }
     };
 
-    if (amount && serviceData) {
-      createPaymentIntent();
-    }
+    if (amount && serviceData) createPaymentIntent();
   }, [amount, currency, serviceData]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-
-    if (!stripe || !elements || !clientSecret) {
-      return;
-    }
+    if (!stripe || !elements || !clientSecret) return;
 
     setProcessing(true);
 
@@ -67,9 +93,9 @@ const CheckoutForm = ({
       // Confirm payment with Stripe
       const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
-          card: card,
+          card,
           billing_details: {
-            name: `${serviceData.firstName} ${serviceData.lastName}`,
+            name: `${serviceData.firstName || ''} ${serviceData.lastName || ''}`.trim(),
             email: serviceData.email,
             phone: serviceData.phone,
             address: {
@@ -77,7 +103,7 @@ const CheckoutForm = ({
               city: serviceData.city,
               state: serviceData.state,
               postal_code: serviceData.zipCode,
-              country: serviceData.country || 'US'
+              country: serviceData.country || 'MX', // <-- MX por defecto
             }
           }
         }
@@ -85,8 +111,11 @@ const CheckoutForm = ({
 
       if (error) {
         console.error('Payment failed:', error);
-        onError(error.message);
-      } else if (paymentIntent.status === 'succeeded') {
+        onError?.(error.message);
+        return;
+      }
+
+      if (paymentIntent?.status === 'succeeded') {
         // Contract the service after successful payment
         try {
           const contractResponse = await servicesService.contractService({
@@ -95,29 +124,29 @@ const CheckoutForm = ({
             domain: serviceData.domain,
             service_name: serviceData.serviceName,
             payment_intent_id: paymentIntent.id,
+            // opciones adicionales
             additional_options: {
-              backup_service: serviceData.backupService,
-              priority_support: serviceData.prioritySupport,
-              auto_renew: serviceData.autoRenew
-            }
+              backup_service: !!serviceData.backupService,
+              priority_support: !!serviceData.prioritySupport,
+              auto_renew: !!serviceData.autoRenew,
+            },
+            // datos de facturación (solo si requireInvoice === true)
+            invoice: buildInvoice(),
           });
 
-          if (contractResponse.success) {
-            onSuccess({
-              paymentIntent,
-              service: contractResponse.data
-            });
+          if (contractResponse?.success) {
+            onSuccess?.({ paymentIntent, service: contractResponse.data });
           } else {
-            onError('Payment successful but service setup failed. Please contact support.');
+            onError?.('Payment successful but service setup failed. Please contact support.');
           }
         } catch (contractError) {
           console.error('Error contracting service:', contractError);
-          onError('Payment successful but service setup failed. Please contact support.');
+          onError?.('Payment successful but service setup failed. Please contact support.');
         }
       }
     } catch (error) {
       console.error('Payment error:', error);
-      onError('Payment processing failed');
+      onError?.('Payment processing failed');
     } finally {
       setProcessing(false);
     }
@@ -128,13 +157,9 @@ const CheckoutForm = ({
       base: {
         fontSize: '16px',
         color: '#424770',
-        '::placeholder': {
-          color: '#aab7c4',
-        },
+        '::placeholder': { color: '#aab7c4' },
       },
-      invalid: {
-        color: '#9e2146',
-      },
+      invalid: { color: '#9e2146' },
     },
     hidePostalCode: true
   };
@@ -145,10 +170,7 @@ const CheckoutForm = ({
         <label className="block text-sm font-medium text-foreground mb-3">
           Información de la Tarjeta
         </label>
-        <CardElement 
-          options={cardElementOptions}
-          className="p-3"
-        />
+        <CardElement options={cardElementOptions} className="p-3" />
       </div>
 
       <div className="flex items-start gap-3 p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 dark:bg-emerald-500/15">
@@ -165,6 +187,7 @@ const CheckoutForm = ({
         </div>
       </div>
 
+      {/* Botón SIEMPRE visible, como lo tienes */}
       <button
         type="submit"
         disabled={!stripe || processing || !clientSecret}
@@ -176,7 +199,7 @@ const CheckoutForm = ({
             Procesando Pago...
           </span>
         ) : (
-          `Pagar $${amount.toFixed(2)}`
+          `Pagar $${Number(amount || 0).toFixed(2)}`
         )}
       </button>
     </form>
@@ -202,4 +225,3 @@ const StripeCheckout = ({ amount, currency, serviceData, onSuccess, onError }) =
 };
 
 export default StripeCheckout;
-

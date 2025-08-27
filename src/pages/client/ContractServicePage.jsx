@@ -91,14 +91,6 @@ const ContractServicePage = () => {
 
     loadData();
   }, []);
-
-  const getPriceWithDiscount = (price, cycle) => {
-    const billingCycleData = billingCycles.find((c) => c.slug === cycle);
-    const discount = billingCycleData?.discount_percentage || 0;
-    return price * (1 - discount / 100);
-  };
-
-  const handleSelectPlan = (plan) => setSelectedPlan(plan);
   
   const handleProceedToCheckout = () => {
     if (selectedPlan) {
@@ -187,128 +179,160 @@ const ContractServicePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <h1 className="text-4xl font-bold text-foreground mb-4">
-            Contratar Servicio
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Elige el servicio perfecto para tus necesidades. Todos nuestros
-            planes incluyen soporte 24/7 y garantía de uptime del 99.9%.
-          </p>
-        </motion.div>
+    <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8 mt-8 mb-15 space-y-8">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center space-y-3"
+      >
+        <h1 className="text-4xl font-bold text-foreground">
+          Contratar Servicio
+        </h1>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Elige el servicio perfecto para tus necesidades. Todos nuestros planes
+          incluyen soporte 24/7 y garantía de uptime del 99.9%.
+        </p>
+      </motion.div>
 
-        {/* Service Categories */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-12"
-        >
-          <h2 className="text-2xl font-semibold text-foreground mb-6">
-            Categorías de Servicios
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {transformedCategories.map((category) => {
-              const Icon = category.icon;
-              return (
-                <motion.div
-                  key={category.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
+      {/* Service Categories */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+      >
+        {transformedCategories.map((category) => {
+          const Icon = category.icon;
+          return (
+            <motion.div
+              key={category.id}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`group text-left p-5 rounded-2xl transition-all bg-white dark:bg-[#101214] border border-black/5 dark:border-white/10 hover:shadow-md ${
+                selectedCategory === category.id
+                  ? "ring-2 ring-[#222]/40 dark:ring-white/40"
+                  : "hover:ring-1 hover:ring-[#222]/15 dark:hover:ring-white/15"
+              }`}
+              onClick={() => setSelectedCategory(category.id)}
+            >
+              <div
+                className={`
+                  grid place-items-center
+                  w-12 h-12 rounded-full
+                  ${category.bgColor}
+                  shadow-sm mb-4
+                  transition-transform
+                  ${
                     selectedCategory === category.id
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                  onClick={() => setSelectedCategory(category.id)}
-                >
-                  <div className={`${category.bgColor} p-3 rounded-lg w-fit mb-4`}>
-                    <Icon className={`h-6 w-6 ${category.color}`} />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    {category.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {category.description}
-                  </p>
-                </motion.div>
-              );
-            })}
-          </div>
-        </motion.div>
+                      ? "scale-105"
+                      : "group-hover:scale-105"
+                  }
+                `}
+              >
+                <Icon className={`w-6 h-6 ${category.color}`} />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                {category.name}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {category.description}
+              </p>
+            </motion.div>
+          );
+        })}
+      </motion.div>
 
-        {/* Billing Cycle Switch */}
-        {transformedBillingCycles.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mb-8"
-          >
+      {/* Billing Cycle Switch */}
+      {transformedBillingCycles.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="flex justify-center"
+        >
+          <div className="flex justify-center">
             <BillingCycleSwitch
               cycles={transformedBillingCycles}
-              selectedCycle={billingCycle}
-              onCycleChange={setBillingCycle}
+              value={billingCycle}
+              onChange={setBillingCycle}
             />
-          </motion.div>
-        )}
+          </div>
+        </motion.div>
+      )}
 
-        {/* Service Plans */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <h2 className="text-2xl font-semibold text-foreground mb-6">
-            Planes Disponibles
-          </h2>
-          
-          {transformedServicePlans[selectedCategory] && transformedServicePlans[selectedCategory].length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {transformedServicePlans[selectedCategory].map((plan) => (
+      {/* Service Plans */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+      >
+        {(() => {
+          const source =
+            (transformedServicePlans?.[selectedCategory] ??
+              servicePlans?.[selectedCategory]) ||
+            [];
+
+          const list = [...source];
+          const popIdx = list.findIndex((p) => p.popular);
+          if (list.length === 3 && popIdx > -1 && popIdx !== 1) {
+            const [popularPlan] = list.splice(popIdx, 1);
+            list.splice(1, 0, popularPlan);
+          }
+
+          const currentDiscount =
+            billingCycles?.find((c) => c.id === billingCycle)?.discount ?? 0;
+
+          // Render
+          return list.length ? (
+            list.map((plan) => {
+              const selected = selectedPlan?.id === plan.id;
+              return (
                 <PricingCard
                   key={plan.id}
                   plan={plan}
                   billingCycle={billingCycle}
-                  onSelect={handleSelectPlan}
-                  isSelected={selectedPlan?.id === plan.id}
-                  getPriceWithDiscount={getPriceWithDiscount}
+                  selected={selected}
+                  discount={currentDiscount}
+                  onSelect={() => setSelectedPlan(plan)}
                 />
-              ))}
-            </div>
+              );
+            })
           ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                No hay planes disponibles para esta categoría.
+            <div className="col-span-full text-center p-10 rounded-2xl bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10">
+              <p className="text-foreground font-semibold">
+                No hay planes para esta categoría.
+              </p>
+              <p className="text-muted-foreground text-sm">
+                Revisa la configuración de <code>servicePlans</code>.
               </p>
             </div>
-          )}
-        </motion.div>
+          );
+        })()}
+      </motion.div>
 
-        {/* Checkout Button */}
-        {selectedPlan && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-12 text-center"
+      {/* Checkout Button */}
+       {selectedPlan && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed bottom-6 right-6 z-[60]"
+        >
+          <button
+            onClick={handleProceedToCheckout}
+            className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold
+                       bg-[#222222] text-white
+                       dark:bg-white dark:text-[#101214]
+                       shadow-lg hover:shadow-xl hover:brightness-110 active:translate-y-px
+                       focus-visible:outline-none focus-visible:ring-2
+                       focus-visible:ring-[#222222]/40 dark:focus-visible:ring-white/40 transition"
           >
-            <button
-              onClick={handleProceedToCheckout}
-              className="inline-flex items-center px-8 py-4 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-lg font-semibold"
-            >
-              Proceder al Checkout
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </button>
-          </motion.div>
-        )}
-      </div>
+            Proceder al Checkout
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </motion.div>
+      )}
     </div>
   );
 };
