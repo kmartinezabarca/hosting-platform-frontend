@@ -177,6 +177,29 @@ class InvoicesService {
     }
   }
 
+  async createSetupIntent() {
+    try {
+      const token = authService.getToken();
+      const response = await fetch(`${API_BASE_URL}/payments/setup-intent`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating setup intent:', error);
+      throw error;
+    }
+  }
+
   async addPaymentMethod(methodData) {
     try {
       const token = authService.getToken();
@@ -199,6 +222,34 @@ class InvoicesService {
       console.error('Error adding payment method:', error);
       throw error;
     }
+  }
+
+  async updatePaymentMethod(id, data) {
+    try {
+      const token = authService.getToken();
+      const response = await fetch(`${API_BASE_URL}/payments/methods/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating payment method:', error);
+      throw error;
+    }
+  }
+
+  async setDefaultPaymentMethod(id) {
+    return this.updatePaymentMethod(id, { is_default: true });
   }
 
   async deletePaymentMethod(id) {

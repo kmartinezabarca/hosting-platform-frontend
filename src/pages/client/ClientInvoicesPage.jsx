@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Receipt, CreditCard, TrendingUp, RefreshCw, AlertCircle } from 'lucide-react';
 import StatsCards from '../../components/invoices/StatsCards';
 import InvoicesList from '../../components/invoices/InvoicesList';
@@ -6,6 +7,7 @@ import PaymentMethods from '../../components/invoices/PaymentMethods';
 import Transactions from '../../components/invoices/Transactions';
 import PaymentModal from '../../components/invoices/PaymentModal';
 import InvoiceDetailModal from '../../components/invoices/InvoiceDetailModal';
+import AddPaymentMethodModal from '../../components/invoices/AddPaymentMethodModal';
 import invoicesService from '../../services/invoices';
 
 /**
@@ -32,6 +34,7 @@ const ClientInvoicesPage = () => {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -115,6 +118,40 @@ const ClientInvoicesPage = () => {
   const handlePayInvoice = (invoice) => {
     setSelectedInvoice(invoice);
     setShowPaymentModal(true);
+  };
+
+  // Payment method handlers
+  const handleAddPaymentMethod = () => {
+    setShowAddPaymentModal(true);
+  };
+
+  const handlePaymentMethodAdded = async (paymentMethod) => {
+    // Reload payment methods after adding a new one
+    await loadData();
+  };
+
+  const handleSetDefaultPaymentMethod = async (method) => {
+    try {
+      const response = await invoicesService.setDefaultPaymentMethod(method.id);
+      if (response.success) {
+        await loadData(); // Reload to update the UI
+      }
+    } catch (err) {
+      console.error('Error setting default payment method:', err);
+    }
+  };
+
+  const handleDeletePaymentMethod = async (method) => {
+    if (window.confirm('¿Estás seguro de que deseas eliminar este método de pago?')) {
+      try {
+        const response = await invoicesService.deletePaymentMethod(method.id);
+        if (response.success) {
+          await loadData(); // Reload to update the UI
+        }
+      } catch (err) {
+        console.error('Error deleting payment method:', err);
+      }
+    }
   };
 
   if (loading) {
@@ -212,9 +249,10 @@ const ClientInvoicesPage = () => {
           {activeTab === 'payments' && (
             <PaymentMethods
               paymentMethods={paymentMethods}
-              onAddMethod={() => { /* placeholder for add */ }}
-              onEditMethod={(method) => { /* placeholder for edit */ }}
-              onDeleteMethod={(method) => { /* placeholder for delete */ }}
+              onAddMethod={handleAddPaymentMethod}
+              onSetDefault={handleSetDefaultPaymentMethod}
+              onDeleteMethod={handleDeletePaymentMethod}
+              loading={loading}
             />
           )}
           {activeTab === 'transactions' && (
@@ -244,6 +282,12 @@ const ClientInvoicesPage = () => {
           setSelectedInvoice(invoice);
           setShowPaymentModal(true);
         }}
+      />
+      <AddPaymentMethodModal
+        isOpen={showAddPaymentModal}
+        onClose={() => setShowAddPaymentModal(false)}
+        onSuccess={handlePaymentMethodAdded}
+        isDefault={paymentMethods.length === 0}
       />
     </div>
   );
