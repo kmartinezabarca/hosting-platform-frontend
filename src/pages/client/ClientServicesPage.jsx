@@ -13,6 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 import ServiceFilters from '../../components/services/service-filters';
 import ServiceCard from '../../components/services/service-card';
 import ServiceDetailModal from '../../components/services/service-detail-modal';
+import { servicesService } from '../../services/services';
 
 const ClientServicesPage = () => {
   const { user } = useAuth();
@@ -20,146 +21,158 @@ const ClientServicesPage = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [actionLoading, setActionLoading] = useState({});
 
-  // Mock data - En producción esto vendría del backend
-  const mockServices = [
-    {
-      id: 1,
-      name: 'Web Hosting Pro',
-      type: 'shared_hosting',
-      status: 'active',
-      domain: 'miempresa.com',
-      ip_address: '192.168.1.100',
-      created_at: '2025-01-15T10:00:00Z',
-      expires_at: '2026-01-15T10:00:00Z',
-      specs: {
-        storage: '50 GB SSD',
-        bandwidth: 'Ilimitado',
-        databases: '10 MySQL',
-        email_accounts: 'Ilimitadas',
-        ssl: 'Incluido',
-        backup: 'Diario'
-      },
-      metrics: {
-        uptime: 99.9,
-        cpu_usage: 15,
-        memory_usage: 45,
-        disk_usage: 32,
-        bandwidth_used: 2.5,
-        bandwidth_limit: 100
-      },
-      price: 29.99,
-      currency: 'USD',
-      billing_cycle: 'monthly'
-    },
-    {
-      id: 2,
-      name: 'Minecraft Server Premium',
-      type: 'game_server',
-      status: 'active',
-      domain: 'mc.miservidor.net',
-      ip_address: '192.168.1.101',
-      port: 25565,
-      created_at: '2025-01-10T15:30:00Z',
-      expires_at: '2025-04-10T15:30:00Z',
-      specs: {
-        ram: '8 GB DDR4',
-        cpu: '4 vCores',
-        storage: '100 GB NVMe',
-        players: '50 slots',
-        version: '1.20.4',
-        mods: 'Forge/Fabric'
-      },
-      metrics: {
-        uptime: 98.5,
-        cpu_usage: 65,
-        memory_usage: 78,
-        disk_usage: 45,
-        players_online: 12,
-        players_max: 50
-      },
-      price: 49.99,
-      currency: 'USD',
-      billing_cycle: 'monthly'
-    },
-    {
-      id: 3,
-      name: 'VPS Cloud Enterprise',
-      type: 'vps',
-      status: 'maintenance',
-      domain: 'vps.miapp.io',
-      ip_address: '192.168.1.102',
-      created_at: '2025-01-05T09:15:00Z',
-      expires_at: '2025-07-05T09:15:00Z',
-      specs: {
-        ram: '16 GB DDR4',
-        cpu: '8 vCores',
-        storage: '500 GB NVMe',
-        bandwidth: '10 TB',
-        os: 'Ubuntu 22.04',
-        root_access: 'Completo'
-      },
-      metrics: {
-        uptime: 99.8,
-        cpu_usage: 35,
-        memory_usage: 52,
-        disk_usage: 68,
-        bandwidth_used: 1.2,
-        bandwidth_limit: 10
-      },
-      price: 89.99,
-      currency: 'USD',
-      billing_cycle: 'monthly'
-    },
-    {
-      id: 4,
-      name: 'Database Cluster',
-      type: 'database',
-      status: 'suspended',
-      domain: 'db.miapp.com',
-      ip_address: '192.168.1.103',
-      created_at: '2024-12-20T14:20:00Z',
-      expires_at: '2025-03-20T14:20:00Z',
-      specs: {
-        engine: 'PostgreSQL 15',
-        ram: '32 GB',
-        storage: '1 TB SSD',
-        connections: '500 max',
-        backup: 'Automático',
-        replication: 'Master-Slave'
-      },
-      metrics: {
+  // Cargar servicios del usuario desde la API
+  useEffect(() => {
+    const fetchUserServices = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await servicesService.getUserServices();
+        
+        if (response.success) {
+          // Transformar los datos de la API al formato esperado por el frontend
+          const transformedServices = response.data.map(service => ({
+            id: service.id,
+            uuid: service.uuid,
+            name: service.name || service.plan_name,
+            type: mapCategoryToType(service.category),
+            status: service.status,
+            domain: service.connection_details?.domain || service.connection_details?.ip_address || 'N/A',
+            ip_address: service.connection_details?.ip_address || 'N/A',
+            port: service.connection_details?.port || null,
+            created_at: service.created_at,
+            expires_at: service.next_due_date,
+            specs: parseSpecifications(service.specifications, service.category),
+            metrics: generateMockMetrics(service.status), // TODO: Implementar métricas reales
+            price: service.price,
+            currency: 'USD', // TODO: Obtener de la configuración
+            billing_cycle: service.billing_cycle,
+            plan_name: service.plan_name,
+            plan_slug: service.plan_slug,
+            category: service.category,
+            setup_fee: service.setup_fee,
+            notes: service.notes
+          }));
+          
+          setServices(transformedServices);
+        } else {
+          setError('Error al cargar los servicios');
+        }
+      } catch (error) {
+        console.error('Error fetching user services:', error);
+        setError('Error de conexión al cargar los servicios');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserServices();
+  }, []);
+
+  // Función para mapear categorías del backend a tipos del frontend
+  const mapCategoryToType = (category) => {
+    const categoryMap = {
+      'hosting': 'shared_hosting',
+      'web-hosting': 'shared_hosting',
+      'vps': 'vps',
+      'cloud': 'vps',
+      'games': 'game_server',
+      'gaming': 'game_server',
+      'database': 'database',
+      'db': 'database'
+    };
+    
+    return categoryMap[category?.toLowerCase()] || 'shared_hosting';
+  };
+
+  // Función para parsear especificaciones según el tipo de servicio
+  const parseSpecifications = (specs, category) => {
+    if (!specs) return {};
+    
+    const categoryType = mapCategoryToType(category);
+    
+    switch (categoryType) {
+      case 'shared_hosting':
+        return {
+          storage: specs.storage || specs.disk || '10 GB SSD',
+          bandwidth: specs.bandwidth || 'Ilimitado',
+          databases: specs.databases || specs.mysql_databases || '5 MySQL',
+          email_accounts: specs.email_accounts || specs.emails || 'Ilimitadas',
+          ssl: specs.ssl || 'Incluido',
+          backup: specs.backup || 'Diario'
+        };
+      
+      case 'vps':
+        return {
+          ram: specs.ram || specs.memory || '4 GB DDR4',
+          cpu: specs.cpu || specs.cores || '2 vCores',
+          storage: specs.storage || specs.disk || '50 GB NVMe',
+          bandwidth: specs.bandwidth || '1 TB',
+          os: specs.os || specs.operating_system || 'Ubuntu 22.04',
+          root_access: specs.root_access || 'Completo'
+        };
+      
+      case 'game_server':
+        return {
+          ram: specs.ram || specs.memory || '4 GB DDR4',
+          cpu: specs.cpu || specs.cores || '2 vCores',
+          storage: specs.storage || specs.disk || '25 GB NVMe',
+          players: specs.players || specs.max_players || '20 slots',
+          version: specs.version || specs.game_version || '1.20.4',
+          mods: specs.mods || specs.mod_support || 'Vanilla'
+        };
+      
+      case 'database':
+        return {
+          engine: specs.engine || specs.db_engine || 'MySQL 8.0',
+          ram: specs.ram || specs.memory || '8 GB',
+          storage: specs.storage || specs.disk || '100 GB SSD',
+          connections: specs.connections || specs.max_connections || '100 max',
+          backup: specs.backup || 'Automático',
+          replication: specs.replication || 'Single'
+        };
+      
+      default:
+        return specs;
+    }
+  };
+
+  // Función para generar métricas mock basadas en el estado del servicio
+  const generateMockMetrics = (status) => {
+    if (status === 'suspended' || status === 'terminated') {
+      return {
         uptime: 0,
         cpu_usage: 0,
         memory_usage: 0,
-        disk_usage: 75,
-        connections_active: 0,
-        connections_max: 500
-      },
-      price: 149.99,
-      currency: 'USD',
-      billing_cycle: 'monthly'
+        disk_usage: Math.floor(Math.random() * 30) + 20, // Mantener algo de uso de disco
+        bandwidth_used: 0,
+        bandwidth_limit: 100
+      };
     }
-  ];
-
-  useEffect(() => {
-    // Simular carga de datos del backend
-    setTimeout(() => {
-      setServices(mockServices);
-      setLoading(false);
-    }, 1200);
-  }, []);
+    
+    return {
+      uptime: Math.random() * 5 + 95, // 95-100%
+      cpu_usage: Math.floor(Math.random() * 60) + 10, // 10-70%
+      memory_usage: Math.floor(Math.random() * 50) + 20, // 20-70%
+      disk_usage: Math.floor(Math.random() * 40) + 20, // 20-60%
+      bandwidth_used: Math.random() * 10 + 1, // 1-11 GB
+      bandwidth_limit: 100
+    };
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'active': return 'text-success';
-      case 'maintenance': return 'text-warning';
+      case 'pending': return 'text-warning';
       case 'suspended': return 'text-error';
-      case 'stopped': return 'text-muted-foreground';
+      case 'terminated': return 'text-muted-foreground';
+      case 'failed': return 'text-error';
       default: return 'text-muted-foreground';
     }
   };
@@ -167,9 +180,10 @@ const ClientServicesPage = () => {
   const getStatusBgColor = (status) => {
     switch (status) {
       case 'active': return 'bg-success/10';
-      case 'maintenance': return 'bg-warning/10';
+      case 'pending': return 'bg-warning/10';
       case 'suspended': return 'bg-error/10';
-      case 'stopped': return 'bg-muted/10';
+      case 'terminated': return 'bg-muted/10';
+      case 'failed': return 'bg-error/10';
       default: return 'bg-muted/10';
     }
   };
@@ -177,9 +191,10 @@ const ClientServicesPage = () => {
   const getStatusText = (status) => {
     switch (status) {
       case 'active': return 'Activo';
-      case 'maintenance': return 'Mantenimiento';
+      case 'pending': return 'Pendiente';
       case 'suspended': return 'Suspendido';
-      case 'stopped': return 'Detenido';
+      case 'terminated': return 'Terminado';
+      case 'failed': return 'Fallido';
       default: return 'Desconocido';
     }
   };
@@ -216,33 +231,49 @@ const ClientServicesPage = () => {
     setActionLoading({ ...actionLoading, [`${serviceId}-${action}`]: true });
     
     try {
-      // Simular acción del servicio
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      let response;
       
-      // Actualizar el estado del servicio según la acción
-      setServices(services.map(service => {
-        if (service.id === serviceId) {
-          let newStatus = service.status;
-          switch (action) {
-            case 'start':
-              newStatus = 'active';
-              break;
-            case 'stop':
-              newStatus = 'stopped';
-              break;
-            case 'restart':
-              newStatus = 'active';
-              break;
-            default:
-              break;
+      switch (action) {
+        case 'start':
+        case 'restart':
+          response = await servicesService.reactivateService(serviceId);
+          break;
+        case 'stop':
+          response = await servicesService.suspendService(serviceId, 'Detenido por el usuario');
+          break;
+        default:
+          throw new Error(`Acción no soportada: ${action}`);
+      }
+      
+      if (response.success) {
+        // Actualizar el estado del servicio localmente
+        setServices(services.map(service => {
+          if (service.id === serviceId) {
+            let newStatus = service.status;
+            switch (action) {
+              case 'start':
+              case 'restart':
+                newStatus = 'active';
+                break;
+              case 'stop':
+                newStatus = 'suspended';
+                break;
+            }
+            return { 
+              ...service, 
+              status: newStatus,
+              metrics: generateMockMetrics(newStatus)
+            };
           }
-          return { ...service, status: newStatus };
-        }
-        return service;
-      }));
+          return service;
+        }));
+      } else {
+        throw new Error(response.message || 'Error al realizar la acción');
+      }
       
     } catch (error) {
       console.error(`Error performing ${action} on service ${serviceId}:`, error);
+      // Aquí podrías mostrar una notificación de error
     } finally {
       setActionLoading({ ...actionLoading, [`${serviceId}-${action}`]: false });
     }
@@ -291,6 +322,31 @@ const ClientServicesPage = () => {
               <div className="loading-skeleton h-32 w-full"></div>
             </div>
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8 mt-8 mb-10">
+        <div className="text-center bg-white dark:bg-card border border-dashed border-border/60 rounded-2xl p-16">
+          <div className="p-4 bg-red-100 dark:bg-red-900/20 rounded-full mb-4 inline-block">
+            <AlertCircle className="w-12 h-12 text-red-600 dark:text-red-400" />
+          </div>
+          <h3 className="text-xl font-semibold text-foreground mb-2">
+            Error al cargar los servicios
+          </h3>
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            {error}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold bg-[#222222] text-white dark:bg-white dark:text-[#101214] shadow-sm hover:shadow-md hover:brightness-110"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Reintentar
+          </button>
         </div>
       </div>
     );
@@ -405,5 +461,3 @@ const ClientServicesPage = () => {
 };
 
 export default ClientServicesPage;
-
-
