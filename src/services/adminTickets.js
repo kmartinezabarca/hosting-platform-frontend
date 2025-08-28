@@ -47,25 +47,25 @@ const adminTicketsService = {
 
   // Cambiar estado del ticket
   changeStatus: async (id, status) => {
-    const response = await api.patch(`/admin/tickets/${id}/status`, { status });
+    const response = await api.put(`/admin/tickets/${id}/status`, { status });
     return response.data;
   },
 
   // Cambiar prioridad del ticket
   changePriority: async (id, priority) => {
-    const response = await api.patch(`/admin/tickets/${id}/priority`, { priority });
+    const response = await api.put(`/admin/tickets/${id}/priority`, { priority });
     return response.data;
   },
 
   // Asignar ticket a un agente
   assign: async (id, agentId) => {
-    const response = await api.patch(`/admin/tickets/${id}/assign`, { agent_id: agentId });
+    const response = await api.put(`/admin/tickets/${id}/assign`, { agent_id: agentId });
     return response.data;
   },
 
   // Agregar respuesta al ticket
   addReply: async (id, replyData) => {
-    const response = await api.post(`/admin/tickets/${id}/replies`, replyData);
+    const response = await api.post(`/admin/tickets/${id}/reply`, replyData);
     return response.data;
   },
 

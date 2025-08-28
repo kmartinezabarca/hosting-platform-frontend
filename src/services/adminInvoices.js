@@ -46,19 +46,19 @@ const adminInvoicesService = {
 
   // Marcar factura como pagada
   markAsPaid: async (id, paymentData) => {
-    const response = await api.patch(`/admin/invoices/${id}/mark-paid`, paymentData);
+    const response = await api.post(`/admin/invoices/${id}/mark-paid`, paymentData);
     return response.data;
   },
 
-  // Marcar factura como vencida
-  markAsOverdue: async (id) => {
-    const response = await api.patch(`/admin/invoices/${id}/mark-overdue`);
+  // Cambiar estado de factura
+  updateStatus: async (id, status) => {
+    const response = await api.put(`/admin/invoices/${id}/status`, { status });
     return response.data;
   },
 
   // Cancelar factura
   cancel: async (id, reason) => {
-    const response = await api.patch(`/admin/invoices/${id}/cancel`, { reason });
+    const response = await api.post(`/admin/invoices/${id}/cancel`, { reason });
     return response.data;
   },
 

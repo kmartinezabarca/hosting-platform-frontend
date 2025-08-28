@@ -44,7 +44,7 @@ const usersService = {
 
   // Cambiar estado del usuario
   changeStatus: async (id, status) => {
-    const response = await api.patch(`/admin/users/${id}/status`, { status });
+    const response = await api.put(`/admin/users/${id}/status`, { status });
     return response.data;
   },
 
