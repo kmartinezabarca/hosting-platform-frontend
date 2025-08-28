@@ -1,0 +1,65 @@
+import api from './api';
+
+const usersService = {
+  // Obtener todos los usuarios (admin)
+  getAll: async (params = {}) => {
+    const queryParams = new URLSearchParams();
+    
+    if (params.search) queryParams.append('search', params.search);
+    if (params.status) queryParams.append('status', params.status);
+    if (params.role) queryParams.append('role', params.role);
+    if (params.page) queryParams.append('page', params.page);
+    if (params.per_page) queryParams.append('per_page', params.per_page);
+    
+    const queryString = queryParams.toString();
+    const url = queryString ? `/admin/users?${queryString}` : '/admin/users';
+    
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Obtener un usuario específico
+  getById: async (id) => {
+    const response = await api.get(`/admin/users/${id}`);
+    return response.data;
+  },
+
+  // Crear nuevo usuario
+  create: async (userData) => {
+    const response = await api.post('/admin/users', userData);
+    return response.data;
+  },
+
+  // Actualizar usuario
+  update: async (id, userData) => {
+    const response = await api.put(`/admin/users/${id}`, userData);
+    return response.data;
+  },
+
+  // Eliminar usuario
+  delete: async (id) => {
+    const response = await api.delete(`/admin/users/${id}`);
+    return response.data;
+  },
+
+  // Cambiar estado del usuario
+  changeStatus: async (id, status) => {
+    const response = await api.patch(`/admin/users/${id}/status`, { status });
+    return response.data;
+  },
+
+  // Obtener estadísticas de usuarios
+  getStats: async () => {
+    const response = await api.get('/admin/users/stats');
+    return response.data;
+  },
+
+  // Obtener actividad reciente de usuarios
+  getRecentActivity: async (limit = 10) => {
+    const response = await api.get(`/admin/users/recent-activity?limit=${limit}`);
+    return response.data;
+  }
+};
+
+export default usersService;
+

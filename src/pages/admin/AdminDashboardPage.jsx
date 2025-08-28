@@ -1,359 +1,472 @@
 import React, { useState, useEffect } from 'react';
-import authService from '../../services/auth';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import { 
+  Users, 
+  Server, 
+  DollarSign, 
+  FileText, 
+  HelpCircle, 
+  TrendingUp, 
+  TrendingDown,
+  Activity,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Eye,
+  ArrowUpRight,
+  ArrowDownRight
+} from 'lucide-react';
+import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import adminDashboardService from '../../services/adminDashboard';
 
 const AdminDashboardPage = () => {
-  const [stats, setStats] = useState({});
-  const [recentActivity, setRecentActivity] = useState([]);
-  const [systemHealth, setSystemHealth] = useState({});
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedPeriod, setSelectedPeriod] = useState('month');
+  const [revenueData, setRevenueData] = useState([]);
+  const [serviceStatusData, setServiceStatusData] = useState([]);
+  const [ticketPriorityData, setTicketPriorityData] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
 
   useEffect(() => {
-    loadAdminData();
-  }, []);
+    fetchDashboardData();
+  }, [selectedPeriod]);
 
-  const loadAdminData = async () => {
+  const fetchDashboardData = async () => {
     try {
-      const token = authService.getToken();
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json'
-      };
-
-      // Mock data for admin dashboard
-      setStats({
-        total_users: 1247,
-        active_services: 892,
-        monthly_revenue: 45678.90,
-        pending_tickets: 23,
-        server_uptime: 99.9,
-        total_domains: 456,
-        new_signups_today: 12,
-        revenue_growth: 15.3
-      });
-
-      setRecentActivity([
-        {
-          id: 1,
-          type: 'user_registration',
-          description: 'Nuevo usuario registrado: john.doe@example.com',
-          timestamp: '2025-08-15 14:30:00',
-          severity: 'info'
-        },
-        {
-          id: 2,
-          type: 'service_created',
-          description: 'Nuevo servicio VPS creado para usuario ID: 1234',
-          timestamp: '2025-08-15 14:15:00',
-          severity: 'success'
-        },
-        {
-          id: 3,
-          type: 'payment_received',
-          description: 'Pago recibido: $299.99 MXN - Factura INV-2025-001',
-          timestamp: '2025-08-15 13:45:00',
-          severity: 'success'
-        },
-        {
-          id: 4,
-          type: 'ticket_created',
-          description: 'Nuevo ticket de soporte: "Problema con DNS"',
-          timestamp: '2025-08-15 13:20:00',
-          severity: 'warning'
-        },
-        {
-          id: 5,
-          type: 'server_alert',
-          description: 'Alerta de uso de CPU en servidor NODE-03: 85%',
-          timestamp: '2025-08-15 12:55:00',
-          severity: 'error'
-        }
+      setLoading(true);
+      
+      // Fetch all dashboard data in parallel
+      const [
+        statsResponse,
+        revenueChartResponse,
+        servicesDistributionResponse,
+        ticketsPriorityResponse,
+        recentActivityResponse
+      ] = await Promise.all([
+        adminDashboardService.getStats(selectedPeriod),
+        adminDashboardService.getRevenueChart(selectedPeriod),
+        adminDashboardService.getServicesDistribution(),
+        adminDashboardService.getTicketsPriority(),
+        adminDashboardService.getRecentActivity(10)
       ]);
-
-      setSystemHealth({
-        cpu_usage: 45,
-        memory_usage: 67,
-        disk_usage: 34,
-        network_status: 'healthy',
-        database_status: 'healthy',
-        backup_status: 'completed',
-        last_backup: '2025-08-15 02:00:00'
-      });
-
+      
+      setStats(statsResponse);
+      setRevenueData(revenueChartResponse);
+      setServiceStatusData(servicesDistributionResponse);
+      setTicketPriorityData(ticketsPriorityResponse);
+      setRecentActivity(recentActivityResponse);
+      
     } catch (error) {
-      console.error('Error loading admin data:', error);
+      console.error('Error fetching dashboard data:', error);
+      // Set empty data on error to prevent crashes
+      setStats({
+        users: { total: 0, active: 0, pending: 0, suspended: 0, new_this_month: 0, growth_rate: 0 },
+        services: { total: 0, active: 0, suspended: 0, maintenance: 0, cancelled: 0, new_this_month: 0, growth_rate: 0 },
+        revenue: { monthly: 0, yearly: 0, currency: 'MXN', growth_rate: 0 },
+        invoices: { total: 0, paid: 0, pending: 0, overdue: 0, cancelled: 0, total_amount: 0, pending_amount: 0 },
+        tickets: { total: 0, open: 0, in_progress: 0, resolved: 0, closed: 0, high_priority: 0, urgent: 0, avg_response_time: '0 hours' }
+      });
+      setRevenueData([]);
+      setServiceStatusData([]);
+      setTicketPriorityData([]);
+      setRecentActivity([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const getSeverityColor = (severity) => {
-    switch (severity) {
-      case 'success': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-      case 'warning': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-      case 'error': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-      default: return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
-    }
-  };
-
-  const getHealthColor = (percentage) => {
-    if (percentage < 50) return 'bg-green-500';
-    if (percentage < 80) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Panel de Administración</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Gestión completa de la plataforma ROKE Industries
-          </p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard Administrativo</h1>
+          <p className="text-gray-600 mt-1">Resumen general de la plataforma</p>
         </div>
-
-        {/* Main Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <span className="text-2xl">👥</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Usuarios</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats.total_users?.toLocaleString()}
-                </p>
-                <p className="text-xs text-green-600 dark:text-green-400">
-                  +{stats.new_signups_today} hoy
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <span className="text-2xl">🖥️</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Servicios Activos</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats.active_services?.toLocaleString()}
-                </p>
-                <p className="text-xs text-blue-600 dark:text-blue-400">
-                  {stats.total_domains} dominios
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-            <div className="flex items-center">
-              <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <span className="text-2xl">💰</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Ingresos Mensuales</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  ${stats.monthly_revenue?.toLocaleString()}
-                </p>
-                <p className="text-xs text-green-600 dark:text-green-400">
-                  +{stats.revenue_growth}% vs mes anterior
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-            <div className="flex items-center">
-              <div className="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                <span className="text-2xl">🎫</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Tickets Pendientes</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats.pending_tickets}
-                </p>
-                <p className="text-xs text-green-600 dark:text-green-400">
-                  {stats.server_uptime}% uptime
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* System Health */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-              Estado del Sistema
-            </h3>
-            
-            <div className="space-y-6">
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">CPU</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {systemHealth.cpu_usage}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full ${getHealthColor(systemHealth.cpu_usage)}`}
-                    style={{ width: `${systemHealth.cpu_usage}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Memoria</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {systemHealth.memory_usage}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full ${getHealthColor(systemHealth.memory_usage)}`}
-                    style={{ width: `${systemHealth.memory_usage}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Disco</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {systemHealth.disk_usage}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full ${getHealthColor(systemHealth.disk_usage)}`}
-                    style={{ width: `${systemHealth.disk_usage}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Base de Datos</span>
-                  </div>
-                  <span className="text-xs font-medium text-green-600 dark:text-green-400">
-                    {systemHealth.database_status}
-                  </span>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Red</span>
-                  </div>
-                  <span className="text-xs font-medium text-green-600 dark:text-green-400">
-                    {systemHealth.network_status}
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Último Backup</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {new Date(systemHealth.last_backup).toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-              Actividad Reciente
-            </h3>
-            
-            <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-start space-x-3">
-                  <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${
-                    activity.severity === 'success' ? 'bg-green-500' :
-                    activity.severity === 'warning' ? 'bg-yellow-500' :
-                    activity.severity === 'error' ? 'bg-red-500' : 'bg-blue-500'
-                  }`}></div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900 dark:text-white">
-                      {activity.description}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {new Date(activity.timestamp).toLocaleString()}
-                    </p>
-                  </div>
-                  <div className={`flex-shrink-0 px-2 py-1 text-xs rounded-full ${getSeverityColor(activity.severity)}`}>
-                    {activity.severity === 'success' ? 'Éxito' :
-                     activity.severity === 'warning' ? 'Alerta' :
-                     activity.severity === 'error' ? 'Error' : 'Info'}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <button className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium">
-                Ver toda la actividad →
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-            Acciones Rápidas
-          </h3>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            <button className="flex flex-col items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-              <span className="text-2xl mb-2">👤</span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">Crear Usuario</span>
-            </button>
-            
-            <button className="flex flex-col items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-              <span className="text-2xl mb-2">🖥️</span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">Nuevo Servicio</span>
-            </button>
-            
-            <button className="flex flex-col items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-              <span className="text-2xl mb-2">📄</span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">Generar Factura</span>
-            </button>
-            
-            <button className="flex flex-col items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-              <span className="text-2xl mb-2">🌐</span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">Registrar Dominio</span>
-            </button>
-            
-            <button className="flex flex-col items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-              <span className="text-2xl mb-2">📊</span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">Ver Reportes</span>
-            </button>
-            
-            <button className="flex flex-col items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-              <span className="text-2xl mb-2">⚙️</span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">Configuración</span>
-            </button>
-          </div>
+        <div className="flex space-x-2">
+          <Button 
+            variant={selectedPeriod === 'week' ? 'default' : 'outline'} 
+            size="sm"
+            onClick={() => setSelectedPeriod('week')}
+          >
+            Semana
+          </Button>
+          <Button 
+            variant={selectedPeriod === 'month' ? 'default' : 'outline'} 
+            size="sm"
+            onClick={() => setSelectedPeriod('month')}
+          >
+            Mes
+          </Button>
+          <Button 
+            variant={selectedPeriod === 'year' ? 'default' : 'outline'} 
+            size="sm"
+            onClick={() => setSelectedPeriod('year')}
+          >
+            Año
+          </Button>
         </div>
       </div>
+
+      {/* Key Metrics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Users Card */}
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Usuarios Totales</CardTitle>
+            <Users className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.users?.total?.toLocaleString() || 0}</div>
+            <div className="flex items-center space-x-2 text-xs text-gray-600">
+              {(stats?.users?.growth_rate || 0) > 0 ? (
+                <TrendingUp className="h-3 w-3 text-green-600" />
+              ) : (
+                <TrendingDown className="h-3 w-3 text-red-600" />
+              )}
+              <span className={(stats?.users?.growth_rate || 0) > 0 ? 'text-green-600' : 'text-red-600'}>
+                {Math.abs(stats?.users?.growth_rate || 0)}% vs mes anterior
+              </span>
+            </div>
+            <div className="mt-2 space-y-1">
+              <div className="flex justify-between text-xs">
+                <span>Activos: {stats?.users?.active || 0}</span>
+                <span>Pendientes: {stats?.users?.pending || 0}</span>
+              </div>
+              <Progress value={stats?.users?.total ? ((stats?.users?.active || 0) / stats?.users?.total) * 100 : 0} className="h-1" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Services Card */}
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Servicios Activos</CardTitle>
+            <Server className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.services?.active?.toLocaleString() || 0}</div>
+            <div className="flex items-center space-x-2 text-xs text-gray-600">
+              {(stats?.services?.growth_rate || 0) > 0 ? (
+                <TrendingUp className="h-3 w-3 text-green-600" />
+              ) : (
+                <TrendingDown className="h-3 w-3 text-red-600" />
+              )}
+              <span className={(stats?.services?.growth_rate || 0) > 0 ? 'text-green-600' : 'text-red-600'}>
+                {Math.abs(stats?.services?.growth_rate || 0)}% vs mes anterior
+              </span>
+            </div>
+            <div className="mt-2 space-y-1">
+              <div className="flex justify-between text-xs">
+                <span>Total: {stats?.services?.total || 0}</span>
+                <span>Suspendidos: {stats?.services?.suspended || 0}</span>
+              </div>
+              <Progress value={stats?.services?.total ? ((stats?.services?.active || 0) / stats?.services?.total) * 100 : 0} className="h-1" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Revenue Card */}
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ingresos Mensuales</CardTitle>
+            <DollarSign className="h-4 w-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${(stats?.revenue?.monthly || 0).toLocaleString()} {stats?.revenue?.currency || 'MXN'}
+            </div>
+            <div className="flex items-center space-x-2 text-xs text-gray-600">
+              {(stats?.revenue?.growth_rate || 0) > 0 ? (
+                <TrendingUp className="h-3 w-3 text-green-600" />
+              ) : (
+                <TrendingDown className="h-3 w-3 text-red-600" />
+              )}
+              <span className={(stats?.revenue?.growth_rate || 0) > 0 ? 'text-green-600' : 'text-red-600'}>
+                {Math.abs(stats?.revenue?.growth_rate || 0)}% vs mes anterior
+              </span>
+            </div>
+            <div className="mt-2 text-xs text-gray-600">
+              Anual: ${(stats?.revenue?.yearly || 0).toLocaleString()} {stats?.revenue?.currency || 'MXN'}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tickets Card */}
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tickets Abiertos</CardTitle>
+            <HelpCircle className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.tickets?.open || 0}</div>
+            <div className="flex items-center space-x-2 text-xs text-gray-600">
+              <Clock className="h-3 w-3" />
+              <span>Tiempo promedio: {stats?.tickets?.avg_response_time || '0 hours'}</span>
+            </div>
+            <div className="mt-2 space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-red-600">Urgentes: {stats?.tickets?.urgent || 0}</span>
+                <span className="text-orange-600">Alta: {stats?.tickets?.high_priority || 0}</span>
+              </div>
+              <div className="flex space-x-1">
+                <div className="flex-1 bg-red-100 h-1 rounded">
+                  <div 
+                    className="bg-red-500 h-1 rounded" 
+                    style={{ width: `${stats?.tickets?.open ? ((stats?.tickets?.urgent || 0) / stats?.tickets?.open) * 100 : 0}%` }}
+                  ></div>
+                </div>
+                <div className="flex-1 bg-orange-100 h-1 rounded">
+                  <div 
+                    className="bg-orange-500 h-1 rounded" 
+                    style={{ width: `${stats?.tickets?.open ? ((stats?.tickets?.high_priority || 0) / stats?.tickets?.open) * 100 : 0}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts and Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Ingresos y Crecimiento de Usuarios</CardTitle>
+            <CardDescription>Tendencia de los últimos períodos</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {revenueData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={revenueData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="period" />
+                  <YAxis yAxisId="left" />
+                  <YAxis yAxisId="right" orientation="right" />
+                  <Tooltip />
+                  <Area 
+                    yAxisId="left"
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="#3b82f6" 
+                    fill="#3b82f6" 
+                    fillOpacity={0.1}
+                    name="Ingresos (MXN)"
+                  />
+                  <Line 
+                    yAxisId="right"
+                    type="monotone" 
+                    dataKey="users" 
+                    stroke="#10b981" 
+                    strokeWidth={2}
+                    name="Usuarios"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-gray-500">
+                No hay datos disponibles
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Service Status Distribution */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Distribución de Servicios</CardTitle>
+            <CardDescription>Estado actual de todos los servicios</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {serviceStatusData.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={serviceStatusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {serviceStatusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  {serviceStatusData.map((item, index) => (
+                    <div key={index} className="flex items-center space-x-2">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: item.color }}
+                      ></div>
+                      <span className="text-sm">{item.name}: {item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-gray-500">
+                No hay datos disponibles
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Detailed Stats and Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Invoice Stats */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <FileText className="h-5 w-5" />
+              <span>Estado de Facturas</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm">Pagadas</span>
+              </div>
+              <span className="font-semibold">{stats?.invoices?.paid || 0}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-2">
+                <Clock className="h-4 w-4 text-yellow-600" />
+                <span className="text-sm">Pendientes</span>
+              </div>
+              <span className="font-semibold">{stats?.invoices?.pending || 0}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-2">
+                <AlertTriangle className="h-4 w-4 text-red-600" />
+                <span className="text-sm">Vencidas</span>
+              </div>
+              <span className="font-semibold">{stats?.invoices?.overdue || 0}</span>
+            </div>
+            <div className="border-t pt-4">
+              <div className="text-sm text-gray-600">Monto pendiente</div>
+              <div className="text-lg font-bold text-red-600">
+                ${(stats?.invoices?.pending_amount || 0).toLocaleString()} MXN
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Ticket Priority Distribution */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <HelpCircle className="h-5 w-5" />
+              <span>Tickets por Prioridad</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {ticketPriorityData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={ticketPriorityData} layout="horizontal">
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis dataKey="priority" type="category" width={60} />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#3b82f6" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[200px] text-gray-500">
+                No hay datos disponibles
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Activity className="h-5 w-5" />
+              <span>Actividad Reciente</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentActivity.length > 0 ? (
+                recentActivity.map((activity, index) => (
+                  <div key={index} className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Activity className="h-4 w-4 text-blue-600" />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-900">{activity.description}</p>
+                      <p className="text-xs text-gray-500">{activity.time}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-gray-500 py-4">
+                  No hay actividad reciente
+                </div>
+              )}
+            </div>
+            <Button variant="outline" className="w-full mt-4" size="sm">
+              <Eye className="h-4 w-4 mr-2" />
+              Ver toda la actividad
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Acciones Rápidas</CardTitle>
+          <CardDescription>Tareas administrativas comunes</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button variant="outline" className="h-20 flex-col space-y-2">
+              <Users className="h-6 w-6" />
+              <span className="text-sm">Gestionar Usuarios</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col space-y-2">
+              <Server className="h-6 w-6" />
+              <span className="text-sm">Servicios</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col space-y-2">
+              <FileText className="h-6 w-6" />
+              <span className="text-sm">Facturas</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col space-y-2">
+              <HelpCircle className="h-6 w-6" />
+              <span className="text-sm">Tickets</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
