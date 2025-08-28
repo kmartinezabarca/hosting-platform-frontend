@@ -5,6 +5,8 @@ import AdminUsersPage from '../pages/admin/AdminUsersPage';
 import AdminServicesPage from '../pages/admin/AdminServicesPage';
 import AdminInvoicesPage from '../pages/admin/AdminInvoicesPage';
 import AdminTicketsPage from '../pages/admin/AdminTicketsPage';
+import AdminServicePlansPage from '../pages/admin/AdminServicePlansPage';
+import AdminAddOnsPage from '../pages/admin/AdminAddOnsPage';
 import { useTheme } from '../context/ThemeContext';
 import { Button } from '@/components/ui/button';
 
@@ -24,10 +26,12 @@ function AdminLayout() {
       <main>
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <nav className="mb-4">
-            <ul className="flex space-x-4">
+            <ul className="flex space-x-4 flex-wrap">
               <li><a href="/admin/dashboard" className="text-primary hover:underline">Dashboard</a></li>
               <li><a href="/admin/users" className="text-primary hover:underline">Users</a></li>
               <li><a href="/admin/services" className="text-primary hover:underline">Services</a></li>
+              <li><a href="/admin/service-plans" className="text-primary hover:underline">Service Plans</a></li>
+              <li><a href="/admin/add-ons" className="text-primary hover:underline">Add-ons</a></li>
               <li><a href="/admin/invoices" className="text-primary hover:underline">Invoices</a></li>
               <li><a href="/admin/tickets" className="text-primary hover:underline">Tickets</a></li>
             </ul>
@@ -37,6 +41,8 @@ function AdminLayout() {
               <Route path="dashboard" element={<AdminDashboardPage />} />
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="services" element={<AdminServicesPage />} />
+              <Route path="service-plans" element={<AdminServicePlansPage />} />
+              <Route path="add-ons" element={<AdminAddOnsPage />} />
               <Route path="invoices" element={<AdminInvoicesPage />} />
               <Route path="tickets" element={<AdminTicketsPage />} />
               <Route path="*" element={<AdminDashboardPage />} />
