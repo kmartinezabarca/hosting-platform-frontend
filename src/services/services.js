@@ -21,8 +21,8 @@ export const servicesService = {
   async getServicePlans() {
     try {
       const response = await fetch(`${API_BASE_URL}/services/plans`, {
-        method: 'GET',
-        headers: createAuthHeaders()
+        method: "GET",
+        headers: createAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -32,8 +32,30 @@ export const servicesService = {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error fetching service plans:', error);
+      console.error("Error fetching service plans:", error);
       throw error;
+    }
+  },
+
+  /**
+   * Fetch the list of add-ons available for the specified plan. The API
+   * endpoint must return an object with `success` boolean and `data` array.
+   * @param {string|number} planId Identifier of the plan (uuid or slug)
+   * @returns {Promise<{success: boolean, data?: any[]}>}
+   */
+  async getPlanAddOns(planId) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/service-plans/add-ons/${planId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await res.json();
+      return data;
+    } catch (err) {
+      console.error("getPlanAddOns error:", err);
+      return { success: false, message: "Error fetching plan add-ons" };
     }
   },
 
@@ -41,9 +63,9 @@ export const servicesService = {
   async contractService(serviceData) {
     try {
       const response = await fetch(`${API_BASE_URL}/services/contract`, {
-        method: 'POST',
+        method: "POST",
         headers: createAuthHeaders(),
-        body: JSON.stringify(serviceData)
+        body: JSON.stringify(serviceData),
       });
 
       if (!response.ok) {
@@ -53,7 +75,7 @@ export const servicesService = {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error contracting service:', error);
+      console.error("Error contracting service:", error);
       throw error;
     }
   },
@@ -62,9 +84,9 @@ export const servicesService = {
   async processPayment(paymentData) {
     try {
       const response = await fetch(`${API_BASE_URL}/payments/process`, {
-        method: 'POST',
+        method: "POST",
         headers: createAuthHeaders(),
-        body: JSON.stringify(paymentData)
+        body: JSON.stringify(paymentData),
       });
 
       if (!response.ok) {
@@ -74,7 +96,7 @@ export const servicesService = {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error processing payment:', error);
+      console.error("Error processing payment:", error);
       throw error;
     }
   },
@@ -83,8 +105,8 @@ export const servicesService = {
   async getUserServices() {
     try {
       const response = await fetch(`${API_BASE_URL}/services/user`, {
-        method: 'GET',
-        headers: createAuthHeaders()
+        method: "GET",
+        headers: createAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -94,7 +116,7 @@ export const servicesService = {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error fetching user services:', error);
+      console.error("Error fetching user services:", error);
       throw error;
     }
   },
@@ -103,8 +125,8 @@ export const servicesService = {
   async getServiceDetails(serviceId) {
     try {
       const response = await fetch(`${API_BASE_URL}/services/${serviceId}`, {
-        method: 'GET',
-        headers: createAuthHeaders()
+        method: "GET",
+        headers: createAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -114,7 +136,7 @@ export const servicesService = {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error fetching service details:', error);
+      console.error("Error fetching service details:", error);
       throw error;
     }
   },
@@ -122,11 +144,14 @@ export const servicesService = {
   // Update service configuration
   async updateServiceConfig(serviceId, configData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/services/${serviceId}/config`, {
-        method: 'PUT',
-        headers: createAuthHeaders(),
-        body: JSON.stringify(configData)
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/services/${serviceId}/config`,
+        {
+          method: "PUT",
+          headers: createAuthHeaders(),
+          body: JSON.stringify(configData),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -135,7 +160,7 @@ export const servicesService = {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error updating service config:', error);
+      console.error("Error updating service config:", error);
       throw error;
     }
   },
@@ -143,11 +168,14 @@ export const servicesService = {
   // Cancel service
   async cancelService(serviceId, reason) {
     try {
-      const response = await fetch(`${API_BASE_URL}/services/${serviceId}/cancel`, {
-        method: 'POST',
-        headers: createAuthHeaders(),
-        body: JSON.stringify({ reason })
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/services/${serviceId}/cancel`,
+        {
+          method: "POST",
+          headers: createAuthHeaders(),
+          body: JSON.stringify({ reason }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -156,7 +184,7 @@ export const servicesService = {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error canceling service:', error);
+      console.error("Error canceling service:", error);
       throw error;
     }
   },
@@ -164,11 +192,14 @@ export const servicesService = {
   // Suspend service
   async suspendService(serviceId, reason) {
     try {
-      const response = await fetch(`${API_BASE_URL}/services/${serviceId}/suspend`, {
-        method: 'POST',
-        headers: createAuthHeaders(),
-        body: JSON.stringify({ reason })
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/services/${serviceId}/suspend`,
+        {
+          method: "POST",
+          headers: createAuthHeaders(),
+          body: JSON.stringify({ reason }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -177,7 +208,7 @@ export const servicesService = {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error suspending service:', error);
+      console.error("Error suspending service:", error);
       throw error;
     }
   },
@@ -185,10 +216,13 @@ export const servicesService = {
   // Reactivate service
   async reactivateService(serviceId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/services/${serviceId}/reactivate`, {
-        method: 'POST',
-        headers: createAuthHeaders()
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/services/${serviceId}/reactivate`,
+        {
+          method: "POST",
+          headers: createAuthHeaders(),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -197,7 +231,7 @@ export const servicesService = {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error reactivating service:', error);
+      console.error("Error reactivating service:", error);
       throw error;
     }
   },
@@ -205,10 +239,13 @@ export const servicesService = {
   // Get service usage statistics
   async getServiceUsage(serviceId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/services/${serviceId}/usage`, {
-        method: 'GET',
-        headers: createAuthHeaders()
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/services/${serviceId}/usage`,
+        {
+          method: "GET",
+          headers: createAuthHeaders(),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -217,7 +254,7 @@ export const servicesService = {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error fetching service usage:', error);
+      console.error("Error fetching service usage:", error);
       throw error;
     }
   },
@@ -225,10 +262,13 @@ export const servicesService = {
   // Get service backups
   async getServiceBackups(serviceId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/services/${serviceId}/backups`, {
-        method: 'GET',
-        headers: createAuthHeaders()
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/services/${serviceId}/backups`,
+        {
+          method: "GET",
+          headers: createAuthHeaders(),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -237,7 +277,7 @@ export const servicesService = {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error fetching service backups:', error);
+      console.error("Error fetching service backups:", error);
       throw error;
     }
   },
@@ -245,11 +285,14 @@ export const servicesService = {
   // Create service backup
   async createServiceBackup(serviceId, backupName) {
     try {
-      const response = await fetch(`${API_BASE_URL}/services/${serviceId}/backups`, {
-        method: 'POST',
-        headers: createAuthHeaders(),
-        body: JSON.stringify({ name: backupName })
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/services/${serviceId}/backups`,
+        {
+          method: "POST",
+          headers: createAuthHeaders(),
+          body: JSON.stringify({ name: backupName }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -258,7 +301,7 @@ export const servicesService = {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error creating service backup:', error);
+      console.error("Error creating service backup:", error);
       throw error;
     }
   },
@@ -266,10 +309,13 @@ export const servicesService = {
   // Restore service backup
   async restoreServiceBackup(serviceId, backupId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/services/${serviceId}/backups/${backupId}/restore`, {
-        method: 'POST',
-        headers: createAuthHeaders()
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/services/${serviceId}/backups/${backupId}/restore`,
+        {
+          method: "POST",
+          headers: createAuthHeaders(),
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -278,10 +324,10 @@ export const servicesService = {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('Error restoring service backup:', error);
+      console.error("Error restoring service backup:", error);
       throw error;
     }
-  }
+  },
 };
 
 export default servicesService;

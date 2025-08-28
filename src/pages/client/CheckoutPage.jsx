@@ -12,23 +12,8 @@ import Addons from "../../components/checkout/Addons";
 import InvoiceFields from "../../components/checkout/InvoiceFields";
 import ReviewAndPay from "../../components/checkout/ReviewAndPay";
 import OrderSummary from "../../components/checkout/OrderSummary";
-
-const additionalServices = [
-  {
-    id: "backup",
-    name: "Servicio de Backup Premium",
-    description: "Backups automáticos diarios con retención de 30 días",
-    price: 4.99,
-    field: "backupService",
-  },
-  {
-    id: "priority",
-    name: "Soporte Prioritario",
-    description: "Soporte 24/7 con tiempo de respuesta garantizado",
-    price: 9.99,
-    field: "prioritySupport",
-  },
-];
+import invoicesService from "../../services/invoices";
+import servicesService from "../../services/services";
 
 export default function CheckoutPage() {
   const location = useLocation();
@@ -63,9 +48,56 @@ export default function CheckoutPage() {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
 
+    /**
+   * addons: list of available add-ons for the selected plan fetched from API
+   * selectedAddOns: ids of add-ons user chooses to include
+   */
+  const [addons, setAddons] = useState([]);
+  const [selectedAddOns, setSelectedAddOns] = useState([]);
+
+  /**
+   * paymentMethods: saved methods for the user
+   * selectedPaymentMethodId: id of the method chosen for payment
+   * showAddMethodModal: controls whether modal for adding new method is open
+   */
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState(null);
+  const [showAddMethodModal, setShowAddMethodModal] = useState(false);
+
   useEffect(() => {
     if (!plan) navigate("/client/contract-service");
   }, [plan, navigate]);
+
+  // fetch available add-ons and user's payment methods on mount
+  useEffect(() => {
+    if (!plan) return;
+    // fetch add-ons for the plan by id/slug
+    const fetchAddons = async () => {
+      try {
+        const res = await servicesService.getPlanAddOns(plan.id);
+        if (res.success) {
+          setAddons(res.data || []);
+        }
+      } catch (err) {
+        console.error("Error fetching add-ons:", err);
+      }
+    };
+    // fetch payment methods and pick default
+    const fetchPaymentMethods = async () => {
+      try {
+        const res = await invoicesService.getPaymentMethods();
+        if (res.success) {
+          setPaymentMethods(res.data || []);
+          const defaultPm = res.data?.find((m) => m.is_default);
+          setSelectedPaymentMethodId(defaultPm ? defaultPm.id : null);
+        }
+      } catch (err) {
+        console.error("Error fetching payment methods:", err);
+      }
+    };
+    fetchAddons();
+    fetchPaymentMethods();
+  }, [plan]);
 
   const billingCycles = {
     monthly: { name: "Mensual", discount: 0 },
@@ -78,19 +110,17 @@ export default function CheckoutPage() {
     return price * (1 - discount / 100);
   };
 
-  const calculateTotal = () => {
-    if (!plan) return 0;
-    let total = getPriceWithDiscount(plan.price[billingCycle], billingCycle);
-    if (formData.backupService) total += 4.99;
-    if (formData.prioritySupport) total += 9.99;
-    return total;
-  };
-
-    const calculateTotals = () => {
+  const calculateTotals = () => {
     if (!plan) return { subtotal: 0, iva: 0, total: 0 };
+    // plan price per cycle (net)
     let subtotal = getPriceWithDiscount(plan.price[billingCycle], billingCycle);
-    if (formData.backupService) subtotal += 4.99;
-    if (formData.prioritySupport) subtotal += 9.99;
+    // add selected add-ons prices
+    selectedAddOns.forEach((addId) => {
+      const add = addons.find((a) => a.uuid === addId || a.id === addId);
+      if (add) {
+        subtotal += add.price;
+      }
+    });
     subtotal = +subtotal.toFixed(2);
     const iva = +(subtotal * 0.16).toFixed(2);
     const total = +(subtotal + iva).toFixed(2);
@@ -251,7 +281,7 @@ export default function CheckoutPage() {
         plan,
         category,
         billingCycle,
-        total: calculateTotal(),
+        total: totals.total,
         serviceName: formData.serviceName,
         paymentIntent: result.paymentIntent,
         service: result.service,
@@ -307,9 +337,9 @@ export default function CheckoutPage() {
                   category={category}
                 />
                 <Addons
-                  additionalServices={additionalServices}
-                  formData={formData}
-                  onChange={handleInputChange}
+                  addons={addons}
+                  selectedAddOns={selectedAddOns}
+                  onChange={(ids) => setSelectedAddOns(ids)}
                 />
                 <InvoiceFields
                   formData={formData}

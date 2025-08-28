@@ -1,39 +1,47 @@
 import React from "react";
 
-export default function Addons({ additionalServices, formData, onChange }) {
+export default function Addons({ addons = [], selectedAddOns = [], onChange }) {
+  // toggles a given add-on id on/off
+  const toggleAddOn = (id) => {
+    if (!onChange) return;
+    if (selectedAddOns.includes(id)) {
+      onChange(selectedAddOns.filter((item) => item !== id));
+    } else {
+      onChange([...selectedAddOns, id]);
+    }
+  };
+
   return (
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-foreground">Servicios Adicionales</h3>
-      {additionalServices.map(({ id, name, description, price, field }) => {
-        const checked = formData[field];
-        return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-foreground">Servicios adicionales</h3>
+      {addons.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No hay servicios adicionales disponibles para este plan.
+        </p>
+      ) : (
+        addons.map((addon) => (
           <label
-            key={id}
-            className={[
-              "flex items-start gap-3 rounded-xl p-4",
-              "border border-black/10 dark:border-white/10",
-              "bg-black/[0.02] dark:bg-white/[0.03]",
-              "hover:border-foreground/20 transition cursor-pointer",
-              checked ? "ring-2 ring-foreground/20" : "",
-            ].join(" ")}
+            key={addon.uuid || addon.id}
+            className="flex items-start gap-3 border border-border rounded-lg p-4 cursor-pointer hover:bg-accent"
           >
             <input
               type="checkbox"
-              name={field}
-              checked={checked}
-              onChange={onChange}
-              className="mt-1.5 accent-foreground"
+              checked={selectedAddOns.includes(addon.uuid || addon.id)}
+              onChange={() => toggleAddOn(addon.uuid || addon.id)}
+              className="mt-1"
             />
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <h4 className="font-medium text-foreground">{name}</h4>
-                <span className="ml-auto text-foreground font-medium">+${price}/mes</span>
-              </div>
-              <p className="text-muted-foreground text-sm mt-1">{description}</p>
+            <div className="flex flex-col gap-1">
+              <span className="font-medium text-foreground">{addon.name}</span>
+              {addon.description && (
+                <span className="text-sm text-muted-foreground">{addon.description}</span>
+              )}
+              <span className="text-sm text-foreground">
+                ${addon.price?.toFixed(2) ?? "0.00"}
+              </span>
             </div>
           </label>
-        );
-      })}
+        ))
+      )}
     </div>
   );
 }
