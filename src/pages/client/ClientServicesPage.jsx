@@ -51,7 +51,7 @@ const ClientServicesPage = () => {
             specs: parseSpecifications(service.specifications, service.category),
             metrics: generateMockMetrics(service.status), // TODO: Implementar métricas reales
             price: service.price,
-            currency: 'USD', // TODO: Obtener de la configuración
+            currency: 'MXN', // TODO: Obtener de la configuración
             billing_cycle: service.billing_cycle,
             plan_name: service.plan_name,
             plan_slug: service.plan_slug,
@@ -79,11 +79,9 @@ const ClientServicesPage = () => {
   const mapCategoryToType = (category) => {
     const categoryMap = {
       'hosting': 'shared_hosting',
-      'web-hosting': 'shared_hosting',
       'vps': 'vps',
       'cloud': 'vps',
-      'games': 'game_server',
-      'gaming': 'game_server',
+      'gameserver': 'game_server',
       'database': 'database',
       'db': 'database'
     };

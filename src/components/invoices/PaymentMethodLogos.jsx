@@ -5,6 +5,7 @@ const LOGO_FILES = {
   mastercard: 'mastercard.svg',
   amex: 'amex.svg',
   nu: 'nu.svg',
+  card: 'credit-card-duotone.svg',
   // discover: 'discover.svg', 
 };
 
@@ -18,7 +19,7 @@ const LOGO_FILES = {
  * @param {string} [props.cardName='Card']
  */
 export const PaymentMethodLogo = ({ brand, className, cardName = 'Card', ...props }) => {
-  const brandKey = (brand || '').toLowerCase();
+  const brandKey = (brand || 'CARD').toLowerCase();
   const logoFile = LOGO_FILES[brandKey];
 
   if (logoFile) {

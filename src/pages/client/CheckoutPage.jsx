@@ -14,6 +14,7 @@ import ReviewAndPay from "../../components/checkout/ReviewAndPay";
 import OrderSummary from "../../components/checkout/OrderSummary";
 import invoicesService from "../../services/invoices";
 import servicesService from "../../services/services";
+import AddPaymentMethodModal from "../../components/invoices/AddPaymentMethodModal";
 
 export default function CheckoutPage() {
   const location = useLocation();
@@ -32,8 +33,6 @@ export default function CheckoutPage() {
     serviceName: "",
     domain: "",
     autoRenew: true,
-    backupService: false,
-    prioritySupport: false,
     requireInvoice: false,
     invoiceRfc: "",
     invoiceName: "",
@@ -48,7 +47,7 @@ export default function CheckoutPage() {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
 
-    /**
+  /**
    * addons: list of available add-ons for the selected plan fetched from API
    * selectedAddOns: ids of add-ons user chooses to include
    */
@@ -89,7 +88,7 @@ export default function CheckoutPage() {
         if (res.success) {
           setPaymentMethods(res.data || []);
           const defaultPm = res.data?.find((m) => m.is_default);
-          setSelectedPaymentMethodId(defaultPm ? defaultPm.id : null);
+          setSelectedPaymentMethodId(defaultPm ? defaultPm.stripe_payment_method_id : null);
         }
       } catch (err) {
         console.error("Error fetching payment methods:", err);
@@ -112,19 +111,28 @@ export default function CheckoutPage() {
 
   const calculateTotals = () => {
     if (!plan) return { subtotal: 0, iva: 0, total: 0 };
-    // plan price per cycle (net)
+
     let subtotal = getPriceWithDiscount(plan.price[billingCycle], billingCycle);
-    // add selected add-ons prices
+
     selectedAddOns.forEach((addId) => {
       const add = addons.find((a) => a.uuid === addId || a.id === addId);
+
       if (add) {
-        subtotal += add.price;
+        subtotal += parseFloat(add.price) || 0;
       }
     });
-    subtotal = +subtotal.toFixed(2);
-    const iva = +(subtotal * 0.16).toFixed(2);
-    const total = +(subtotal + iva).toFixed(2);
-    return { subtotal, iva, total };
+
+    const iva = subtotal * 0.16;
+    const total = subtotal + iva;
+    const formattedSubtotal = parseFloat(subtotal.toFixed(2));
+    const formattedIva = parseFloat(iva.toFixed(2));
+    const formattedTotal = parseFloat(total.toFixed(2));
+
+    return {
+      subtotal: formattedSubtotal,
+      iva: formattedIva,
+      total: formattedTotal,
+    };
   };
 
   const totals = calculateTotals();
@@ -191,9 +199,22 @@ export default function CheckoutPage() {
   };
 
   const validateStep1 = () => {
-    const base = ["firstName", "lastName", "email", "phone", "serviceName", ...(category === "hosting" ? ["domain"] : [])];
+    const base = [
+      "firstName",
+      "lastName",
+      "email",
+      "phone",
+      "serviceName",
+      ...(category === "hosting" ? ["domain"] : []),
+    ];
     const invoice = formData.requireInvoice
-      ? ["invoiceRfc", "invoiceName", "invoiceZip", "invoiceRegimen", "invoiceUsoCfdi"]
+      ? [
+          "invoiceRfc",
+          "invoiceName",
+          "invoiceZip",
+          "invoiceRegimen",
+          "invoiceUsoCfdi",
+        ]
       : [];
     const targets = [...base, ...invoice];
 
@@ -238,7 +259,13 @@ export default function CheckoutPage() {
     if (name === "requireInvoice" && !checked) {
       setErrors((prev) => {
         const n = { ...prev };
-        ["invoiceRfc", "invoiceName", "invoiceZip", "invoiceRegimen", "invoiceUsoCfdi"].forEach((k) => delete n[k]);
+        [
+          "invoiceRfc",
+          "invoiceName",
+          "invoiceZip",
+          "invoiceRegimen",
+          "invoiceUsoCfdi",
+        ].forEach((k) => delete n[k]);
         return n;
       });
       setFormData((p) => ({
@@ -298,7 +325,11 @@ export default function CheckoutPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 mb-16 space-y-8">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center gap-4"
+      >
         <button
           onClick={() => navigate("/client/contract-service")}
           className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition"
@@ -308,12 +339,17 @@ export default function CheckoutPage() {
         </button>
         <div>
           <h1 className="text-3xl font-bold text-foreground">Checkout</h1>
-          <p className="text-muted-foreground">Finaliza tu contratación de servicio</p>
+          <p className="text-muted-foreground">
+            Finaliza tu contratación de servicio
+          </p>
         </div>
       </motion.div>
 
       {/* Stepper */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
         <Stepper step={step} showInvoice={formData.requireInvoice} />
       </motion.div>
 
@@ -327,7 +363,9 @@ export default function CheckoutPage() {
           >
             {step === 1 ? (
               <div className="space-y-8">
-                <h2 className="text-2xl font-semibold text-foreground">Información del Servicio</h2>
+                <h2 className="text-2xl font-semibold text-foreground">
+                  Información del Servicio
+                </h2>
                 <ServiceFields
                   formData={formData}
                   errors={errors}
@@ -360,6 +398,11 @@ export default function CheckoutPage() {
                 payRef={payRef}
                 onSuccess={handlePaymentSuccess}
                 onError={handlePaymentError}
+                paymentMethods={paymentMethods}
+                selectedPaymentMethodId={selectedPaymentMethodId}
+                setSelectedPaymentMethodId={setSelectedPaymentMethodId}
+                onAddMethod={() => setShowAddMethodModal(true)}
+                selectedAddOns={selectedAddOns}
               />
             )}
           </motion.div>
@@ -367,7 +410,10 @@ export default function CheckoutPage() {
 
         {/* Sidebar */}
         <div className="lg:col-span-1">
-          <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }}>
+          <motion.div
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
             <OrderSummary
               plan={plan}
               billingCycle={billingCycle}
@@ -379,10 +425,30 @@ export default function CheckoutPage() {
               onNext={onNext}
               onBack={onBack}
               payRef={payRef}
+              selectedAddOns={selectedAddOns}
+              addons={addons}
             />
           </motion.div>
         </div>
       </div>
+
+      {/* Payment Method Modal: allow user to add a new card */}
+      {showAddMethodModal && (
+        <AddPaymentMethodModal
+          isOpen={showAddMethodModal}
+          onClose={() => setShowAddMethodModal(false)}
+          onSuccess={(pm) => {
+            // refresh payment methods after adding new one
+            invoicesService.getPaymentMethods().then((res) => {
+              if (res.success) {
+                setPaymentMethods(res.data);
+                setSelectedPaymentMethodId(pm.stripe_payment_method_id);
+              }
+            });
+          }}
+          isDefault={paymentMethods.length === 0}
+        />
+      )}
     </div>
   );
 }

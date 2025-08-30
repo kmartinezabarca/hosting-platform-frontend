@@ -7,45 +7,47 @@ export default function OrderSummary({
   billingCycles,
   formData,
   setFormData,
-  totals,          // { subtotal, iva, total }
+  totals, // { subtotal, iva, total }
   step,
   onNext,
   onBack,
   payRef,
+  selectedAddOns = [],
+  addons = [],
 }) {
+  const items = [];
+  if (plan) {
+    const price = plan.price?.[billingCycle] ?? 0;
+    items.push({
+      key: `plan-${plan.id}-${billingCycle}`,
+      name: `${plan.name} (${
+        billingCycles[billingCycle]?.name || billingCycle
+      })`,
+      price,
+    });
+  }
+  selectedAddOns.forEach((id) => {
+    const add = addons.find((a) => a.uuid === id || a.id === id);
+    if (add) {
+      items.push({ key: `addon-${id}`, name: add.name, price: add.price });
+    }
+  });
+
   return (
     <aside className="sticky top-6 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0f1115] p-6">
-      <h3 className="text-lg font-semibold text-foreground mb-5">Resumen del Pedido</h3>
+      <h3 className="text-lg font-semibold text-foreground mb-5">
+        Resumen del Pedido
+      </h3>
 
       <div className="space-y-3">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">{plan.name}</span>
-          <span className="text-foreground font-medium">
-            ${Number(plan.price[billingCycle]).toFixed(2)}
-          </span>
-        </div>
-
-        {formData.backupService && (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Backup Premium</span>
-            <span className="text-foreground font-medium">$4.99</span>
-          </div>
-        )}
-        {formData.prioritySupport && (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Soporte Prioritario</span>
-            <span className="text-foreground font-medium">$9.99</span>
-          </div>
-        )}
-
-        {billingCycles[billingCycle].discount > 0 && (
-          <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
-            <span>Descuento ({billingCycles[billingCycle].discount}%)</span>
-            <span>
-              -${((plan.price[billingCycle] * billingCycles[billingCycle].discount) / 100).toFixed(2)}
+        {items.map((item) => (
+          <div key={item.key} className="flex justify-between text-sm">
+            <span className="text-muted-foreground">{item.name}</span>
+            <span className="text-foreground font-medium">
+              ${parseFloat(item.price)?.toFixed(2) ?? "0.00"}
             </span>
           </div>
-        )}
+        ))}
 
         <hr className="border-black/10 dark:border-white/10 my-2" />
 
@@ -60,11 +62,13 @@ export default function OrderSummary({
         </div>
         <div className="flex justify-between text-lg font-semibold">
           <span className="text-foreground">Total</span>
-          <span className="text-foreground">${totals.total.toFixed(2)}</span>
+          <span className="text-foreground">${totals.total.toFixed(2)}/
+          {billingCycle === "monthly"
+            ? "mes"
+            : billingCycle === "quarterly"
+            ? "trimestre"
+            : "año"}</span>
         </div>
-        <p className="text-muted-foreground text-sm">
-          /{billingCycle === "monthly" ? "mes" : billingCycle === "quarterly" ? "trimestre" : "año"}
-        </p>
       </div>
 
       {/* Auto-renovación */}
@@ -72,14 +76,17 @@ export default function OrderSummary({
         <input
           type="checkbox"
           checked={formData.autoRenew}
-          onChange={(e) => setFormData((p) => ({ ...p, autoRenew: e.target.checked }))}
+          onChange={(e) =>
+            setFormData((p) => ({ ...p, autoRenew: e.target.checked }))
+          }
           className="mt-1.5 accent-foreground"
         />
         <div>
           <h4 className="font-medium text-foreground">Renovación automática</h4>
           <p className="text-muted-foreground text-sm">
-            Si activas esta opción, se cargará automáticamente el total ({`$${totals.total.toFixed(2)} MXN`}) en cada ciclo.
-            Puedes desactivarla en cualquier momento desde tu panel.
+            Si activas esta opción, se cargará automáticamente el total (
+            {`$${totals.total.toFixed(2)} MXN`}) en cada ciclo. Puedes
+            desactivarla en cualquier momento desde tu panel.
           </p>
         </div>
       </label>

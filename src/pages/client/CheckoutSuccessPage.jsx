@@ -118,7 +118,7 @@ export default function CheckoutSuccessPage() {
             Total pagado
           </p>
           <div className="text-3xl sm:text-4xl font-bold text-foreground mt-1">
-            ${Number(total || 0).toFixed(2)}
+            ${parseFloat(total || 0).toFixed(2)}
           </div>
           <p className="text-sm text-muted-foreground mt-1">
             Facturación{" "}
