@@ -7,6 +7,7 @@ import ClientLayout from './components/ClientLayout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import Verify2FAPage from './pages/Verify2FAPage';
+import ProfileDemo from './pages/ProfileDemo';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/verify-2fa" element={<Verify2FAPage />} />
+        <Route path="/profile-demo" element={<ProfileDemo />} />
 
         {/* Client Routes - Protected */}
         <Route 
