@@ -1,76 +1,53 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import authService from '@/services/authService';
-import { useQueryClient } from '@tanstack/react-query';
+import React, { createContext, useContext } from 'react';
+import { useCurrentUser } from '../hooks/useCurrentUser';
+import {
+  useLogin,
+  useLogout,
+  useRegister,
+  useLoginWithGoogle,
+  useVerify2FA,
+} from '../hooks/useAuth';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser]   = useState(null);
-  const [loading, setLoading] = useState(true);
-  const queryClient = useQueryClient();
+  const { data: user, isLoading, isError } = useCurrentUser();
 
-  // Al montar, si hay token → traer usuario real
-  useEffect(() => {
-    const boot = async () => {
-      try {
-        if (authService.isAuthenticated()) {
-          const me = await authService.getCurrentUser();
-          setUser(me);
-        }
-      } catch {
-        // token inválido
-        localStorage.removeItem('auth_token');
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    boot();
-  }, []);
+  const { mutate: login, isPending: isLoggingIn } = useLogin();
+  const { mutate: logout, isPending: isLoggingOut } = useLogout();
+  const { mutate: register, isPending: isRegistering } = useRegister();
+  const { mutate: loginWithGoogle, isPending: isLoggingInWithGoogle } = useLoginWithGoogle();
+  const { mutate: verifyTwoFactor, isPending: isVerifying2FA } = useVerify2FA();
 
-  const login = async (email, password) => {
-    const res = await authService.login({ email, password });
-    const me = await authService.getCurrentUser();
-    setUser(me);
-    await queryClient.invalidateQueries({ queryKey: ['profile'] }); // si usas react-query en otras vistas
-    return res;
+  const isAuthenticated = !!user && !isError;
+
+  const value = {
+    user,
+    isLoading, // Carga inicial del usuario
+    isAuthenticated,
+
+    // Acciones de mutación
+    login,
+    logout,
+    register,
+    loginWithGoogle,
+    verifyTwoFactor,
+
+    // Estados de las mutaciones
+    isLoggingIn,
+    isLoggingOut,
+    isRegistering,
+    isLoggingInWithGoogle,
+    isVerifying2FA,
   };
 
-  const loginWithGoogle = async (googleData) => {
-    const res = await authService.loginWithGoogle(googleData);
-    const me = await authService.getCurrentUser();
-    setUser(me);
-    await queryClient.invalidateQueries({ queryKey: ['profile'] });
-    return res;
-  };
-
-  const verifyTwoFactor = async (email, code) => {
-    const res = await authService.verify2FA({ email, code });
-    const me = await authService.getCurrentUser();
-    setUser(me);
-    await queryClient.invalidateQueries({ queryKey: ['profile'] });
-    return res;
-  };
-
-  const logout = async () => {
-    await authService.logout();
-    setUser(null);
-    await queryClient.removeQueries({ queryKey: ['profile'] });
-  };
-
-  const register = async (payload) => {
-    const res = await authService.register(payload);
-    const me = await authService.getCurrentUser();
-    setUser(me);
-    await queryClient.invalidateQueries({ queryKey: ['profile'] });
-    return res;
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, loading, login, logout, register, loginWithGoogle, verifyTwoFactor }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
