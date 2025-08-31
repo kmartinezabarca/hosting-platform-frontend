@@ -1,124 +1,234 @@
-import React, { useState } from 'react';
-import { 
-  MonitorSmartphone, 
-  Smartphone, 
-  Monitor, 
-  Tablet, 
-  MapPin, 
-  Clock, 
-  LogOut, 
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import {
+  MonitorSmartphone,
+  Smartphone,
+  Monitor,
+  Tablet,
+  MapPin,
+  Clock,
+  LogOut,
   AlertTriangle,
   CheckCircle2,
-  MoreVertical
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-const DevicesSection = ({ devices = [], onLogoutDevice }) => {
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(null);
+/**
+ * Normaliza un item de sesión/dispositivo para evitar crasheos por datos faltantes.
+ */
+function normalizeDevice(raw) {
+  const id = raw?.uuid || raw?.id || `${raw?.ip_address || 'ip-unk'}:${(raw?.user_agent || '').slice(0, 12)}`;
+  const deviceTypeRaw = (raw?.device_type || raw?.device || '').toLowerCase();
+  const device_type = ['mobile', 'tablet', 'desktop'].includes(deviceTypeRaw)
+    ? deviceTypeRaw
+    : deviceTypeRaw.includes('phone')
+      ? 'mobile'
+      : deviceTypeRaw.includes('tab')
+        ? 'tablet'
+        : 'desktop';
 
-  // Datos mock si no se proporcionan dispositivos
-  const mockDevices = [
-    {
-      id: 1,
-      device_type: 'desktop',
-      browser: 'Chrome',
-      os: 'Windows 11',
-      location: 'Ciudad de México, MX',
-      ip_address: '192.168.1.100',
-      last_activity: '2024-08-30T10:30:00Z',
-      is_current: true,
-      created_at: '2024-08-29T08:00:00Z'
-    },
-    {
-      id: 2,
-      device_type: 'mobile',
-      browser: 'Safari',
-      os: 'iOS 17.5',
-      location: 'Guadalajara, MX',
-      ip_address: '192.168.1.101',
-      last_activity: '2024-08-30T09:15:00Z',
-      is_current: false,
-      created_at: '2024-08-28T14:30:00Z'
-    },
-    {
-      id: 3,
-      device_type: 'tablet',
-      browser: 'Chrome',
-      os: 'Android 14',
-      location: 'Monterrey, MX',
-      ip_address: '192.168.1.102',
-      last_activity: '2024-08-29T22:45:00Z',
-      is_current: false,
-      created_at: '2024-08-27T16:20:00Z'
-    }
-  ];
+  // SO / navegador
+  const browser = raw?.browser || 'Navegador';
+  const os = raw?.os || raw?.platform || 'Sistema operativo';
 
-  const deviceList = devices.length > 0 ? devices : mockDevices;
-
-  const getDeviceIcon = (deviceType) => {
-    switch (deviceType) {
-      case 'mobile':
-        return Smartphone;
-      case 'tablet':
-        return Tablet;
-      case 'desktop':
-      default:
-        return Monitor;
-    }
+  // Fechas
+  const parseDate = (v) => {
+    const d = v ? new Date(v) : null;
+    return d && !Number.isNaN(d.getTime()) ? d : null;
   };
+  const last_activity = parseDate(raw?.last_activity);
+  const created_at = parseDate(raw?.created_at);
+  const login_at = parseDate(raw?.login_at);
+  const logout_at = parseDate(raw?.logout_at);
 
-  const getDeviceTypeLabel = (deviceType) => {
-    switch (deviceType) {
-      case 'mobile':
-        return 'Móvil';
-      case 'tablet':
-        return 'Tablet';
-      case 'desktop':
-      default:
-        return 'Escritorio';
+  // Ubicación
+  const location =
+    raw?.location ||
+    [raw?.city, raw?.region, raw?.country].filter(Boolean).join(', ') ||
+    null;
+
+  return {
+    id,
+    uuid: raw?.uuid || null,
+    is_current: !!raw?.is_current,
+    ip_address: raw?.ip_address || '—',
+    user_agent: raw?.user_agent || '',
+    device_type,
+    browser,
+    os,
+    location,
+    created_at,
+    last_activity,
+    login_at,
+    logout_at,
+  };
+}
+
+/**
+ * Formato relativo simple en español. Fallback a fecha corta si no válida.
+ */
+function formatRelativeEs(date) {
+  if (!date || Number.isNaN(date.getTime())) return '—';
+  const diffMs = Date.now() - date.getTime();
+  if (diffMs < 0) return 'En el futuro';
+
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  const week = 7 * day;
+
+  if (diffMs < minute) return 'Ahora mismo';
+  if (diffMs < hour) {
+    const m = Math.floor(diffMs / minute);
+    return `Hace ${m} min`;
+  }
+  if (diffMs < day) {
+    const h = Math.floor(diffMs / hour);
+    return `Hace ${h} h`;
+  }
+  if (diffMs < week) {
+    const d = Math.floor(diffMs / day);
+    return `Hace ${d} d`;
+  }
+  return date.toLocaleDateString('es-MX');
+}
+
+const getDeviceIcon = (deviceType) => {
+  switch (deviceType) {
+    case 'mobile':
+      return Smartphone;
+    case 'tablet':
+      return Tablet;
+    case 'desktop':
+    default:
+      return Monitor;
+  }
+};
+
+const getDeviceTypeLabel = (deviceType) => {
+  switch (deviceType) {
+    case 'mobile':
+      return 'Móvil';
+    case 'tablet':
+      return 'Tablet';
+    case 'desktop':
+    default:
+      return 'Escritorio';
+  }
+};
+
+/**
+ * Props:
+ * - devices: array de sesiones del backend (pueden venir con campos faltantes).
+ * - onLogoutDevice: fn(idOrUuid) => Promise|void
+ * - onLogoutOthers: fn(currentIdOrUuid) => Promise|void  (opcional)
+ * - loading: boolean (para skeletons externos si quieres)
+ */
+export default function DevicesSection({
+  devices = [],
+  onLogoutDevice,
+  onLogoutOthers,
+  loading = false,
+}) {
+  const [confirmFor, setConfirmFor] = useState(null); // id/uuid del dispositivo a cerrar
+  const [pendingId, setPendingId] = useState(null);   // deshabilitar botón mientras cierra
+  const [confirmAllOpen, setConfirmAllOpen] = useState(false);
+
+  const normalized = useMemo(() => {
+    const list = Array.isArray(devices) ? devices : [];
+    return list.map(normalizeDevice)
+      .sort((a, b) => {
+        // actual primero
+        if (a.is_current && !b.is_current) return -1;
+        if (!a.is_current && b.is_current) return 1;
+        // luego por last_activity desc
+        const at = a.last_activity?.getTime?.() || 0;
+        const bt = b.last_activity?.getTime?.() || 0;
+        return bt - at;
+      });
+  }, [devices]);
+
+  const current = normalized.find(d => d.is_current) || null;
+  const total = normalized.length;
+  const newestActivity = useMemo(() => {
+    const best = normalized[0]?.last_activity;
+    return best || null;
+  }, [normalized]);
+
+  const handleLogout = useCallback(async (idOrUuid) => {
+    if (!onLogoutDevice) {
+      setConfirmFor(null);
+      return;
     }
-  };
-
-  const formatLastActivity = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Ahora mismo';
-    if (diffInMinutes < 60) return `Hace ${diffInMinutes} min`;
-    
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `Hace ${diffInHours}h`;
-    
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return `Hace ${diffInDays}d`;
-    
-    return date.toLocaleDateString('es-ES');
-  };
-
-  const handleLogout = (deviceId) => {
-    if (onLogoutDevice) {
-      onLogoutDevice(deviceId);
+    try {
+      setPendingId(idOrUuid);
+      await onLogoutDevice(idOrUuid);
+    } finally {
+      setPendingId(null);
+      setConfirmFor(null);
     }
-    setShowLogoutConfirm(null);
-  };
+  }, [onLogoutDevice]);
+
+  const handleLogoutOthers = useCallback(async () => {
+    if (!onLogoutOthers || !current) {
+      setConfirmAllOpen(false);
+      return;
+    }
+    try {
+      setPendingId('__ALL__');
+      await onLogoutOthers(current.uuid || current.id);
+    } finally {
+      setPendingId(null);
+      setConfirmAllOpen(false);
+    }
+  }, [onLogoutOthers, current]);
+
+  // Cerrar modal con ESC
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        setConfirmFor(null);
+        setConfirmAllOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header / métricas */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-            <MonitorSmartphone className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+              <MonitorSmartphone className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                Dispositivos Activos
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Gestiona las sesiones abiertas en tus dispositivos
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-              Dispositivos Activos
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Gestiona las sesiones activas en tus dispositivos
-            </p>
-          </div>
+
+          {!!onLogoutOthers && (
+            <button
+              type="button"
+              onClick={() => setConfirmAllOpen(true)}
+              disabled={!current || pendingId === '__ALL__'}
+              className={cn(
+                'px-3 py-2 rounded-lg text-sm font-medium transition',
+                'border border-slate-300 dark:border-slate-600',
+                'text-slate-700 dark:text-slate-300',
+                'hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50'
+              )}
+              title="Cerrar sesión en todos los demás dispositivos"
+            >
+              Cerrar en otros
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -126,7 +236,7 @@ const DevicesSection = ({ devices = [], onLogoutDevice }) => {
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                {deviceList.length} Dispositivos
+                {total} dispositivo{total === 1 ? '' : 's'}
               </span>
             </div>
             <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
@@ -138,11 +248,11 @@ const DevicesSection = ({ devices = [], onLogoutDevice }) => {
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
               <span className="text-sm font-medium text-green-900 dark:text-green-100">
-                Sesión Actual
+                {current ? 'Sesión actual' : 'Sin sesión actual detectada'}
               </span>
             </div>
             <p className="text-xs text-green-700 dark:text-green-300 mt-1">
-              Dispositivo seguro
+              {current ? 'Dispositivo seguro' : 'Inicia sesión para identificarla'}
             </p>
           </div>
 
@@ -154,50 +264,60 @@ const DevicesSection = ({ devices = [], onLogoutDevice }) => {
               </span>
             </div>
             <p className="text-xs text-orange-700 dark:text-orange-300 mt-1">
-              {formatLastActivity(deviceList[0]?.last_activity)}
+              {newestActivity ? formatRelativeEs(newestActivity) : '—'}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Lista de dispositivos */}
+      {/* Lista */}
       <div className="space-y-4">
-        {deviceList.map((device) => {
+        {normalized.length === 0 && !loading && (
+          <div className="text-center p-10 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+            <Monitor className="w-8 h-8 mx-auto mb-3 text-slate-400" />
+            <p className="text-slate-600 dark:text-slate-400">No hay sesiones activas.</p>
+          </div>
+        )}
+
+        {normalized.map((device) => {
           const DeviceIcon = getDeviceIcon(device.device_type);
-          
+          const isPending = pendingId === device.id || pendingId === device.uuid;
+
           return (
             <div
               key={device.id}
               className={cn(
                 'bg-white dark:bg-slate-900 rounded-2xl border p-6 transition-all duration-200',
-                device.is_current 
+                device.is_current
                   ? 'border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10'
                   : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
               )}
             >
               <div className="flex items-start gap-4">
-                {/* Icono del dispositivo */}
-                <div className={cn(
-                  'w-12 h-12 rounded-xl flex items-center justify-center',
-                  device.is_current
-                    ? 'bg-blue-100 dark:bg-blue-900/30'
-                    : 'bg-slate-100 dark:bg-slate-800'
-                )}>
-                  <DeviceIcon className={cn(
-                    'w-6 h-6',
+                <div
+                  className={cn(
+                    'w-12 h-12 rounded-xl flex items-center justify-center',
                     device.is_current
-                      ? 'text-blue-600 dark:text-blue-400'
-                      : 'text-slate-600 dark:text-slate-400'
-                  )} />
+                      ? 'bg-blue-100 dark:bg-blue-900/30'
+                      : 'bg-slate-100 dark:bg-slate-800'
+                  )}
+                >
+                  <DeviceIcon
+                    className={cn(
+                      'w-6 h-6',
+                      device.is_current
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : 'text-slate-600 dark:text-slate-400'
+                    )}
+                  />
                 </div>
 
-                {/* Información del dispositivo */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-slate-900 dark:text-white">
-                          {device.browser} en {device.os}
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-semibold text-slate-900 dark:text-white truncate">
+                          {(device.browser || 'Navegador')} en {(device.os || 'SO')}
                         </h4>
                         {device.is_current && (
                           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium">
@@ -206,49 +326,46 @@ const DevicesSection = ({ devices = [], onLogoutDevice }) => {
                           </span>
                         )}
                       </div>
-                      
                       <p className="text-sm text-slate-600 dark:text-slate-400">
-                        {getDeviceTypeLabel(device.device_type)} • {device.ip_address}
+                        {getDeviceTypeLabel(device.device_type)} • {device.ip_address || '—'}
                       </p>
                     </div>
 
-                    {/* Menú de acciones */}
                     {!device.is_current && (
-                      <div className="relative">
-                        <button
-                          onClick={() => setShowLogoutConfirm(device.id)}
-                          className={cn(
-                            'p-2 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400',
-                            'hover:bg-red-50 dark:hover:bg-red-900/20',
-                            'focus:outline-none focus:ring-2 focus:ring-red-500/20',
-                            'transition-all duration-200'
-                          )}
-                          title="Cerrar sesión"
-                        >
-                          <LogOut className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmFor(device.id)}
+                        disabled={isPending}
+                        className={cn(
+                          'p-2 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400',
+                          'hover:bg-red-50 dark:hover:bg-red-900/20',
+                          'focus:outline-none focus:ring-2 focus:ring-red-500/20',
+                          'transition-all duration-200 disabled:opacity-50'
+                        )}
+                        title="Cerrar sesión"
+                        aria-label="Cerrar sesión en este dispositivo"
+                      >
+                        <LogOut className="w-4 h-4" />
+                      </button>
                     )}
                   </div>
 
-                  {/* Detalles adicionales */}
                   <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                       <MapPin className="w-4 h-4" />
-                      <span>{device.location}</span>
+                      <span>{device.location || 'Ubicación desconocida'}</span>
                     </div>
-                    
                     <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                       <Clock className="w-4 h-4" />
-                      <span>Última actividad: {formatLastActivity(device.last_activity)}</span>
+                      <span>Última actividad: {formatRelativeEs(device.last_activity)}</span>
                     </div>
                   </div>
 
-                  {/* Información de seguridad */}
                   <div className="mt-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm">
                       <span className="text-slate-600 dark:text-slate-400">
-                        Primera conexión: {new Date(device.created_at).toLocaleDateString('es-ES')}
+                        Primera conexión:{' '}
+                        {device.created_at ? device.created_at.toLocaleDateString('es-MX') : '—'}
                       </span>
                       <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
                         <CheckCircle2 className="w-3 h-3" />
@@ -259,9 +376,16 @@ const DevicesSection = ({ devices = [], onLogoutDevice }) => {
                 </div>
               </div>
 
-              {/* Modal de confirmación de logout */}
-              {showLogoutConfirm === device.id && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              {/* Modal confirmación logout uno */}
+              {confirmFor === device.id && (
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  className="fixed inset-0 bg-black/50 flex items-center justify-center z-60 p-4"
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) setConfirmFor(null);
+                  }}
+                >
                   <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 max-w-md w-full">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
@@ -269,7 +393,7 @@ const DevicesSection = ({ devices = [], onLogoutDevice }) => {
                       </div>
                       <div>
                         <h3 className="font-semibold text-slate-900 dark:text-white">
-                          Cerrar sesión
+                          Cerrar sesión en este dispositivo
                         </h3>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
                           ¿Estás seguro?
@@ -278,13 +402,14 @@ const DevicesSection = ({ devices = [], onLogoutDevice }) => {
                     </div>
 
                     <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-                      Se cerrará la sesión en <strong>{device.browser} en {device.os}</strong>. 
-                      El dispositivo necesitará iniciar sesión nuevamente.
+                      Se cerrará la sesión en <strong>{device.browser}</strong> en{' '}
+                      <strong>{device.os}</strong>. Tendrá que iniciar sesión nuevamente.
                     </p>
 
                     <div className="flex gap-3">
                       <button
-                        onClick={() => setShowLogoutConfirm(null)}
+                        type="button"
+                        onClick={() => setConfirmFor(null)}
                         className={cn(
                           'flex-1 px-4 py-2 rounded-lg',
                           'border border-slate-300 dark:border-slate-600',
@@ -296,17 +421,19 @@ const DevicesSection = ({ devices = [], onLogoutDevice }) => {
                       >
                         Cancelar
                       </button>
-                      
+
                       <button
-                        onClick={() => handleLogout(device.id)}
+                        type="button"
+                        onClick={() => handleLogout(device.uuid || device.id)}
+                        disabled={isPending}
                         className={cn(
                           'flex-1 px-4 py-2 rounded-lg',
                           'bg-red-600 hover:bg-red-700 text-white',
                           'focus:outline-none focus:ring-2 focus:ring-red-500/20',
-                          'transition-all duration-200'
+                          'transition-all duration-200 disabled:opacity-50'
                         )}
                       >
-                        Cerrar sesión
+                        {isPending ? 'Cerrando…' : 'Cerrar sesión'}
                       </button>
                     </div>
                   </div>
@@ -317,7 +444,66 @@ const DevicesSection = ({ devices = [], onLogoutDevice }) => {
         })}
       </div>
 
-      {/* Información adicional */}
+      {/* Modal confirmación logout en otros */}
+      {confirmAllOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setConfirmAllOpen(false);
+          }}
+        >
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 max-w-md w-full">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900 dark:text-white">
+                  Cerrar sesión en todos los demás
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  ¿Confirmas que deseas cerrar sesión en todos los dispositivos excepto el actual?
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmAllOpen(false)}
+                className={cn(
+                  'flex-1 px-4 py-2 rounded-lg',
+                  'border border-slate-300 dark:border-slate-600',
+                  'text-slate-700 dark:text-slate-300',
+                  'hover:bg-slate-100 dark:hover:bg-slate-700',
+                  'focus:outline-none focus:ring-2 focus:ring-slate-500/20',
+                  'transition-all duration-200'
+                )}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={handleLogoutOthers}
+                disabled={pendingId === '__ALL__'}
+                className={cn(
+                  'flex-1 px-4 py-2 rounded-lg',
+                  'bg-red-600 hover:bg-red-700 text-white',
+                  'focus:outline-none focus:ring-2 focus:ring-red-500/20',
+                  'transition-all duration-200 disabled:opacity-50'
+                )}
+              >
+                {pendingId === '__ALL__' ? 'Cerrando…' : 'Cerrar en otros'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tips */}
       <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-200 dark:border-blue-800 p-6">
         <div className="flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
@@ -336,7 +522,4 @@ const DevicesSection = ({ devices = [], onLogoutDevice }) => {
       </div>
     </div>
   );
-};
-
-export default DevicesSection;
-
+}

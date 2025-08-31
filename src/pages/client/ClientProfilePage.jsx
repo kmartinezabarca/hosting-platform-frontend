@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
-import authService from "../../services/auth";
+
+// Services
+import profileService from "../../services/profile";
+import twoFactorService from "../../services/twoFactor";
+import sessionsService from "../../services/sessions";
 
 // Componentes del perfil
 import ProfileHeader from "../../components/profile/ProfileHeader";
@@ -27,7 +31,8 @@ const ClientProfilePageNew = () => {
     postal_code: "",
     avatar_url: "",
     created_at: null,
-    services_count: 0
+    services_count: 0,
+    email_verified_at: null,
   });
 
   // Estados de seguridad
@@ -46,7 +51,6 @@ const ClientProfilePageNew = () => {
   // Estados de dispositivos
   const [devices, setDevices] = useState([]);
 
-  // Cargar datos iniciales
   useEffect(() => {
     loadAllData();
   }, []);
@@ -57,11 +61,11 @@ const ClientProfilePageNew = () => {
       await Promise.all([
         loadProfileData(),
         loadSecurityData(),
-        loadDevicesData()
+        loadDevicesData(),
       ]);
     } catch (error) {
-      console.error('Error loading data:', error);
-      toast.error('Error al cargar los datos del perfil');
+      console.error("Error loading data:", error);
+      toast.error(error.message || "Error al cargar los datos del perfil");
     } finally {
       setLoading(false);
     }
@@ -69,58 +73,32 @@ const ClientProfilePageNew = () => {
 
   const loadProfileData = async () => {
     try {
-      const token = authService.getToken();
-      const res = await fetch("http://localhost:8000/api/profile", {
-        headers: { 
-          Authorization: `Bearer ${token}`, 
-          Accept: "application/json" 
-        },
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        setProfile(prev => ({ ...prev, ...data.data }));
+      const res = await profileService.get();
+      if (res?.success && res.data) {
+        setProfile((prev) => ({ ...prev, ...res.data }));
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error("Error loading profile:", error);
     }
   };
 
   const loadSecurityData = async () => {
     try {
-      const token = authService.getToken();
-      const res = await fetch("http://localhost:8000/api/profile/security", {
-        headers: { 
-          Authorization: `Bearer ${token}`, 
-          Accept: "application/json" 
-        },
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        setSecurity(data.data);
+      const res = await profileService.getSecurity();
+      if (res?.success && res.data) {
+        setSecurity(res.data);
       }
     } catch (error) {
-      console.error('Error loading security data:', error);
+      console.error("Error loading security data:", error);
     }
   };
 
   const loadDevicesData = async () => {
     try {
-      const token = authService.getToken();
-      const res = await fetch("http://localhost:8000/api/profile/devices", {
-        headers: { 
-          Authorization: `Bearer ${token}`, 
-          Accept: "application/json" 
-        },
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        setDevices(data.data || []);
-      }
+      const res = await sessionsService.list();
+      if (res?.success) setDevices(res.data || []);
     } catch (error) {
-      console.error('Error loading devices:', error);
+      console.error("Error loading devices:", error);
     }
   };
 
@@ -128,28 +106,16 @@ const ClientProfilePageNew = () => {
   const handleProfileUpdate = async (updatedProfile) => {
     setSaving(true);
     try {
-      const token = authService.getToken();
-      const res = await fetch("http://localhost:8000/api/profile", {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(updatedProfile),
-      });
-
-      const data = await res.json();
-      
-      if (res.ok) {
-        setProfile(data.data);
-        toast.success('Perfil actualizado exitosamente');
+      const res = await profileService.update(updatedProfile);
+      if (res?.success) {
+        setProfile(res.data);
+        toast.success("Perfil actualizado exitosamente");
       } else {
-        toast.error(data.message || 'Error al actualizar el perfil');
+        toast.error(res?.message || "Error al actualizar el perfil");
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error('Error de conexión');
+      console.error("Error updating profile:", error);
+      toast.error(error.message || "Error de conexión");
     } finally {
       setSaving(false);
     }
@@ -158,30 +124,16 @@ const ClientProfilePageNew = () => {
   // Cambio de avatar
   const handleAvatarChange = async (file) => {
     try {
-      const formData = new FormData();
-      formData.append('avatar', file);
-
-      const token = authService.getToken();
-      const res = await fetch("http://localhost:8000/api/profile/avatar", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-        body: formData,
-      });
-
-      const data = await res.json();
-      
-      if (res.ok) {
-        setProfile(prev => ({ ...prev, avatar_url: data.data.avatar_url }));
-        toast.success('Avatar actualizado exitosamente');
+      const res = await profileService.uploadAvatar(file);
+      if (res?.success) {
+        setProfile((prev) => ({ ...prev, avatar_url: res.data.avatar_url }));
+        toast.success("Avatar actualizado exitosamente");
       } else {
-        toast.error(data.message || 'Error al actualizar el avatar');
+        toast.error(res?.message || "Error al actualizar el avatar");
       }
     } catch (error) {
-      console.error('Error updating avatar:', error);
-      toast.error('Error al subir la imagen');
+      console.error("Error updating avatar:", error);
+      toast.error(error.message || "Error al subir la imagen");
     }
   };
 
@@ -189,26 +141,16 @@ const ClientProfilePageNew = () => {
   const handle2FAGenerate = async () => {
     setSaving2FA(true);
     try {
-      const token = authService.getToken();
-      const res = await fetch("http://localhost:8000/api/2fa/generate", {
-        method: "POST",
-        headers: { 
-          Authorization: `Bearer ${token}`, 
-          Accept: "application/json" 
-        },
-      });
-      
-      const data = await res.json();
-      
-      if (res.ok) {
-        setQrCode(data.data.qr_code);
-        setTwoFactorSecret(data.data.secret);
+      const res = await twoFactorService.generate();
+      if (res?.success) {
+        setQrCode(res.data.qr_code);
+        setTwoFactorSecret(res.data.secret);
       } else {
-        toast.error(data.message || 'Error al generar 2FA');
+        toast.error(res?.message || "Error al generar 2FA");
       }
     } catch (error) {
-      console.error('Error generating 2FA:', error);
-      toast.error('Error de conexión');
+      console.error("Error generating 2FA:", error);
+      toast.error(error.message || "Error de conexión");
     } finally {
       setSaving2FA(false);
     }
@@ -217,30 +159,18 @@ const ClientProfilePageNew = () => {
   const handle2FAEnable = async (verificationCode) => {
     setSaving2FA(true);
     try {
-      const token = authService.getToken();
-      const res = await fetch("http://localhost:8000/api/2fa/enable", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ code: verificationCode }),
-      });
-      
-      const data = await res.json();
-      
-      if (res.ok) {
-        setSecurity(prev => ({ ...prev, two_factor_enabled: true }));
+      const res = await twoFactorService.enable(verificationCode);
+      if (res?.success) {
+        setSecurity((prev) => ({ ...prev, two_factor_enabled: true }));
         setQrCode("");
         setTwoFactorSecret("");
-        toast.success('2FA activado exitosamente');
+        toast.success("2FA activado exitosamente");
       } else {
-        toast.error(data.message || 'Código de verificación inválido');
+        toast.error(res?.message || "Código de verificación inválido");
       }
     } catch (error) {
-      console.error('Error enabling 2FA:', error);
-      toast.error('Error de conexión');
+      console.error("Error enabling 2FA:", error);
+      toast.error(error.message || "Error de conexión");
     } finally {
       setSaving2FA(false);
     }
@@ -249,88 +179,37 @@ const ClientProfilePageNew = () => {
   const handle2FADisable = async () => {
     setSaving2FA(true);
     try {
-      const token = authService.getToken();
-      const res = await fetch("http://localhost:8000/api/2fa/disable", {
-        method: "POST",
-        headers: { 
-          Authorization: `Bearer ${token}`, 
-          Accept: "application/json" 
-        },
-      });
-      
-      const data = await res.json();
-      
-      if (res.ok) {
-        setSecurity(prev => ({ ...prev, two_factor_enabled: false }));
-        toast.success('2FA desactivado');
+      const res = await twoFactorService.disable();
+      if (res?.success) {
+        setSecurity((prev) => ({ ...prev, two_factor_enabled: false }));
+        toast.success("2FA desactivado");
       } else {
-        toast.error(data.message || 'Error al desactivar 2FA');
+        toast.error(res?.message || "Error al desactivar 2FA");
       }
     } catch (error) {
-      console.error('Error disabling 2FA:', error);
-      toast.error('Error de conexión');
+      console.error("Error disabling 2FA:", error);
+      toast.error(error.message || "Error de conexión");
     } finally {
       setSaving2FA(false);
     }
   };
 
-  // Cambio de contraseña
-  const handlePasswordUpdate = async (passwordData) => {
-    setSavingPassword(true);
-    try {
-      const token = authService.getToken();
-      const res = await fetch("http://localhost:8000/api/profile/password", {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify(passwordData),
-      });
-      
-      const data = await res.json();
-      
-      if (res.ok) {
-        toast.success('Contraseña actualizada correctamente');
-        loadSecurityData(); // Recargar datos de seguridad
-      } else {
-        toast.error(data.message || 'Error al actualizar la contraseña');
-      }
-    } catch (error) {
-      console.error('Error updating password:', error);
-      toast.error('Error de conexión');
-    } finally {
-      setSavingPassword(false);
-    }
-  };
-
   // Cerrar sesión en dispositivo
-  const handleLogoutDevice = async (deviceId) => {
+  const handleLogoutDevice = async (deviceIdOrUuid) => {
     try {
-      const token = authService.getToken();
-      const res = await fetch(`http://localhost:8000/api/profile/devices/${deviceId}/logout`, {
-        method: "POST",
-        headers: { 
-          Authorization: `Bearer ${token}`, 
-          Accept: "application/json" 
-        },
-      });
-      
-      if (res.ok) {
-        setDevices(prev => prev.filter(device => device.id !== deviceId));
-        toast.success('Sesión cerrada exitosamente');
+      const res = await sessionsService.logoutOne(deviceIdOrUuid);
+      if (res?.success) {
+        setDevices((prev) => prev.filter((d) => (d.uuid || d.id) !== deviceIdOrUuid));
+        toast.success("Sesión cerrada exitosamente");
       } else {
-        const data = await res.json();
-        toast.error(data.message || 'Error al cerrar sesión');
+        toast.error(res?.message || "Error al cerrar sesión");
       }
     } catch (error) {
-      console.error('Error logging out device:', error);
-      toast.error('Error de conexión');
+      console.error("Error logging out device:", error);
+      toast.error(error.message || "Error de conexión");
     }
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
@@ -345,13 +224,8 @@ const ClientProfilePageNew = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8">
       <div className="max-w-6xl mx-auto px-4 space-y-8">
-        {/* Header del perfil */}
-        <ProfileHeader 
-          profile={profile} 
-          onAvatarChange={handleAvatarChange}
-        />
+        <ProfileHeader profile={profile} onAvatarChange={handleAvatarChange} />
 
-        {/* Tabs y contenido */}
         <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab}>
           {activeTab === "profile" && (
             <PersonalInfoSection
@@ -364,22 +238,19 @@ const ClientProfilePageNew = () => {
           {activeTab === "security" && (
             <SecuritySection
               security={security}
-              onPasswordUpdate={handlePasswordUpdate}
+              onPasswordUpdate={handle2FAEnable ? undefined : undefined} // (si tienes sección de password aquí)
               on2FAGenerate={handle2FAGenerate}
               on2FAEnable={handle2FAEnable}
               on2FADisable={handle2FADisable}
               qrCode={qrCode}
               twoFactorSecret={twoFactorSecret}
               saving2FA={saving2FA}
-              savingPassword={savingPassword}
+              savingPassword={false}
             />
           )}
 
           {activeTab === "devices" && (
-            <DevicesSection
-              devices={devices}
-              onLogoutDevice={handleLogoutDevice}
-            />
+            <DevicesSection devices={devices} onLogoutDevice={handleLogoutDevice} />
           )}
         </ProfileTabs>
       </div>
@@ -388,4 +259,3 @@ const ClientProfilePageNew = () => {
 };
 
 export default ClientProfilePageNew;
-

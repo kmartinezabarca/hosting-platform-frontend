@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Camera, Upload, X } from 'lucide-react';
+import ReactCountryFlag from "react-country-flag";
+import { countryName } from "../../lib/geo";
 import { cn } from '../../lib/utils';
 
 const ProfileHeader = ({ profile, onAvatarChange }) => {
@@ -45,19 +47,21 @@ const ProfileHeader = ({ profile, onAvatarChange }) => {
       profile.first_name || 'user'
     )}`;
 
+  const isVerified = Boolean(profile?.email_verified_at);
+
   return (
     <div className="relative">
       {/* Background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-800 dark:to-slate-900 rounded-2xl" />
-      
+
       <div className="relative p-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
           {/* Avatar con upload */}
           <div className="relative">
-            <div 
+            <div
               className={cn(
-                'relative w-24 h-24 rounded-2xl overflow-hidden border-4 border-white dark:border-slate-700 shadow-lg transition-all duration-200',
-                isHovering && 'scale-105 shadow-xl'
+                "relative w-24 h-24 rounded-2xl overflow-hidden border-4 border-white dark:border-slate-700 shadow-lg transition-all duration-200",
+                isHovering && "scale-105 shadow-xl"
               )}
               onMouseEnter={() => setIsHovering(true)}
               onMouseLeave={() => setIsHovering(false)}
@@ -67,12 +71,14 @@ const ProfileHeader = ({ profile, onAvatarChange }) => {
                 alt="Avatar"
                 className="w-full h-full object-cover"
               />
-              
+
               {/* Overlay de upload */}
-              <div className={cn(
-                'absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200',
-                isHovering ? 'opacity-100' : 'opacity-0'
-              )}>
+              <div
+                className={cn(
+                  "absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200",
+                  isHovering ? "opacity-100" : "opacity-0"
+                )}
+              >
                 {isUploading ? (
                   <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
@@ -80,7 +86,7 @@ const ProfileHeader = ({ profile, onAvatarChange }) => {
                 )}
               </div>
             </div>
-            
+
             {/* Input de archivo oculto */}
             <input
               type="file"
@@ -89,73 +95,91 @@ const ProfileHeader = ({ profile, onAvatarChange }) => {
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               disabled={isUploading}
             />
-            
+
             {/* Botón de upload visible */}
             <button
               type="button"
               className={cn(
-                'absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-blue-600 text-white shadow-lg transition-all duration-200',
-                'hover:bg-blue-700 hover:scale-110',
-                'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2',
-                isUploading && 'opacity-50 cursor-not-allowed'
+                "absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-blue-600 text-white shadow-lg transition-all duration-200",
+                "hover:bg-blue-700 hover:scale-110",
+                "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+                isUploading && "opacity-50 cursor-not-allowed"
               )}
               disabled={isUploading}
             >
               <Upload className="w-4 h-4 mx-auto" />
             </button>
           </div>
-          
+
           {/* Información del usuario */}
           <div className="flex-1 min-w-0">
             <div className="space-y-2">
               <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-                {profile.first_name && profile.last_name 
+                {profile.first_name && profile.last_name
                   ? `${profile.first_name} ${profile.last_name}`
-                  : 'Mi Perfil'
-                }
+                  : "Mi Perfil"}
               </h1>
-              
+
               <p className="text-slate-600 dark:text-slate-300">
                 {profile.email}
               </p>
-              
+
               <div className="flex flex-wrap gap-3 mt-4">
                 {/* Badge de verificación */}
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium">
-                  <div className="w-2 h-2 rounded-full bg-green-500" />
-                  Cuenta verificada
-                </div>
-                
+                {isVerified ? (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    Cuenta verificada
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-sm font-medium">
+                    <div className="w-2 h-2 rounded-full bg-amber-500" />
+                    Verifica tu correo
+                  </div>
+                )}
+
                 {/* Badge de ubicación si existe */}
-                {profile.country && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm">
-                    <span className="text-lg">
-                      {profile.country === 'MX' ? '🇲🇽' : 
-                       profile.country === 'US' ? '🇺🇸' : 
-                       profile.country === 'CA' ? '🇨🇦' : 
-                       profile.country === 'ES' ? '🇪🇸' : '🌍'}
+                {profile?.country && (
+                  <div
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm"
+                    aria-label={`Ubicación: ${
+                      profile.city ? profile.city + ", " : ""
+                    }${countryName(profile.country)}`}
+                  >
+                    <ReactCountryFlag
+                      countryCode={profile.country}
+                      svg
+                      style={{
+                        width: "1.25rem",
+                        height: "1.25rem",
+                        borderRadius: "2px",
+                      }}
+                      title={profile.country}
+                      aria-label={countryName(profile.country)}
+                    />
+                    <span className="truncate">
+                      {profile.city || countryName(profile.country)}
                     </span>
-                    {profile.city || 'Ubicación'}
                   </div>
                 )}
               </div>
             </div>
           </div>
-          
+
           {/* Estadísticas rápidas */}
           <div className="flex sm:flex-col gap-4 sm:gap-2 text-center">
             <div className="px-4 py-2 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
               <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {new Date().getFullYear() - new Date(profile.created_at || '2024-01-01').getFullYear() || 0}
+                {profile.years_with_us || 0}
               </div>
               <div className="text-xs text-slate-600 dark:text-slate-400">
                 Años con nosotros
               </div>
             </div>
-            
+
             <div className="px-4 py-2 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
               <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {profile.services_count || 0}
+                {profile.active_services || 0}
               </div>
               <div className="text-xs text-slate-600 dark:text-slate-400">
                 Servicios activos
@@ -163,11 +187,12 @@ const ProfileHeader = ({ profile, onAvatarChange }) => {
             </div>
           </div>
         </div>
-        
+
         {/* Descripción adicional */}
         <div className="mt-6 pt-6 border-t border-white/20 dark:border-slate-700/50">
           <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-            Gestiona tu información personal, configuración de seguridad y dispositivos conectados desde este panel de control.
+            Gestiona tu información personal, configuración de seguridad y
+            dispositivos conectados desde este panel de control.
           </p>
         </div>
       </div>
