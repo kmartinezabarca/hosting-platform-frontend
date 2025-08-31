@@ -10,18 +10,12 @@ import Verify2FAPage from './pages/Verify2FAPage';
 import ProfileDemo from './pages/ProfileDemo';
 import ProtectedRoute from './components/ProtectedRoute';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { createQueryClient } from './config/queryConfig';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutos
-      refetchOnWindowFocus: false,
-      retry: 2,
-    },
-  },
-});
+// Crear instancia de QueryClient con configuración avanzada
+const queryClient = createQueryClient();
 
 function App() {
   return (

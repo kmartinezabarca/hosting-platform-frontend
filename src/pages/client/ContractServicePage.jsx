@@ -13,9 +13,9 @@ import {
 import { useNavigate } from "react-router-dom";
 import BillingCycleSwitch from "../../components/pricing/billing-cycle-switch";
 import PricingCard from "../../components/pricing/pricing-card";
-import { useCategories } from "../../services/categoryService";
-import { useBillingCycles } from "../../services/billingCycleService";
-import { useServicePlans } from "../../services/servicePlanService";
+import { useCategories } from "../../hooks/useCategories";
+import { useBillingCycles } from "../../hooks/useBillingCycles";
+import { useServicePlans } from "../../hooks/useServicePlans";
 
 const ContractServicePage = () => {
   const navigate = useNavigate();

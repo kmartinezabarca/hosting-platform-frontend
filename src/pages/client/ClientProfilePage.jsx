@@ -1,10 +1,23 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 
 // React Query hooks
-import { useProfile, useUpdateProfile, useUploadAvatar, useSecurity, useUpdatePassword } from "../../services/profile";
-import { useGenerate2FA, useEnable2FA, useDisable2FA } from "../../services/twoFactor";
-import { useSessions, useLogoutSession } from "../../services/sessions";
+import { 
+  useProfile, 
+  useUpdateProfile, 
+  useUploadAvatar, 
+  useSecurity, 
+  useUpdatePassword 
+} from "../../hooks/useProfile";
+import { 
+  useGenerate2FA, 
+  useEnable2FA, 
+  useDisable2FA 
+} from "../../hooks/useTwoFactor";
+import { 
+  useSessions, 
+  useLogoutSession 
+} from "../../hooks/useSessions";
 
 // Componentes del perfil
 import ProfileHeader from "../../components/profile/ProfileHeader";
