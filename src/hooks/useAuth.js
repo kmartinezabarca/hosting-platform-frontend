@@ -20,6 +20,24 @@ export const useLogin = () => {
 };
 
 /**
+ * Hook para iniciar sesión con Google
+ */
+export const useLoginWithGoogle = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: authService.loginWithGoogle,
+    onSuccess: () => {
+      // Limpiar cache al hacer login exitoso con Google
+      queryClient.clear();
+    },
+    onError: (error) => {
+      console.error("Error al iniciar sesión con Google", error);
+    },
+  });
+};
+
+/**
  * Hook para registrar usuario
  */
 export const useRegister = () => {

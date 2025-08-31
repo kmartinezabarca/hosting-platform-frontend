@@ -114,7 +114,7 @@ const LoginPage = () => {
       }
 
       const googleUserInfo = await userInfoResponse.json();
-      const backendResponse = await loginWithGoogle(googleUserInfo);
+      const backendResponse = await loginWithGoogle(tokenResponse.access_token);
       console.log("Respuesta del backend:", backendResponse);
 
       const { token, tokenType, twoFactorRequired, email, user } = normalizeAuthResponse(backendResponse);

@@ -16,33 +16,31 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const response = await AuthService.login(email, password);
-    setUser(response);
+    const response = await AuthService.login({ email, password });
+    setUser(AuthService.getCurrentUser()); // Actualizar usuario después del login
     return response;
   };
 
-  const loginWithGoogle = async (googleUserData) => {
-    const response = await AuthService.loginWithGoogle(googleUserData);
-    setUser(response.user);
+  const loginWithGoogle = async (googleToken) => {
+    const response = await AuthService.loginWithGoogle(googleToken);
+    setUser(AuthService.getCurrentUser()); // Actualizar usuario después del login con Google
     return response;
   };
 
   const verifyTwoFactor = async (email, code) => {
-    const response = await AuthService.verifyTwoFactor(email, code);
-    if (response.user) {
-      setUser(response.user);
-    }
+    const response = await AuthService.verify2FA({ email, code });
+    setUser(AuthService.getCurrentUser()); // Actualizar usuario después de verificar 2FA
     return response;
   };
 
-  const logout = () => {
-    AuthService.logout();
+  const logout = async () => {
+    await AuthService.logout();
     setUser(null);
   };
 
   const register = async (userData) => {
     const response = await AuthService.register(userData);
-    setUser(response.user);
+    setUser(AuthService.getCurrentUser()); // Actualizar usuario después del registro
     return response;
   };
 
