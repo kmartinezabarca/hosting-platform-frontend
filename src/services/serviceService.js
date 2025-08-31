@@ -83,18 +83,7 @@ export const servicesService = {
   // Process payment for service
   async processPayment(paymentData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/payments/process`, {
-        method: "POST",
-        headers: createAuthHeaders(),
-        body: JSON.stringify(paymentData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      return paymentService.processPayment(paymentData);
     } catch (error) {
       console.error("Error processing payment:", error);
       throw error;
@@ -331,4 +320,7 @@ export const servicesService = {
 };
 
 export default servicesService;
+
+
+import paymentService from './paymentService';
 

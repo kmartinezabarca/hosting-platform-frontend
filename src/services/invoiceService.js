@@ -158,19 +158,7 @@ class InvoicesService {
 
   async getPaymentMethods() {
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_BASE_URL}/payments/methods`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+return paymentService.getPaymentMethods();
     } catch (error) {
       console.error('Error fetching payment methods:', error);
       throw error;
@@ -179,21 +167,7 @@ class InvoicesService {
 
   async createSetupIntent() {
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_BASE_URL}/payments/setup-intent`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+return paymentService.createSetupIntent();
     } catch (error) {
       console.error('Error creating setup intent:', error);
       throw error;
@@ -202,22 +176,7 @@ class InvoicesService {
 
   async addPaymentMethod(methodData) {
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_BASE_URL}/payments/methods`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(methodData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+return paymentService.addPaymentMethod(methodData);
     } catch (error) {
       console.error('Error adding payment method:', error);
       throw error;
@@ -226,22 +185,7 @@ class InvoicesService {
 
   async updatePaymentMethod(id, data) {
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_BASE_URL}/payments/methods/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(data)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+return paymentService.updatePaymentMethod(id, data);
     } catch (error) {
       console.error('Error updating payment method:', error);
       throw error;
@@ -254,20 +198,7 @@ class InvoicesService {
 
   async deletePaymentMethod(id) {
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_BASE_URL}/payments/methods/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+    return paymentService.deletePaymentMethod(id);
     } catch (error) {
       console.error('Error deleting payment method:', error);
       throw error;
@@ -275,44 +206,12 @@ class InvoicesService {
   }
 
   async processPayment(paymentData) {
-    try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_BASE_URL}/payments/process`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(paymentData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error processing payment:', error);
-      throw error;
-    }
+    return paymentService.processPayment(paymentData);
   }
 
   async getPaymentStats() {
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_BASE_URL}/payments/stats`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+return paymentService.getPaymentStats();
     } catch (error) {
       console.error('Error fetching payment stats:', error);
       throw error;
@@ -321,4 +220,7 @@ class InvoicesService {
 }
 
 export default new InvoicesService();
+
+
+import paymentService from './paymentService';
 

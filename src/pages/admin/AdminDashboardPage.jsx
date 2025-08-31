@@ -22,7 +22,7 @@ import {
   ArrowDownRight
 } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import adminDashboardService from '../../services/adminDashboard';
+import adminDashboardService from '../../services/adminDashboardService';
 
 const AdminDashboardPage = () => {
   const [stats, setStats] = useState(null);

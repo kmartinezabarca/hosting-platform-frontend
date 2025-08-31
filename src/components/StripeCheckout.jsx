@@ -6,7 +6,7 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
-import { paymentService } from "../services/payments";
+import { paymentService } from "../services/paymentService";
 import { servicesService } from "../services/services";
 
 // Initialize Stripe
