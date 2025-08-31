@@ -35,17 +35,19 @@ const authService = {
   },
 
   /**
-   * Iniciar sesión con Google (placeholder)
+   * Iniciar sesión con Google
    */
-  loginWithGoogle: async (googleToken) => {
-    // Aquí iría la lógica para enviar el token de Google al backend
-    // y recibir el token de sesión de la aplicación.
-    // Por ahora, es un placeholder para evitar errores.
-    console.log("Simulando login con Google con token:", googleToken);
-    // Simular un token de acceso
-    const simulatedToken = `simulated_google_token_${Date.now()}`;
-    localStorage.setItem("auth_token", simulatedToken);
-    return { access_token: simulatedToken, message: "Login con Google simulado exitoso" };
+  loginWithGoogle: async (googleUserData) => {
+    const response = await apiClient.post("/auth/google/callback", {
+      first_name: googleUserData.given_name,
+      last_name: googleUserData.family_name || '',
+      email: googleUserData.email,
+      google_id: googleUserData.sub
+    });
+    if (response.data.access_token) {
+      localStorage.setItem("auth_token", response.data.access_token);
+    }
+    return response.data;
   },
 
   /**
