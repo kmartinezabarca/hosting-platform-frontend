@@ -11,6 +11,7 @@ const authService = {
     const response = await apiClient.post('/auth/login', credentials);
     if (response.data.access_token) {
       localStorage.setItem('auth_token', response.data.access_token);
+      localStorage.setItem("user_data", JSON.stringify(response.data.user));
     }
     return response.data;
   },
@@ -46,6 +47,7 @@ const authService = {
     });
     if (response.data.access_token) {
       localStorage.setItem("auth_token", response.data.access_token);
+      localStorage.setItem("user_data", JSON.stringify(response.data.user));
     }
     return response.data;
   },
