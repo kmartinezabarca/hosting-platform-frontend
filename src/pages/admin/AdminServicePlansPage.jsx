@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Edit, Trash2, Search, Star, Eye, EyeOff } from 'lucide-react';
-import servicePlansService from '../../services/servicePlans';
+import servicePlansService from "../../services/servicePlansService";
 
 const AdminServicePlansPage = () => {
   const [servicePlans, setServicePlans] = useState([]);

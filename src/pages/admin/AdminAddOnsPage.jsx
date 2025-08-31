@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Edit, Trash2, Search, Eye, EyeOff, DollarSign, Package } from 'lucide-react';
-import addOnsService from '../../services/addOns';
+import addOnsService from '../../services/addOnsService';
 
 const AdminAddOnsPage = () => {
   const [addOns, setAddOns] = useState([]);

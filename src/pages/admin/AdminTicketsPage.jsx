@@ -30,7 +30,7 @@ import {
   ArrowDown,
   Minus
 } from 'lucide-react';
-import adminTicketsService from '../../services/adminTickets';
+import adminTicketsService from '../../services/adminTicketsService';
 
 const AdminTicketsPage = () => {
   const [tickets, setTickets] = useState([]);

@@ -92,3 +92,42 @@ export const useLogout = () => {
   });
 };
 
+
+
+/**
+ * Hook para obtener el usuario actual con React Query
+ */
+export const useCurrentUser = (options = {}) => {
+  const queryClient = useQueryClient();
+
+  return useQuery({
+    queryKey: ["auth", "me"],
+    queryFn: async ({ signal }) => {
+      const localUserData = localStorage.getItem("user_data");
+      if (localUserData && !options.forceRefetch) {
+        return JSON.parse(localUserData);
+      }
+      const apiData = await authService.fetchCurrentUser(signal);
+      localStorage.setItem("user_data", JSON.stringify(apiData));
+      return apiData;
+    },
+    select: (data) => data.data || data, // Asegura que siempre se extraiga el objeto de usuario
+    staleTime: options.staleTime ?? 5 * 60 * 1000, // 5 minutos
+    cacheTime: options.cacheTime ?? 15 * 60 * 1000, // 15 minutos
+    refetchOnWindowFocus: options.refetchOnWindowFocus ?? false,
+    refetchOnMount: options.refetchOnMount ?? false,
+    enabled: options.enabled ?? authService.isAuthenticated(), // Solo habilitar si hay token
+    onError: (error) => {
+      console.error("Error al obtener el usuario actual:", error);
+      // Si hay un error (ej. token inválido), limpiar el token y los datos del usuario
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("user_data");
+        queryClient.setQueryData(["auth", "me"], null);
+      }
+    },
+
+  });
+};
+
+

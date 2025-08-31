@@ -12,8 +12,7 @@ import Addons from "../../components/checkout/Addons";
 import InvoiceFields from "../../components/checkout/InvoiceFields";
 import ReviewAndPay from "../../components/checkout/ReviewAndPay";
 import OrderSummary from "../../components/checkout/OrderSummary";
-import invoicesService from "../../services/invoices";
-import servicesService from "../../services/services";
+import { usePlanAddons, usePaymentMethods } from "../../hooks/useCheckout";
 import AddPaymentMethodModal from "../../components/invoices/AddPaymentMethodModal";
 
 export default function CheckoutPage() {
@@ -67,36 +66,20 @@ export default function CheckoutPage() {
     if (!plan) navigate("/client/contract-service");
   }, [plan, navigate]);
 
-  // fetch available add-ons and user's payment methods on mount
+  const { data: fetchedAddons = [] } = usePlanAddons(plan?.id, !!plan);
+  const { data: fetchedPaymentMethods = [] } = usePaymentMethods();
+
   useEffect(() => {
-    if (!plan) return;
-    // fetch add-ons for the plan by id/slug
-    const fetchAddons = async () => {
-      try {
-        const res = await servicesService.getPlanAddOns(plan.id);
-        if (res.success) {
-          setAddons(res.data || []);
-        }
-      } catch (err) {
-        console.error("Error fetching add-ons:", err);
-      }
-    };
-    // fetch payment methods and pick default
-    const fetchPaymentMethods = async () => {
-      try {
-        const res = await invoicesService.getPaymentMethods();
-        if (res.success) {
-          setPaymentMethods(res.data || []);
-          const defaultPm = res.data?.find((m) => m.is_default);
-          setSelectedPaymentMethodId(defaultPm ? defaultPm.stripe_payment_method_id : null);
-        }
-      } catch (err) {
-        console.error("Error fetching payment methods:", err);
-      }
-    };
-    fetchAddons();
-    fetchPaymentMethods();
-  }, [plan]);
+    setAddons(fetchedAddons);
+  }, [fetchedAddons]);
+
+  useEffect(() => {
+    setPaymentMethods(fetchedPaymentMethods);
+    if (fetchedPaymentMethods.length > 0) {
+      const defaultPm = fetchedPaymentMethods.find((m) => m.is_default);
+      setSelectedPaymentMethodId(defaultPm ? defaultPm.stripe_payment_method_id : null);
+    }
+  }, [fetchedPaymentMethods]);
 
   const billingCycles = {
     monthly: { name: "Mensual", discount: 0 },
@@ -438,13 +421,8 @@ export default function CheckoutPage() {
           isOpen={showAddMethodModal}
           onClose={() => setShowAddMethodModal(false)}
           onSuccess={(pm) => {
-            // refresh payment methods after adding new one
-            invoicesService.getPaymentMethods().then((res) => {
-              if (res.success) {
-                setPaymentMethods(res.data);
-                setSelectedPaymentMethodId(pm.stripe_payment_method_id);
-              }
-            });
+            queryClient.invalidateQueries({ queryKey: ["paymentMethods"] });
+            setSelectedPaymentMethodId(pm.stripe_payment_method_id);
           }}
           isDefault={paymentMethods.length === 0}
         />

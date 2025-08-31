@@ -1,73 +1,48 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import authService from '@/services/authService';
 import { useQueryClient } from '@tanstack/react-query';
+import { useCurrentUser } from '@/hooks/useAuth'; // Importar el nuevo hook
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser]   = useState(null);
-  const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
+  const { data: user, isLoading: loading, refetch: refetchUser } = useCurrentUser(); // Usar el hook useCurrentUser
 
-  // Al montar, si hay token → traer usuario real
-  // useEffect(() => {
-  //   const boot = async () => {
-  //     try {
-  //       if (authService.isAuthenticated()) {
-  //         const me = await authService.getCurrentUser();
-  //         setUser(me);
-  //       }
-  //     } catch {
-  //       // token inválido
-  //       localStorage.removeItem('auth_token');
-  //       setUser(null);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-  //   boot();
-  // }, []);
+  // Las funciones de login, register, etc., ahora invalidarán la caché de 'auth', 'me'
+  // para que useCurrentUser refetchee automáticamente.
 
+  const { mutateAsync: loginMutation } = useLogin();
   const login = async (email, password) => {
-    const res = await authService.login({ email, password });
-    const me = await authService.getCurrentUser();
-    setUser(me);
-    await queryClient.invalidateQueries({ queryKey: ['profile'] }); // si usas react-query en otras vistas
+    const res = await loginMutation({ email, password });
     return res;
   };
 
+  const { mutateAsync: loginWithGoogleMutation } = useLoginWithGoogle();
   const loginWithGoogle = async (googleData) => {
-    const res = await authService.loginWithGoogle(googleData);
-    const me = await authService.getCurrentUser();
-    setUser(me);
-    await queryClient.invalidateQueries({ queryKey: ['profile'] });
+    const res = await loginWithGoogleMutation(googleData);
     return res;
   };
 
+  const { mutateAsync: verifyTwoFactorMutation } = useVerify2FA();
   const verifyTwoFactor = async (email, code) => {
-    const res = await authService.verify2FA({ email, code });
-    const me = await authService.getCurrentUser();
-    setUser(me);
-    await queryClient.invalidateQueries({ queryKey: ['profile'] });
+    const res = await verifyTwoFactorMutation({ email, code });
     return res;
   };
 
+  const { mutateAsync: logoutMutation } = useLogout();
   const logout = async () => {
-    await authService.logout();
-    setUser(null);
-    await queryClient.removeQueries({ queryKey: ['profile'] });
+    await logoutMutation();
   };
 
+  const { mutateAsync: registerMutation } = useRegister();
   const register = async (payload) => {
-    const res = await authService.register(payload);
-    const me = await authService.getCurrentUser();
-    setUser(me);
-    await queryClient.invalidateQueries({ queryKey: ['profile'] });
+    const res = await registerMutation(payload);
     return res;
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, register, loginWithGoogle, verifyTwoFactor }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, register, loginWithGoogle, verifyTwoFactor, refetchUser }}>
       {children}
     </AuthContext.Provider>
   );

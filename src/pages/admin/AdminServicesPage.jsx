@@ -27,8 +27,8 @@ import {
   Settings,
   Eye
 } from 'lucide-react';
-import adminServicesService from '../../services/adminServices';
-import servicePlansService from '../../services/servicePlans';
+import adminServicesService from '../../services/adminServicesService';
+import servicePlansService from "../../services/servicePlansService";
 
 const AdminServicesPage = () => {
   const [services, setServices] = useState([]);

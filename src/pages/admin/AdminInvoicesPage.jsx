@@ -27,7 +27,7 @@ import {
   Eye,
   CreditCard
 } from 'lucide-react';
-import adminInvoicesService from '../../services/adminInvoices';
+import adminInvoicesService from '../../services/adminInvoicesService';
 
 const AdminInvoicesPage = () => {
   const [invoices, setInvoices] = useState([]);

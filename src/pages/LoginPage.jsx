@@ -13,6 +13,7 @@ import {
   Globe,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useLogin, useLoginWithGoogle } from "../hooks/useAuth";
 import logoROKE from "../assets/ROKEIndustriesFusionLogo.png";
 
 const LoginPage = () => {
@@ -21,11 +22,11 @@ const LoginPage = () => {
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [formErrors, setFormErrors] = useState({});
-  const [setTempAuthData] = useState(null);
-  const { login, loginWithGoogle } = useAuth();
+  const { mutate: login, isLoading: isLoginLoading } = useLogin();
+  const { mutate: loginWithGoogle, isLoading: isGoogleLoginLoading } = useLoginWithGoogle();
+  const isLoading = isLoginLoading || isGoogleLoginLoading;
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -62,14 +63,11 @@ const LoginPage = () => {
     setFormErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      setIsLoading(true);
       setError("");
       try {
-        // La función login ahora puede devolver un objeto especial
         const response = await login(formData.email, formData.password);
 
         if (response.two_factor_required) {
-          setTempAuthData(response.temp_data);
           navigate("/verify-2fa", { state: { email: formData.email } });
         } else {
           navigate("/client/dashboard");
@@ -78,8 +76,6 @@ const LoginPage = () => {
         setError(
           err.message || "Error al iniciar sesión. Verifica tus credenciales."
         );
-      } finally {
-        setIsLoading(false);
       }
     }
   };
@@ -95,7 +91,6 @@ const LoginPage = () => {
   }
 
  const handleGoogleLoginSuccess = async (tokenResponse) => {
-    setIsLoading(true);
     setError("");
 
     try {
@@ -133,7 +128,6 @@ const LoginPage = () => {
       console.error("Error en el flujo de autenticación con Google:", err);
       setError(err.message || "No se pudo completar el inicio de sesión.");
     } finally {
-      setIsLoading(false);
     }
   };
 

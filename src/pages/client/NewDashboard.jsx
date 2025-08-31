@@ -27,7 +27,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { dashboardService } from "../../services/dashboard";
+import { dashboardService } from "../../services/dashboardService";
 import { useAuth } from "../../context/AuthContext";
 import StatCard from "../../components/dashboard/stat-card";
 import DashboardCard from "../../components/dashboard/dashboard-card";

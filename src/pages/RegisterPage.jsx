@@ -6,7 +6,7 @@ import {
   Eye, EyeOff, Mail, Lock, User, Chrome, ArrowRight, 
   Shield, Zap, Globe, Check, X, AlertCircle, CheckCircle2 
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useRegister, useLoginWithGoogle } from '../hooks/useAuth';
 import logoROKE from "../assets/ROKEIndustriesFusionLogo.png";
 
 const RegisterPage = () => {
@@ -30,7 +30,9 @@ const RegisterPage = () => {
     isValid: false
   });
   
-  const { register, loginWithGoogle } = useAuth();
+  const { mutate: register, isLoading: isRegisterLoading } = useRegister();
+  const { mutate: loginWithGoogle, isLoading: isGoogleRegisterLoading } = useLoginWithGoogle();
+  const isLoading = isRegisterLoading || isGoogleRegisterLoading;
   const navigate = useNavigate();
 
   // Validación de fortaleza de contraseña

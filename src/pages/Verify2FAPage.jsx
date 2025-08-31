@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useVerify2FA } from '../hooks/useAuth';
 import logoROKE from '../assets/ROKEIndustriesFusionLogo.png';
 
 const Verify2FAPage = () => {
@@ -11,7 +11,7 @@ const Verify2FAPage = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
-  const { verifyTwoFactor } = useAuth();
+  const { mutate: verifyTwoFactor, isLoading } = useVerify2FA();
 
   const email = location.state?.email;
 

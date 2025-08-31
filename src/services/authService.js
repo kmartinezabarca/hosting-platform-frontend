@@ -20,7 +20,7 @@ const authService = {
    * Registrar nuevo usuario
    */
   register: async (userData) => {
-    const response = await apiClient.post('/auth/register', userData);
+    const response = await apiClient.post("/auth/register", userData);
     return response.data;
   },
 
@@ -56,38 +56,48 @@ const authService = {
    * Cerrar sesión
    */
   logout: async () => {
-    // En una aplicación real, aquí harías una llamada al backend para invalidar el token
-    localStorage.removeItem('auth_token');
-    return { success: true };
+    try {
+      const token = localStorage.getItem("auth_token");
+      if (token) {
+        await apiClient.post("/auth/logout");
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("user_data");
+    }
   },
 
   /**
    * Verificar si el usuario está autenticado
    */
   isAuthenticated: () => {
-    const token = localStorage.getItem('auth_token');
-    return !!token;
-  },
-
-  /**
-   * Verificar si el usuario es administrador
-   */
-  isAdmin: () => {
-    const user = authService.getCurrentUser();
-    return user?.role === 'admin';
+    const token = localStorage.getItem("auth_token");
+    const user = JSON.parse(localStorage.getItem("user_data"));
+    return !!(token && user);
   },
 
 
   /**
-   * Devuelve: { uuid, first_name, last_name, email, role, avatar_url }
-   * (El backend ya debe construir avatar_url absoluta)
+   * Verificar si el usuario tiene un rol específico
    */
-  getCurrentUser: async (signal) => {
+  hasRole: (role) => {
+    const user = JSON.parse(localStorage.getItem("user_data"));
+    return user && user.role === role;
+  },
+
+  /**
+   * Obtener token de autenticación
+   */
+  getToken: () => {
+    return localStorage.getItem("auth_token");
+  },  * (El backend ya debe construir avatar_url absoluta)
+   */
+  fetchCurrentUser: async (signal) => {
     if (!authService.getToken()) return null;
-
-    const res = await apiClient.get('/auth/me', { signal });
-    const user = res?.data ?? res;
-    return user;
+    const res = await apiClient.get("/auth/me", { signal });
+    return res?.data ?? res;
   },
 
   /**
