@@ -1,47 +1,69 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import AuthService from '../services/authService';
+import authService from '@/services/authService';
+import { useQueryClient } from '@tanstack/react-query';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser]   = useState(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
+  // Al montar, si hay token → traer usuario real
   useEffect(() => {
-    const currentUser = AuthService.getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
-    }
-    setLoading(false);
+    const boot = async () => {
+      try {
+        if (authService.isAuthenticated()) {
+          const me = await authService.getCurrentUser();
+          setUser(me);
+        }
+      } catch {
+        // token inválido
+        localStorage.removeItem('auth_token');
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    boot();
   }, []);
 
   const login = async (email, password) => {
-    const response = await AuthService.login({ email, password });
-    setUser(AuthService.getCurrentUser()); // Actualizar usuario después del login
-    return response;
+    const res = await authService.login({ email, password });
+    const me = await authService.getCurrentUser();
+    setUser(me);
+    await queryClient.invalidateQueries({ queryKey: ['profile'] }); // si usas react-query en otras vistas
+    return res;
   };
 
-  const loginWithGoogle = async (googleToken) => {
-    const response = await AuthService.loginWithGoogle(googleToken);
-    setUser(AuthService.getCurrentUser()); // Actualizar usuario después del login con Google
-    return response;
+  const loginWithGoogle = async (googleData) => {
+    const res = await authService.loginWithGoogle(googleData);
+    const me = await authService.getCurrentUser();
+    setUser(me);
+    await queryClient.invalidateQueries({ queryKey: ['profile'] });
+    return res;
   };
 
   const verifyTwoFactor = async (email, code) => {
-    const response = await AuthService.verify2FA({ email, code });
-    setUser(AuthService.getCurrentUser()); // Actualizar usuario después de verificar 2FA
-    return response;
+    const res = await authService.verify2FA({ email, code });
+    const me = await authService.getCurrentUser();
+    setUser(me);
+    await queryClient.invalidateQueries({ queryKey: ['profile'] });
+    return res;
   };
 
   const logout = async () => {
-    await AuthService.logout();
+    await authService.logout();
     setUser(null);
+    await queryClient.removeQueries({ queryKey: ['profile'] });
   };
 
-  const register = async (userData) => {
-    const response = await AuthService.register(userData);
-    setUser(AuthService.getCurrentUser()); // Actualizar usuario después del registro
-    return response;
+  const register = async (payload) => {
+    const res = await authService.register(payload);
+    const me = await authService.getCurrentUser();
+    setUser(me);
+    await queryClient.invalidateQueries({ queryKey: ['profile'] });
+    return res;
   };
 
   return (
@@ -51,8 +73,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
-
-
+export const useAuth = () => useContext(AuthContext);

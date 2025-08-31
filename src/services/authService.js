@@ -71,30 +71,21 @@ const authService = {
    * Verificar si el usuario es administrador
    */
   isAdmin: () => {
-    // Placeholder - implementar lógica real de verificación de admin
     const user = authService.getCurrentUser();
     return user?.role === 'admin';
   },
 
+
   /**
-   * Obtener usuario actual
+   * Devuelve: { uuid, first_name, last_name, email, role, avatar_url }
+   * (El backend ya debe construir avatar_url absoluta)
    */
-  getCurrentUser: () => {
-    // Placeholder - implementar decodificación de token JWT
-    const token = localStorage.getItem('auth_token');
-    if (!token) return null;
-    
-    try {
-      // En una aplicación real, decodificarías el JWT aquí
-      return {
-        id: 1,
-        name: 'Usuario Demo',
-        email: 'demo@example.com',
-        role: 'user'
-      };
-    } catch (error) {
-      return null;
-    }
+  getCurrentUser: async (signal) => {
+    if (!authService.getToken()) return null;
+
+    const res = await apiClient.get('/auth/me', { signal });
+    const user = res?.data ?? res;
+    return user;
   },
 
   /**

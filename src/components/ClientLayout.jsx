@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-
+import UserAvatar from '../components/UserAvatar';
 import NewDashboard from '../pages/client/NewDashboard';
 import ClientServicesPage from '../pages/client/ClientServicesPage';
 import ClientInvoicesPage from '../pages/client/ClientInvoicesPage';
@@ -228,28 +228,17 @@ const ClientLayout = () => {
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                   className="flex items-center space-x-3 p-2 rounded-xl hover:bg-accent transition-colors"
                 >
-                  <div
-                    className="
-                      w-8 h-8 bg-gradient-primary rounded-full
-                      grid place-items-center select-none
-                      text-sm font-semibold uppercase
-                      text-[#222222] dark:text-white
-                      border border-black/10 dark:border-white/20
-                      shadow-sm
-                    "
-                  >
-                    {user?.first_name?.[0] ?? user?.name?.[0] ?? "U"}
-                  </div>
+                  <UserAvatar user={user} size={32} />
                   <div className="hidden sm:block text-left">
                     <p className="text-sm font-medium text-foreground">
-                      {[user?.first_name, user?.last_name]
+                      {[user?.data?.first_name, user?.data?.last_name]
                         .filter(Boolean)
                         .join(" ") ||
-                        user?.name ||
+                        user?.data?.name ||
                         "Usuario"}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {user?.email}
+                      {user?.data?.email}
                     </p>
                   </div>
                   <ChevronDown className="w-4 h-4 text-muted-foreground" />
@@ -273,7 +262,7 @@ const ClientLayout = () => {
                          supports-[backdrop-filter]:dark:bg-[#121417]/80
                          border border-black/10 dark:border-white/10
                          shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.45)]
-                         text-foreground   /* <-- texto de alto contraste por defecto */
+                         text-foreground
                         "
                     >
                       {/* Caret */}
@@ -290,14 +279,14 @@ const ClientLayout = () => {
                       {/* Header */}
                       <div className="px-3 py-2 border-b border-black/10 dark:border-white/10">
                         <p className="font-semibold">
-                          {[user?.first_name, user?.last_name]
+                          {[user?.data?.first_name, user?.data?.last_name]
                             .filter(Boolean)
                             .join(" ") ||
-                            user?.name ||
+                            user?.data?.name ||
                             "Usuario"}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {user?.email}
+                          {user?.data?.email}
                         </p>
                       </div>
 
