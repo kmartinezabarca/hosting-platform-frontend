@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import authService from '../services/authService';
 
 /**
@@ -28,7 +28,6 @@ export const useLoginWithGoogle = () => {
   return useMutation({
     mutationFn: authService.loginWithGoogle,
     onSuccess: () => {
-      // Al hacer login, invalidamos la query del usuario para que se refresque.
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
     },
     onError: (error) => {

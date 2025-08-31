@@ -8,7 +8,7 @@ import Transactions from '../../components/invoices/Transactions';
 import PaymentModal from '../../components/invoices/PaymentModal';
 import InvoiceDetailModal from '../../components/invoices/InvoiceDetailModal';
 import AddPaymentMethodModal from '../../components/invoices/AddPaymentMethodModal';
-import invoicesService from '../../services/invoices';
+import invoicesService from '../../services/invoiceService';
 
 /**
  * Main page for clients to view and manage their invoices, payment methods

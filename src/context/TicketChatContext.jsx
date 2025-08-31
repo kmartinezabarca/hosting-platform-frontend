@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import { useAuth } from "./AuthContext";
 import TicketChatDock from "../components/tickets/TicketChatDock";
-import ticketsService from "../services/tickets"; // Este servicio lo vamos a revisar en el Paso 2
+import ticketsService from "../services/ticketService"; // Este servicio lo vamos a revisar en el Paso 2
 
 const TicketChatContext = createContext(null);
 

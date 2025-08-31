@@ -7,7 +7,7 @@ import logoROKE from '../assets/ROKEIndustriesFusionLogo.png';
 
 const Verify2FAPage = () => {
   const [code, setCode] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const location = useLocation();

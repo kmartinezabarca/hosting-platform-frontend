@@ -7,7 +7,7 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { paymentService } from "../services/paymentService";
-import { servicesService } from "../services/services";
+import { servicesService } from "../services/serviceService";
 
 // Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);

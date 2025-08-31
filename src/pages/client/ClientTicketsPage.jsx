@@ -6,7 +6,7 @@ import TicketsHeader from "../../components/tickets/TicketsHeader";
 import TicketsList from "../../components/tickets/TicketsList";
 import TicketCreateModal from "../../components/tickets/TicketCreateModal";
 import { useTicketChat } from "../../context/TicketChatContext";
-import ticketsService from "../../services/tickets";
+import ticketsService from "../../services/ticketService";
 
 // Map de categoría (UI) -> department (API)
 const categoryToDepartment = {

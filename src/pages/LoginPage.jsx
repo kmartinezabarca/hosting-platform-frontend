@@ -24,7 +24,7 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const { mutate: login, isLoading: isLoginLoading } = useLogin();
-  const { mutate: loginWithGoogle, isLoading: isGoogleLoginLoading } = useLoginWithGoogle();
+  const { mutateAsync: loginWithGoogle, isPending: isGoogleLoginLoading } = useLoginWithGoogle();
   const isLoading = isLoginLoading || isGoogleLoginLoading;
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -81,6 +81,7 @@ const LoginPage = () => {
   };
 
   function normalizeAuthResponse(resp) {
+    console.log("Normalizando respuesta de autenticación:", resp);
     return {
       token: resp.token || resp.access_token || null,
       tokenType: resp.token_type || "Bearer",
@@ -127,7 +128,6 @@ const LoginPage = () => {
     } catch (err) {
       console.error("Error en el flujo de autenticación con Google:", err);
       setError(err.message || "No se pudo completar el inicio de sesión.");
-    } finally {
     }
   };
 

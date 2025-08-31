@@ -13,7 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 import ServiceFilters from '../../components/services/service-filters';
 import ServiceCard from '../../components/services/service-card';
 import ServiceDetailModal from '../../components/services/service-detail-modal';
-import { servicesService } from '../../services/services';
+import { servicesService } from '../../services/serviceService';
 
 const ClientServicesPage = () => {
   const { user } = useAuth();

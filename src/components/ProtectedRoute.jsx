@@ -5,7 +5,7 @@ import authService from '../services/authService';
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
   const isAuthenticated = authService.isAuthenticated();
   const isAdmin = authService.isAdmin();
-  const user = authService.getCurrentUser();
+  const user = JSON.parse(localStorage.getItem("user_data"));
 
   // Check if user is authenticated
   if (!isAuthenticated) {

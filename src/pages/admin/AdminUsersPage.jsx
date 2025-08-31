@@ -27,7 +27,7 @@ import {
   Shield,
   AlertTriangle
 } from 'lucide-react';
-import usersService from '../../services/users';
+import usersService from '../../services/userService';
 
 const AdminUsersPage = () => {
   const [users, setUsers] = useState([]);

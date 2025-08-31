@@ -14,7 +14,7 @@ import {
   CheckCircle,
   Loader2
 } from 'lucide-react';
-import invoicesService from '../../services/invoices';
+import invoicesService from '../../services/invoiceService';
 
 // Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);

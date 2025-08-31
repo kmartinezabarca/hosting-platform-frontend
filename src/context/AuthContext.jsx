@@ -1,16 +1,12 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import authService from '@/services/authService';
-import { useQueryClient } from '@tanstack/react-query';
-import { useCurrentUser } from '@/hooks/useAuth'; // Importar el nuevo hook
+import React, { createContext, useContext } from 'react';
+import { useCurrentUser } from '@/hooks/useAuth';
+import {  useLogin, useLoginWithGoogle, useVerify2FA, useLogout, useRegister } from '@/hooks/useAuth';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const queryClient = useQueryClient();
-  const { data: user, isLoading: loading, refetch: refetchUser } = useCurrentUser(); // Usar el hook useCurrentUser
 
-  // Las funciones de login, register, etc., ahora invalidarán la caché de 'auth', 'me'
-  // para que useCurrentUser refetchee automáticamente.
+  const { data: user, isLoading: loading, refetch: refetchUser } = useCurrentUser();
 
   const { mutateAsync: loginMutation } = useLogin();
   const login = async (email, password) => {
