@@ -6,12 +6,12 @@ import authService from '../services/authService';
  */
 export const useLogin = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: authService.login,
     onSuccess: () => {
-      // Limpiar cache al hacer login exitoso
-      queryClient.clear();
+      // Al hacer login, invalidamos la query del usuario para que se refresque.
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
     },
     onError: (error) => {
       console.error("Error al iniciar sesión", error);
@@ -28,8 +28,8 @@ export const useLoginWithGoogle = () => {
   return useMutation({
     mutationFn: authService.loginWithGoogle,
     onSuccess: () => {
-      // Limpiar cache al hacer login exitoso con Google
-      queryClient.clear();
+      // Al hacer login, invalidamos la query del usuario para que se refresque.
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
     },
     onError: (error) => {
       console.error("Error al iniciar sesión con Google", error);
@@ -41,8 +41,13 @@ export const useLoginWithGoogle = () => {
  * Hook para registrar usuario
  */
 export const useRegister = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: authService.register,
+    onSuccess: () => {
+      // Al registrarse, invalidamos la query del usuario para que se refresque.
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+    },
     onError: (error) => {
       console.error("Error al registrar usuario", error);
     },
@@ -54,12 +59,12 @@ export const useRegister = () => {
  */
 export const useVerify2FA = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: authService.verify2FA,
     onSuccess: () => {
-      // Limpiar cache al verificar 2FA exitosamente
-      queryClient.clear();
+      // Al verificar 2FA, invalidamos la query del usuario para que se refresque.
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
     },
     onError: (error) => {
       console.error("Error al verificar 2FA", error);
@@ -72,12 +77,14 @@ export const useVerify2FA = () => {
  */
 export const useLogout = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: authService.logout,
     onSuccess: () => {
-      // Limpiar todo el cache al hacer logout
-      queryClient.clear();
+      // Al hacer logout, removemos la query del usuario de la caché.
+      queryClient.removeQueries({ queryKey: ['auth', 'me'] });
+      // Opcional: setear los datos a null para una actualización instantánea en la UI
+      queryClient.setQueryData(['auth', 'me'], null);
     },
     onError: (error) => {
       console.error("Error al cerrar sesión", error);
