@@ -34,7 +34,7 @@ const updatePassword = async (payload) => {
 };
 
 export const useProfile = () => {
-  return useQuery({ queryKey: ['profile'], queryFn: getProfile });
+  return useQuery({ queryKey: ['profile'], queryFn: getProfile, select: (data) => data.data, });
 };
 
 export const useUpdateProfile = () => {

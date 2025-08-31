@@ -31,8 +31,8 @@ apiClient.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       console.error('Unauthorized, logging out...');
       // Opcional: limpiar token y redirigir al login
-      // localStorage.removeItem('auth_token');
-      // window.location.href = '/login';
+      localStorage.removeItem('auth_token');
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
