@@ -10,23 +10,23 @@ export const AuthProvider = ({ children }) => {
   const queryClient = useQueryClient();
 
   // Al montar, si hay token → traer usuario real
-  useEffect(() => {
-    const boot = async () => {
-      try {
-        if (authService.isAuthenticated()) {
-          const me = await authService.getCurrentUser();
-          setUser(me);
-        }
-      } catch {
-        // token inválido
-        localStorage.removeItem('auth_token');
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    boot();
-  }, []);
+  // useEffect(() => {
+  //   const boot = async () => {
+  //     try {
+  //       if (authService.isAuthenticated()) {
+  //         const me = await authService.getCurrentUser();
+  //         setUser(me);
+  //       }
+  //     } catch {
+  //       // token inválido
+  //       localStorage.removeItem('auth_token');
+  //       setUser(null);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   boot();
+  // }, []);
 
   const login = async (email, password) => {
     const res = await authService.login({ email, password });
