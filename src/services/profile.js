@@ -1,32 +1,72 @@
-import { apiFetch } from './api_v2';
+import apiClient from './apiClient';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-const profileService = {
-  async get() {
-    return apiFetch('/profile', { method: 'GET' });
-  },
-
-  async update(payload) {
-    return apiFetch('/profile', { method: 'PUT', body: payload });
-  },
-
-  async uploadAvatar(file) {
-    const form = new FormData();
-    form.append('avatar', file);
-
-    return apiFetch('/profile/avatar', {
-      method: 'POST',
-      isForm: true,
-      body: form,
-    });
-  },
-
-  async getSecurity() {
-    return apiFetch('/profile/security', { method: 'GET' });
-  },
-
-  async updatePassword(payload) {
-    return apiFetch('/profile/password', { method: 'PUT', body: payload });
-  },
+const getProfile = async () => {
+  const response = await apiClient.get('/profile');
+  return response.data;
 };
 
-export default profileService;
+const updateProfile = async (payload) => {
+  const response = await apiClient.put('/profile', payload);
+  return response.data;
+};
+
+const uploadAvatar = async (file) => {
+  const formData = new FormData();
+  formData.append('avatar', file);
+  
+  const response = await apiClient.post('/profile/avatar', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
+const getSecurity = async () => {
+  const response = await apiClient.get('/profile/security');
+  return response.data;
+};
+
+const updatePassword = async (payload) => {
+  const response = await apiClient.put('/profile/password', payload);
+  return response.data;
+};
+
+export const useProfile = () => {
+  return useQuery({ queryKey: ['profile'], queryFn: getProfile });
+};
+
+export const useUpdateProfile = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateProfile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
+};
+
+export const useUploadAvatar = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: uploadAvatar,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
+};
+
+export const useSecurity = () => {
+  return useQuery({ queryKey: ['security'], queryFn: getSecurity });
+};
+
+export const useUpdatePassword = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updatePassword,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['security'] });
+    },
+  });
+};

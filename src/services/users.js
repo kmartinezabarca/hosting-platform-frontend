@@ -1,4 +1,4 @@
-import api from './api';
+import apiClient from './apiClient';
 
 const usersService = {
   // Obtener todos los usuarios (admin)
@@ -14,49 +14,49 @@ const usersService = {
     const queryString = queryParams.toString();
     const url = queryString ? `/admin/users?${queryString}` : '/admin/users';
     
-    const response = await api.get(url);
+    const response = await apiClient.get(url);
     return response.data;
   },
 
   // Obtener un usuario específico
   getById: async (id) => {
-    const response = await api.get(`/admin/users/${id}`);
+    const response = await apiClient.get(`/admin/users/${id}`);
     return response.data;
   },
 
   // Crear nuevo usuario
   create: async (userData) => {
-    const response = await api.post('/admin/users', userData);
+    const response = await apiClient.post('/admin/users', userData);
     return response.data;
   },
 
   // Actualizar usuario
   update: async (id, userData) => {
-    const response = await api.put(`/admin/users/${id}`, userData);
+    const response = await apiClient.put(`/admin/users/${id}`, userData);
     return response.data;
   },
 
   // Eliminar usuario
   delete: async (id) => {
-    const response = await api.delete(`/admin/users/${id}`);
+    const response = await apiClient.delete(`/admin/users/${id}`);
     return response.data;
   },
 
   // Cambiar estado del usuario
   changeStatus: async (id, status) => {
-    const response = await api.put(`/admin/users/${id}/status`, { status });
+    const response = await apiClient.put(`/admin/users/${id}/status`, { status });
     return response.data;
   },
 
   // Obtener estadísticas de usuarios
   getStats: async () => {
-    const response = await api.get('/admin/users/stats');
+    const response = await apiClient.get('/admin/users/stats');
     return response.data;
   },
 
   // Obtener actividad reciente de usuarios
   getRecentActivity: async (limit = 10) => {
-    const response = await api.get(`/admin/users/recent-activity?limit=${limit}`);
+    const response = await apiClient.get(`/admin/users/recent-activity?limit=${limit}`);
     return response.data;
   }
 };

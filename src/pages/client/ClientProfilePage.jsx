@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-// Services
-import profileService from "../../services/profile";
-import twoFactorService from "../../services/twoFactor";
-import sessionsService from "../../services/sessions";
+// React Query hooks
+import { useProfile, useUpdateProfile, useUploadAvatar, useSecurity, useUpdatePassword } from "../../services/profile";
+import { useGenerate2FA, useEnable2FA, useDisable2FA } from "../../services/twoFactor";
+import { useSessions, useLogoutSession } from "../../services/sessions";
 
 // Componentes del perfil
 import ProfileHeader from "../../components/profile/ProfileHeader";
@@ -15,122 +15,44 @@ import DevicesSection from "../../components/profile/DevicesSection";
 
 const ClientProfilePageNew = () => {
   const [activeTab, setActiveTab] = useState("profile");
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
-  // Estados del perfil
-  const [profile, setProfile] = useState({
-    first_name: "",
-    last_name: "",
-    email: "",
-    phone: "",
-    address: "",
-    city: "",
-    state: "",
-    country: "MX",
-    postal_code: "",
-    avatar_url: "",
-    created_at: null,
-    services_count: 0,
-    email_verified_at: null,
-  });
+  // React Query hooks
+  const { data: profile, isLoading: profileLoading, error: profileError } = useProfile();
+  const { data: security, isLoading: securityLoading, error: securityError } = useSecurity();
+  const { data: devices = [], isLoading: devicesLoading, error: devicesError } = useSessions();
 
-  // Estados de seguridad
-  const [security, setSecurity] = useState({
-    two_factor_enabled: false,
-    password_last_changed: null,
-    security_score: 0,
-  });
+  // Mutations
+  const updateProfileMutation = useUpdateProfile();
+  const uploadAvatarMutation = useUploadAvatar();
+  const updatePasswordMutation = useUpdatePassword();
+  const generate2FAMutation = useGenerate2FA();
+  const enable2FAMutation = useEnable2FA();
+  const disable2FAMutation = useDisable2FA();
+  const logoutSessionMutation = useLogoutSession();
 
   // Estados de 2FA
   const [qrCode, setQrCode] = useState("");
   const [twoFactorSecret, setTwoFactorSecret] = useState("");
-  const [saving2FA, setSaving2FA] = useState(false);
-  const [savingPassword, setSavingPassword] = useState(false);
 
-  // Estados de dispositivos
-  const [devices, setDevices] = useState([]);
-
-  useEffect(() => {
-    loadAllData();
-  }, []);
-
-  const loadAllData = async () => {
-    setLoading(true);
-    try {
-      await Promise.all([
-        loadProfileData(),
-        loadSecurityData(),
-        loadDevicesData(),
-      ]);
-    } catch (error) {
-      console.error("Error loading data:", error);
-      toast.error(error.message || "Error al cargar los datos del perfil");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadProfileData = async () => {
-    try {
-      const res = await profileService.get();
-      if (res?.success && res.data) {
-        setProfile((prev) => ({ ...prev, ...res.data }));
-      }
-    } catch (error) {
-      console.error("Error loading profile:", error);
-    }
-  };
-
-  const loadSecurityData = async () => {
-    try {
-      const res = await profileService.getSecurity();
-      if (res?.success && res.data) {
-        setSecurity(res.data);
-      }
-    } catch (error) {
-      console.error("Error loading security data:", error);
-    }
-  };
-
-  const loadDevicesData = async () => {
-    try {
-      const res = await sessionsService.list();
-      if (res?.success) setDevices(res.data || []);
-    } catch (error) {
-      console.error("Error loading devices:", error);
-    }
-  };
+  const loading = profileLoading || securityLoading || devicesLoading;
+  const error = profileError || securityError || devicesError;
 
   // Actualizar perfil
   const handleProfileUpdate = async (updatedProfile) => {
-    setSaving(true);
     try {
-      const res = await profileService.update(updatedProfile);
-      if (res?.success) {
-        setProfile(res.data);
-        toast.success("Perfil actualizado exitosamente");
-      } else {
-        toast.error(res?.message || "Error al actualizar el perfil");
-      }
+      await updateProfileMutation.mutateAsync(updatedProfile);
+      toast.success("Perfil actualizado exitosamente");
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error(error.message || "Error de conexión");
-    } finally {
-      setSaving(false);
+      toast.error(error.message || "Error al actualizar el perfil");
     }
   };
 
   // Cambio de avatar
   const handleAvatarChange = async (file) => {
     try {
-      const res = await profileService.uploadAvatar(file);
-      if (res?.success) {
-        setProfile((prev) => ({ ...prev, avatar_url: res.data.avatar_url }));
-        toast.success("Avatar actualizado exitosamente");
-      } else {
-        toast.error(res?.message || "Error al actualizar el avatar");
-      }
+      await uploadAvatarMutation.mutateAsync(file);
+      toast.success("Avatar actualizado exitosamente");
     } catch (error) {
       console.error("Error updating avatar:", error);
       toast.error(error.message || "Error al subir la imagen");
@@ -139,74 +61,57 @@ const ClientProfilePageNew = () => {
 
   // Funciones de 2FA
   const handle2FAGenerate = async () => {
-    setSaving2FA(true);
     try {
-      const res = await twoFactorService.generate();
-      if (res?.success) {
-        setQrCode(res.data.qr_code);
-        setTwoFactorSecret(res.data.secret);
-      } else {
-        toast.error(res?.message || "Error al generar 2FA");
-      }
+      const res = await generate2FAMutation.mutateAsync();
+      setQrCode(res.qr_code);
+      setTwoFactorSecret(res.secret);
     } catch (error) {
       console.error("Error generating 2FA:", error);
-      toast.error(error.message || "Error de conexión");
-    } finally {
-      setSaving2FA(false);
+      toast.error(error.message || "Error al generar 2FA");
     }
   };
 
   const handle2FAEnable = async (verificationCode) => {
-    setSaving2FA(true);
     try {
-      const res = await twoFactorService.enable(verificationCode);
-      if (res?.success) {
-        setSecurity((prev) => ({ ...prev, two_factor_enabled: true }));
-        setQrCode("");
-        setTwoFactorSecret("");
-        toast.success("2FA activado exitosamente");
-      } else {
-        toast.error(res?.message || "Código de verificación inválido");
-      }
+      await enable2FAMutation.mutateAsync(verificationCode);
+      setQrCode("");
+      setTwoFactorSecret("");
+      toast.success("2FA activado exitosamente");
     } catch (error) {
       console.error("Error enabling 2FA:", error);
-      toast.error(error.message || "Error de conexión");
-    } finally {
-      setSaving2FA(false);
+      toast.error(error.message || "Código de verificación inválido");
     }
   };
 
   const handle2FADisable = async () => {
-    setSaving2FA(true);
     try {
-      const res = await twoFactorService.disable();
-      if (res?.success) {
-        setSecurity((prev) => ({ ...prev, two_factor_enabled: false }));
-        toast.success("2FA desactivado");
-      } else {
-        toast.error(res?.message || "Error al desactivar 2FA");
-      }
+      await disable2FAMutation.mutateAsync();
+      toast.success("2FA desactivado");
     } catch (error) {
       console.error("Error disabling 2FA:", error);
-      toast.error(error.message || "Error de conexión");
-    } finally {
-      setSaving2FA(false);
+      toast.error(error.message || "Error al desactivar 2FA");
+    }
+  };
+
+  // Actualizar contraseña
+  const handlePasswordUpdate = async (passwordData) => {
+    try {
+      await updatePasswordMutation.mutateAsync(passwordData);
+      toast.success("Contraseña actualizada correctamente");
+    } catch (error) {
+      console.error("Error updating password:", error);
+      toast.error(error.message || "Error al actualizar la contraseña");
     }
   };
 
   // Cerrar sesión en dispositivo
   const handleLogoutDevice = async (deviceIdOrUuid) => {
     try {
-      const res = await sessionsService.logoutOne(deviceIdOrUuid);
-      if (res?.success) {
-        setDevices((prev) => prev.filter((d) => (d.uuid || d.id) !== deviceIdOrUuid));
-        toast.success("Sesión cerrada exitosamente");
-      } else {
-        toast.error(res?.message || "Error al cerrar sesión");
-      }
+      await logoutSessionMutation.mutateAsync(deviceIdOrUuid);
+      toast.success("Sesión cerrada exitosamente");
     } catch (error) {
       console.error("Error logging out device:", error);
-      toast.error(error.message || "Error de conexión");
+      toast.error(error.message || "Error al cerrar sesión");
     }
   };
 
@@ -216,6 +121,22 @@ const ClientProfilePageNew = () => {
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto" />
           <p className="text-slate-600 dark:text-slate-400">Cargando perfil...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="text-center space-y-4">
+          <p className="text-red-600">Error al cargar el perfil</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Reintentar
+          </button>
         </div>
       </div>
     );
@@ -231,21 +152,21 @@ const ClientProfilePageNew = () => {
             <PersonalInfoSection
               profile={profile}
               onUpdate={handleProfileUpdate}
-              saving={saving}
+              saving={updateProfileMutation.isPending}
             />
           )}
 
           {activeTab === "security" && (
             <SecuritySection
               security={security}
-              onPasswordUpdate={handle2FAEnable ? undefined : undefined} // (si tienes sección de password aquí)
+              onPasswordUpdate={handlePasswordUpdate}
               on2FAGenerate={handle2FAGenerate}
               on2FAEnable={handle2FAEnable}
               on2FADisable={handle2FADisable}
               qrCode={qrCode}
               twoFactorSecret={twoFactorSecret}
-              saving2FA={saving2FA}
-              savingPassword={false}
+              saving2FA={generate2FAMutation.isPending || enable2FAMutation.isPending || disable2FAMutation.isPending}
+              savingPassword={updatePasswordMutation.isPending}
             />
           )}
 

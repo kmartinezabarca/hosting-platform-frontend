@@ -13,7 +13,9 @@ import {
 import { useNavigate } from "react-router-dom";
 import BillingCycleSwitch from "../../components/pricing/billing-cycle-switch";
 import PricingCard from "../../components/pricing/pricing-card";
-import apiService from "../../services/api";
+import { useCategories } from "../../services/categoryService";
+import { useBillingCycles } from "../../services/billingCycleService";
+import { useServicePlans } from "../../services/servicePlanService";
 
 const ContractServicePage = () => {
   const navigate = useNavigate();
@@ -21,12 +23,10 @@ const ContractServicePage = () => {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [billingCycle, setBillingCycle] = useState("monthly");
   
-  // Dynamic data states
-  const [categories, setCategories] = useState([]);
-  const [billingCycles, setBillingCycles] = useState([]);
-  const [servicePlans, setServicePlans] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // React Query hooks
+  const { data: categories = [], isLoading: categoriesLoading, error: categoriesError } = useCategories();
+  const { data: billingCycles = [], isLoading: billingCyclesLoading, error: billingCyclesError } = useBillingCycles();
+  const { data: servicePlans = [], isLoading: servicePlansLoading, error: servicePlansError } = useServicePlans();
 
   // Icon mapping for categories
   const iconMap = {
@@ -36,61 +36,33 @@ const ContractServicePage = () => {
     Database,
   };
 
-  // Load initial data
+  // Set default values when data loads
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    if (categories.length > 0 && !selectedCategory) {
+      setSelectedCategory(categories[0].slug);
+    }
+  }, [categories, selectedCategory]);
 
-        // Load categories, billing cycles, and service plans in parallel
-        const [categoriesResponse, billingCyclesResponse, servicePlansResponse] = await Promise.all([
-          apiService.getCategories(),
-          apiService.getBillingCycles(),
-          apiService.getServicePlans(),
-        ]);
+  useEffect(() => {
+    if (billingCycles.length > 0 && !billingCycle) {
+      setBillingCycle(billingCycles[0].slug);
+    }
+  }, [billingCycles, billingCycle]);
 
-        if (categoriesResponse.success) {
-          setCategories(categoriesResponse.data);
-          // Set first category as default if available
-          if (categoriesResponse.data.length > 0) {
-            setSelectedCategory(categoriesResponse.data[0].slug);
-          }
-        }
-
-        if (billingCyclesResponse.success) {
-          setBillingCycles(billingCyclesResponse.data);
-          // Set first billing cycle as default if available
-          if (billingCyclesResponse.data.length > 0) {
-            setBillingCycle(billingCyclesResponse.data[0].slug);
-          }
-        }
-
-        if (servicePlansResponse.success) {
-          // Group service plans by category slug
-          const plansByCategory = {};
-          servicePlansResponse.data.forEach(plan => {
-            const categorySlug = plan.category?.slug;
-            if (categorySlug) {
-              if (!plansByCategory[categorySlug]) {
-                plansByCategory[categorySlug] = [];
-              }
-              plansByCategory[categorySlug].push(plan);
-            }
-          });
-          setServicePlans(plansByCategory);
-        }
-
-      } catch (err) {
-        console.error('Error loading data:', err);
-        setError('Error al cargar los datos. Por favor, intenta de nuevo.');
-      } finally {
-        setLoading(false);
+  // Group service plans by category slug
+  const plansByCategory = servicePlans.reduce((acc, plan) => {
+    const categorySlug = plan.category?.slug;
+    if (categorySlug) {
+      if (!acc[categorySlug]) {
+        acc[categorySlug] = [];
       }
-    };
+      acc[categorySlug].push(plan);
+    }
+    return acc;
+  }, {});
 
-    loadData();
-  }, []);
+  const loading = categoriesLoading || billingCyclesLoading || servicePlansLoading;
+  const error = categoriesError || billingCyclesError || servicePlansError;
   
   const handleProceedToCheckout = () => {
     if (selectedPlan) {
@@ -117,8 +89,8 @@ const ContractServicePage = () => {
   }));
 
   const transformedServicePlans = {};
-  Object.keys(servicePlans).forEach(categorySlug => {
-    transformedServicePlans[categorySlug] = servicePlans[categorySlug].map(plan => {
+  Object.keys(plansByCategory).forEach(categorySlug => {
+    transformedServicePlans[categorySlug] = plansByCategory[categorySlug].map(plan => {
       // Build pricing object from plan_pricing relationships
       const pricing = {};
       if (plan.pricing && Array.isArray(plan.pricing)) {

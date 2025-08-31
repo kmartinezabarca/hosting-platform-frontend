@@ -10,10 +10,24 @@ import Verify2FAPage from './pages/Verify2FAPage';
 import ProfileDemo from './pages/ProfileDemo';
 import ProtectedRoute from './components/ProtectedRoute';
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutos
+      refetchOnWindowFocus: false,
+      retry: 2,
+    },
+  },
+});
+
 function App() {
   return (
-    <Router>
-      <Routes>
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -70,6 +84,8 @@ function App() {
         } />
       </Routes>
     </Router>
+    <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 }
 

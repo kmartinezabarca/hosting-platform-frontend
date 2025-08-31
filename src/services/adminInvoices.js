@@ -1,4 +1,4 @@
-import api from './api';
+import apiClient from './apiClient';
 
 const adminInvoicesService = {
   // Obtener todas las facturas (admin)
@@ -16,61 +16,61 @@ const adminInvoicesService = {
     const queryString = queryParams.toString();
     const url = queryString ? `/admin/invoices?${queryString}` : '/admin/invoices';
     
-    const response = await api.get(url);
+    const response = await apiClient.get(url);
     return response.data;
   },
 
   // Obtener una factura específica
   getById: async (id) => {
-    const response = await api.get(`/admin/invoices/${id}`);
+    const response = await apiClient.get(`/admin/invoices/${id}`);
     return response.data;
   },
 
   // Crear nueva factura
   create: async (invoiceData) => {
-    const response = await api.post('/admin/invoices', invoiceData);
+    const response = await apiClient.post('/admin/invoices', invoiceData);
     return response.data;
   },
 
   // Actualizar factura
   update: async (id, invoiceData) => {
-    const response = await api.put(`/admin/invoices/${id}`, invoiceData);
+    const response = await apiClient.put(`/admin/invoices/${id}`, invoiceData);
     return response.data;
   },
 
   // Eliminar factura
   delete: async (id) => {
-    const response = await api.delete(`/admin/invoices/${id}`);
+    const response = await apiClient.delete(`/admin/invoices/${id}`);
     return response.data;
   },
 
   // Marcar factura como pagada
   markAsPaid: async (id, paymentData) => {
-    const response = await api.post(`/admin/invoices/${id}/mark-paid`, paymentData);
+    const response = await apiClient.post(`/admin/invoices/${id}/mark-paid`, paymentData);
     return response.data;
   },
 
   // Cambiar estado de factura
   updateStatus: async (id, status) => {
-    const response = await api.put(`/admin/invoices/${id}/status`, { status });
+    const response = await apiClient.put(`/admin/invoices/${id}/status`, { status });
     return response.data;
   },
 
   // Cancelar factura
   cancel: async (id, reason) => {
-    const response = await api.post(`/admin/invoices/${id}/cancel`, { reason });
+    const response = await apiClient.post(`/admin/invoices/${id}/cancel`, { reason });
     return response.data;
   },
 
   // Enviar recordatorio de pago
   sendReminder: async (id) => {
-    const response = await api.post(`/admin/invoices/${id}/send-reminder`);
+    const response = await apiClient.post(`/admin/invoices/${id}/send-reminder`);
     return response.data;
   },
 
   // Generar PDF de factura
   generatePdf: async (id) => {
-    const response = await api.get(`/admin/invoices/${id}/pdf`, {
+    const response = await apiClient.get(`/admin/invoices/${id}/pdf`, {
       responseType: 'blob'
     });
     return response.data;
@@ -78,19 +78,19 @@ const adminInvoicesService = {
 
   // Obtener estadísticas de facturas
   getStats: async () => {
-    const response = await api.get('/admin/invoices/stats');
+    const response = await apiClient.get('/admin/invoices/stats');
     return response.data;
   },
 
   // Obtener facturas por usuario
   getByUser: async (userId) => {
-    const response = await api.get(`/admin/users/${userId}/invoices`);
+    const response = await apiClient.get(`/admin/users/${userId}/invoices`);
     return response.data;
   },
 
   // Obtener facturas vencidas
   getOverdue: async () => {
-    const response = await api.get('/admin/invoices/overdue');
+    const response = await apiClient.get('/admin/invoices/overdue');
     return response.data;
   },
 
@@ -105,7 +105,7 @@ const adminInvoicesService = {
     const queryString = queryParams.toString();
     const url = queryString ? `/admin/invoices/revenue-report?${queryString}` : '/admin/invoices/revenue-report';
     
-    const response = await api.get(url);
+    const response = await apiClient.get(url);
     return response.data;
   }
 };

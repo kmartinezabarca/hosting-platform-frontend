@@ -1,15 +1,43 @@
-import { apiFetch } from './api_v2';
+import apiClient from './apiClient';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-const twoFactorService = {
-  async generate() {
-    return apiFetch('/2fa/generate', { method: 'POST' });
-  },
-  async enable(code) {
-    return apiFetch('/2fa/enable', { method: 'POST', body: { code } });
-  },
-  async disable() {
-    return apiFetch('/2fa/disable', { method: 'POST' });
-  },
+const generate2FA = async () => {
+  const response = await apiClient.post('/2fa/generate');
+  return response.data;
 };
 
-export default twoFactorService;
+const enable2FA = async (code) => {
+  const response = await apiClient.post('/2fa/enable', { code });
+  return response.data;
+};
+
+const disable2FA = async () => {
+  const response = await apiClient.post('/2fa/disable');
+  return response.data;
+};
+
+export const useGenerate2FA = () => {
+  return useMutation({ mutationFn: generate2FA });
+};
+
+export const useEnable2FA = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: enable2FA,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['security'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
+};
+
+export const useDisable2FA = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: disable2FA,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['security'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
+};

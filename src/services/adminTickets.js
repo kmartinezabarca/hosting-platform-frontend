@@ -1,4 +1,4 @@
-import api from './api';
+import apiClient from './apiClient';
 
 const adminTicketsService = {
   // Obtener todos los tickets (admin)
@@ -17,109 +17,109 @@ const adminTicketsService = {
     const queryString = queryParams.toString();
     const url = queryString ? `/admin/tickets?${queryString}` : '/admin/tickets';
     
-    const response = await api.get(url);
+    const response = await apiClient.get(url);
     return response.data;
   },
 
   // Obtener un ticket específico
   getById: async (id) => {
-    const response = await api.get(`/admin/tickets/${id}`);
+    const response = await apiClient.get(`/admin/tickets/${id}`);
     return response.data;
   },
 
   // Crear nuevo ticket
   create: async (ticketData) => {
-    const response = await api.post('/admin/tickets', ticketData);
+    const response = await apiClient.post('/admin/tickets', ticketData);
     return response.data;
   },
 
   // Actualizar ticket
   update: async (id, ticketData) => {
-    const response = await api.put(`/admin/tickets/${id}`, ticketData);
+    const response = await apiClient.put(`/admin/tickets/${id}`, ticketData);
     return response.data;
   },
 
   // Eliminar ticket
   delete: async (id) => {
-    const response = await api.delete(`/admin/tickets/${id}`);
+    const response = await apiClient.delete(`/admin/tickets/${id}`);
     return response.data;
   },
 
   // Cambiar estado del ticket
   changeStatus: async (id, status) => {
-    const response = await api.put(`/admin/tickets/${id}/status`, { status });
+    const response = await apiClient.put(`/admin/tickets/${id}/status`, { status });
     return response.data;
   },
 
   // Cambiar prioridad del ticket
   changePriority: async (id, priority) => {
-    const response = await api.put(`/admin/tickets/${id}/priority`, { priority });
+    const response = await apiClient.put(`/admin/tickets/${id}/priority`, { priority });
     return response.data;
   },
 
   // Asignar ticket a un agente
   assign: async (id, agentId) => {
-    const response = await api.put(`/admin/tickets/${id}/assign`, { agent_id: agentId });
+    const response = await apiClient.put(`/admin/tickets/${id}/assign`, { agent_id: agentId });
     return response.data;
   },
 
   // Agregar respuesta al ticket
   addReply: async (id, replyData) => {
-    const response = await api.post(`/admin/tickets/${id}/reply`, replyData);
+    const response = await apiClient.post(`/admin/tickets/${id}/reply`, replyData);
     return response.data;
   },
 
   // Obtener respuestas del ticket
   getReplies: async (id) => {
-    const response = await api.get(`/admin/tickets/${id}/replies`);
+    const response = await apiClient.get(`/admin/tickets/${id}/replies`);
     return response.data;
   },
 
   // Cerrar ticket
   close: async (id, reason) => {
-    const response = await api.patch(`/admin/tickets/${id}/close`, { reason });
+    const response = await apiClient.patch(`/admin/tickets/${id}/close`, { reason });
     return response.data;
   },
 
   // Reabrir ticket
   reopen: async (id, reason) => {
-    const response = await api.patch(`/admin/tickets/${id}/reopen`, { reason });
+    const response = await apiClient.patch(`/admin/tickets/${id}/reopen`, { reason });
     return response.data;
   },
 
   // Obtener estadísticas de tickets
   getStats: async () => {
-    const response = await api.get('/admin/tickets/stats');
+    const response = await apiClient.get('/admin/tickets/stats');
     return response.data;
   },
 
   // Obtener tickets por usuario
   getByUser: async (userId) => {
-    const response = await api.get(`/admin/users/${userId}/tickets`);
+    const response = await apiClient.get(`/admin/users/${userId}/tickets`);
     return response.data;
   },
 
   // Obtener tickets asignados a un agente
   getByAgent: async (agentId) => {
-    const response = await api.get(`/admin/agents/${agentId}/tickets`);
+    const response = await apiClient.get(`/admin/agents/${agentId}/tickets`);
     return response.data;
   },
 
   // Obtener tickets por prioridad
   getByPriority: async (priority) => {
-    const response = await api.get(`/admin/tickets/priority/${priority}`);
+    const response = await apiClient.get(`/admin/tickets/priority/${priority}`);
     return response.data;
   },
 
   // Obtener categorías de tickets
   getCategories: async () => {
-    const response = await api.get('/admin/tickets/categories');
+    const response = await apiClient.get('/admin/tickets/categories');
     return response.data;
   },
 
   // Obtener agentes disponibles
   getAgents: async () => {
-    const response = await api.get('/admin/tickets/agents');
+    const response = await apiClient.get('/admin/tickets/agents');
     return response.data;
   },
 
@@ -133,7 +133,7 @@ const adminTicketsService = {
     const queryString = queryParams.toString();
     const url = queryString ? `/admin/tickets/performance?${queryString}` : '/admin/tickets/performance';
     
-    const response = await api.get(url);
+    const response = await apiClient.get(url);
     return response.data;
   }
 };

@@ -1,4 +1,4 @@
-import api from './api';
+import apiClient from './apiClient';
 
 const adminServicesService = {
   // Obtener todos los servicios (admin)
@@ -15,67 +15,67 @@ const adminServicesService = {
     const queryString = queryParams.toString();
     const url = queryString ? `/admin/services?${queryString}` : '/admin/services';
     
-    const response = await api.get(url);
+    const response = await apiClient.get(url);
     return response.data;
   },
 
   // Obtener un servicio específico
   getById: async (id) => {
-    const response = await api.get(`/admin/services/${id}`);
+    const response = await apiClient.get(`/admin/services/${id}`);
     return response.data;
   },
 
   // Crear nuevo servicio
   create: async (serviceData) => {
-    const response = await api.post('/admin/services', serviceData);
+    const response = await apiClient.post('/admin/services', serviceData);
     return response.data;
   },
 
   // Actualizar servicio
   update: async (id, serviceData) => {
-    const response = await api.put(`/admin/services/${id}`, serviceData);
+    const response = await apiClient.put(`/admin/services/${id}`, serviceData);
     return response.data;
   },
 
   // Eliminar servicio
   delete: async (id) => {
-    const response = await api.delete(`/admin/services/${id}`);
+    const response = await apiClient.delete(`/admin/services/${id}`);
     return response.data;
   },
 
   // Cambiar estado del servicio
   changeStatus: async (id, status) => {
-    const response = await api.patch(`/admin/services/${id}/status`, { status });
+    const response = await apiClient.patch(`/admin/services/${id}/status`, { status });
     return response.data;
   },
 
   // Suspender servicio
   suspend: async (id, reason) => {
-    const response = await api.patch(`/admin/services/${id}/suspend`, { reason });
+    const response = await apiClient.patch(`/admin/services/${id}/suspend`, { reason });
     return response.data;
   },
 
   // Reactivar servicio
   reactivate: async (id) => {
-    const response = await api.patch(`/admin/services/${id}/reactivate`);
+    const response = await apiClient.patch(`/admin/services/${id}/reactivate`);
     return response.data;
   },
 
   // Obtener estadísticas de servicios
   getStats: async () => {
-    const response = await api.get('/admin/services/stats');
+    const response = await apiClient.get('/admin/services/stats');
     return response.data;
   },
 
   // Obtener servicios por usuario
   getByUser: async (userId) => {
-    const response = await api.get(`/admin/users/${userId}/services`);
+    const response = await apiClient.get(`/admin/users/${userId}/services`);
     return response.data;
   },
 
   // Obtener historial de un servicio
   getHistory: async (id) => {
-    const response = await api.get(`/admin/services/${id}/history`);
+    const response = await apiClient.get(`/admin/services/${id}/history`);
     return response.data;
   }
 };
