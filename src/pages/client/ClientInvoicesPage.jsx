@@ -1,204 +1,221 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Receipt, CreditCard, TrendingUp, RefreshCw, AlertCircle } from 'lucide-react';
-import StatsCards from '../../components/invoices/StatsCards';
-import InvoicesList from '../../components/invoices/InvoicesList';
-import PaymentMethods from '../../components/invoices/PaymentMethods';
-import Transactions from '../../components/invoices/Transactions';
-import PaymentModal from '../../components/invoices/PaymentModal';
-import InvoiceDetailModal from '../../components/invoices/InvoiceDetailModal';
-import AddPaymentMethodModal from '../../components/invoices/AddPaymentMethodModal';
-import invoicesService from '../../services/invoiceService';
+import React, { useState } from "react";
+import {
+  Receipt,
+  CreditCard,
+  TrendingUp,
+  RefreshCw,
+  AlertCircle,
+} from "lucide-react";
 
-/**
- * Main page for clients to view and manage their invoices, payment methods
- * and transaction history. Data fetching is performed on mount and the UI
- * delegates presentation to child components.
- */
+// --- Hooks de React Query ---
+import {
+  useInvoices,
+  useInvoiceStats,
+  usePaymentMethods,
+  useTransactions,
+  useProcessPayment,
+  useSetDefaultPaymentMethod,
+  useDeletePaymentMethod,
+} from "../../hooks/useInvoices";
+
+// --- Componentes de UI ---
+import StatsCards from "../../components/invoices/StatsCards";
+import InvoicesList from "../../components/invoices/InvoicesList";
+import PaymentMethods from "../../components/invoices/PaymentMethods";
+import Transactions from "../../components/invoices/Transactions";
+import PaymentModal from "../../components/invoices/PaymentModal";
+import InvoiceDetailModal from "../../components/invoices/InvoiceDetailModal";
+import AddPaymentMethodModal from "../../components/invoices/AddPaymentMethodModal";
+import ConfirmationModal from "../../components/modals/ConfirmationModal";
+import { useToast } from '@/components/ToastProvider';
+
+// --- Componentes Internos para Estados de Carga y Error ---
+
+const PageSkeleton = () => (
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-pulse">
+    {/* Skeleton del Header */}
+    <div className="flex justify-between items-center mb-8">
+      <div className="space-y-2">
+        <div className="h-8 w-48 bg-muted rounded-md" />
+        <div className="h-5 w-72 bg-muted rounded-md" />
+      </div>
+    </div>
+    {/* Skeleton de las Stats Cards */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {[...Array(4)].map((_, i) => (
+        <div
+          key={i}
+          className="bg-card border border-border rounded-2xl p-6 h-28"
+        />
+      ))}
+    </div>
+    {/* Skeleton del Contenedor de Pestañas */}
+    <div className="bg-card border border-border rounded-2xl">
+      <div className="h-14 border-b border-border" />
+      <div className="p-6">
+        <div className="h-64 bg-muted rounded-lg" />
+      </div>
+    </div>
+  </div>
+);
+
+const ErrorState = ({ onRetry }) => (
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="text-center bg-card border border-dashed border-destructive/30 rounded-2xl p-12">
+      <div className="p-4 bg-destructive/10 rounded-full mb-4 inline-block">
+        <AlertCircle className="w-12 h-12 text-destructive" />
+      </div>
+      <h3 className="text-xl font-semibold text-foreground mb-2">
+        Ocurrió un Error
+      </h3>
+      <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+        No pudimos cargar los datos de facturación. Por favor, comprueba tu
+        conexión e inténtalo de nuevo.
+      </p>
+      <button
+        onClick={onRetry}
+        className="inline-flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg font-medium transition-colors"
+      >
+        <RefreshCw className="w-4 h-4" />
+        Reintentar
+      </button>
+    </div>
+  </div>
+);
+
 const ClientInvoicesPage = () => {
-  // Data sets
-  const [invoices, setInvoices] = useState([]);
-  const [paymentMethods, setPaymentMethods] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [invoiceStats, setInvoiceStats] = useState({});
-  const [transactionStats, setTransactionStats] = useState({});
-  const [paymentStats, setPaymentStats] = useState({});
-
-  // UI state
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('invoices');
-  const [filters, setFilters] = useState({ status: 'all', dateRange: 'all', search: '' });
-
-  // Modal state
+  // --- Estado de la UI (lo único que gestionamos manualmente) ---
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("invoices");
+  const [filters, setFilters] = useState({
+    status: "all",
+    dateRange: "all",
+    search: "",
+  });
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
+  const [methodToDelete, setMethodToDelete] = useState(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // --- Hooks para obtener datos ---
+  const {
+    data: invoices,
+    isLoading: isLoadingInvoices,
+    isError: isErrorInvoices,
+    refetch: refetchInvoices,
+  } = useInvoices(filters);
+  const { data: paymentMethods, isLoading: isLoadingMethods } =
+    usePaymentMethods();
+  const { data: transactions } = useTransactions(filters);
+  const { data: invoiceStats, isLoading: isLoadingStats } = useInvoiceStats();
 
-  /**
-   * Loads invoices, payment methods, transactions and stats in parallel.
-   */
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const [
-        invoicesResponse,
-        paymentMethodsResponse,
-        transactionsResponse,
-        invoiceStatsResponse,
-        transactionStatsResponse,
-        paymentStatsResponse,
-      ] = await Promise.allSettled([
-        invoicesService.getInvoices(),
-        invoicesService.getPaymentMethods(),
-        invoicesService.getTransactions(),
-        invoicesService.getInvoiceStats(),
-        invoicesService.getTransactionStats(),
-        invoicesService.getPaymentStats(),
-      ]);
-      if (invoicesResponse.status === 'fulfilled' && invoicesResponse.value.success) {
-        setInvoices(invoicesResponse.value.data?.data || []);
-      }
-      if (paymentMethodsResponse.status === 'fulfilled' && paymentMethodsResponse.value.success) {
-        setPaymentMethods(paymentMethodsResponse.value.data || []);
-      }
-      if (transactionsResponse.status === 'fulfilled' && transactionsResponse.value.success) {
-        setTransactions(transactionsResponse.value.data?.data || []);
-      }
-      if (invoiceStatsResponse.status === 'fulfilled' && invoiceStatsResponse.value.success) {
-        setInvoiceStats(invoiceStatsResponse.value.data || {});
-      }
-      if (transactionStatsResponse.status === 'fulfilled' && transactionStatsResponse.value.success) {
-        setTransactionStats(transactionStatsResponse.value.data || {});
-      }
-      if (paymentStatsResponse.status === 'fulfilled' && paymentStatsResponse.value.success) {
-        setPaymentStats(paymentStatsResponse.value.data || {});
-      }
-    } catch (err) {
-      console.error('Error loading data:', err);
-      setError('Error al cargar los datos. Por favor, inténtalo de nuevo.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // --- Hooks para las mutaciones ---
+  const processPaymentMutation = useProcessPayment();
+  const setDefaultMethodMutation = useSetDefaultPaymentMethod();
+  const deleteMethodMutation = useDeletePaymentMethod();
 
-  /**
-   * Processes an invoice payment via the service layer and reloads data on success.
-   *
-   * @param {string|number} invoiceId The ID of the invoice.
-   * @param {string|number} paymentMethodId The ID of the payment method to use.
-   */
-  const processPayment = async (invoiceId, paymentMethodId) => {
-    try {
-      const response = await invoicesService.processPayment({
-        invoice_id: invoiceId,
-        payment_method_id: paymentMethodId,
-        provider: 'stripe',
-      });
-      if (response.success) {
-        setShowPaymentModal(false);
-        await loadData();
-      }
-    } catch (err) {
-      console.error('Error processing payment:', err);
-    }
-  };
-
-  // Event handlers for selecting and paying invoices
-  const handleSelectInvoice = (invoice) => {
-    setSelectedInvoice(invoice);
-    setShowInvoiceModal(true);
-  };
+  // --- Manejadores de eventos ---
   const handlePayInvoice = (invoice) => {
     setSelectedInvoice(invoice);
     setShowPaymentModal(true);
   };
 
-  // Payment method handlers
-  const handleAddPaymentMethod = () => {
-    setShowAddPaymentModal(true);
-  };
-
-  const handlePaymentMethodAdded = async (paymentMethod) => {
-    // Reload payment methods after adding a new one
-    await loadData();
-  };
-
-  const handleSetDefaultPaymentMethod = async (method) => {
-    try {
-      const response = await invoicesService.setDefaultPaymentMethod(method.id);
-      if (response.success) {
-        await loadData(); // Reload to update the UI
+  const processPayment = (invoiceId, paymentMethodId) => {
+    processPaymentMutation.mutate(
+      { invoice_id: invoiceId, payment_method_id: paymentMethodId },
+      {
+        onSuccess: () => {
+          setShowPaymentModal(false);
+          toast({
+            title: 'Pago en proceso',
+            description: 'Tu pago se está procesando. La factura se actualizará en breve.',
+            variant: 'success',
+          });
+        },
+        onError: (error) => {
+          toast({
+            title: 'Error en el pago',
+            description: error.message || 'No se pudo procesar el pago. Inténtalo de nuevo.',
+            variant: 'destructive',
+          });
+        },
       }
-    } catch (err) {
-      console.error('Error setting default payment method:', err);
+    );
+  };
+
+  const handleSetDefaultPaymentMethod = (method) => {
+    setDefaultMethodMutation.mutate(method.uuid, {
+      onSuccess: () => {
+        toast({
+          title: 'Método de pago actualizado',
+          description: `La tarjeta que termina en ${method.last4} es ahora tu método predeterminado.`,
+          variant: 'success',
+        });
+      },
+      onError: (error) => {
+        toast({
+          title: 'Error al actualizar',
+          description: error.message || 'No se pudo establecer el método como predeterminado.',
+          variant: 'destructive',
+        });
+      },
+    });
+  };
+
+  const handleDeletePaymentMethod = (method) => {
+    setMethodToDelete(method);
+  };
+
+  const confirmDelete = () => {
+    if (methodToDelete) {
+      deleteMethodMutation.mutate(methodToDelete.uuid, {
+        onSuccess: () => {
+          toast({
+            title: 'Método de pago eliminado',
+            description: `La tarjeta que termina en ${methodToDelete.last4} ha sido eliminada.`,
+            variant: 'success',
+          });
+          setMethodToDelete(null); // Cierra el modal
+        },
+        onError: (error) => {
+          toast({
+            title: 'Error al eliminar',
+            description: error.message || 'No se pudo eliminar el método de pago.',
+            variant: 'destructive',
+          });
+          setMethodToDelete(null); // Cierra el modal también en caso de error
+        },
+      });
     }
   };
 
-  const handleDeletePaymentMethod = async (method) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este método de pago?')) {
-      try {
-        const response = await invoicesService.deletePaymentMethod(method.id);
-        if (response.success) {
-          await loadData(); // Reload to update the UI
-        }
-      } catch (err) {
-        console.error('Error deleting payment method:', err);
-      }
-    }
+    const handlePaymentMethodAdded = () => {
+    setShowAddPaymentModal(false);
+    toast({
+      title: 'Método de pago añadido',
+      description: 'Tu nuevo método de pago está listo para usarse.',
+      variant: 'success',
+    });
   };
 
-  if (loading) {
-    // Skeleton state while data loads
-    return (
-      <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8 mt-8 mb-10">
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-8 w-48 rounded" />
-            <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-10 w-32 rounded" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white dark:bg-card border border-border rounded-2xl p-6">
-                <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-6 w-3/4 mb-4 rounded" />
-                <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-8 w-1/2 rounded" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  const isLoading = isLoadingInvoices || isLoadingMethods || isLoadingStats;
+  if (isLoading) {
+    return <PageSkeleton />;
   }
-  if (error) {
-    // Error state
-    return (
-      <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8 mt-8 mb-10">
-        <div className="text-center bg-white dark:bg-card border border-dashed border-border/60 rounded-2xl p-16">
-          <div className="p-4 bg-red-100 dark:bg-red-900/20 rounded-full mb-4 inline-block">
-            <AlertCircle className="w-12 h-12 text-red-600 dark:text-red-400" />
-          </div>
-          <h3 className="text-xl font-semibold text-foreground mb-2">Error al cargar datos</h3>
-          <p className="text-muted-foreground mb-6 max-w-md mx-auto">{error}</p>
-          <button
-            onClick={loadData}
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-lg font-medium transition-colors"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Reintentar
-          </button>
-        </div>
-      </div>
-    );
+
+  if (isErrorInvoices) {
+    return <ErrorState onRetry={refetchInvoices} />;
   }
+
+  const TABS = [
+    { id: "invoices", name: "Facturas", icon: Receipt },
+    { id: "payments", name: "Métodos de Pago", icon: CreditCard },
+    { id: "transactions", name: "Transacciones", icon: TrendingUp },
+  ];
 
   return (
-    <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8 mt-8 mb-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
@@ -208,25 +225,26 @@ const ClientInvoicesPage = () => {
           </p>
         </div>
       </div>
+
       {/* Stats cards */}
-      <StatsCards invoiceStats={invoiceStats} paymentMethodCount={paymentMethods.length} />
-      {/* Tab container */}
-      <div className="bg-white dark:bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
-        {/* Tabs navigation */}
+      <StatsCards
+        invoiceStats={invoiceStats}
+        paymentMethodCount={paymentMethods?.length || 0}
+      />
+
+      {/* Contenedor de Pestañas */}
+      <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+        {/* Navegación de Pestañas */}
         <div className="border-b border-border">
           <nav className="flex space-x-8 px-6">
-            {[
-              { id: 'invoices', name: 'Facturas', icon: Receipt },
-              { id: 'payments', name: 'Métodos de Pago', icon: CreditCard },
-              { id: 'transactions', name: 'Transacciones', icon: TrendingUp },
-            ].map((tab) => (
+            {TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
                   activeTab === tab.id
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
@@ -235,27 +253,34 @@ const ClientInvoicesPage = () => {
             ))}
           </nav>
         </div>
-        {/* Tabs content */}
+
+        {/* Contenido de las Pestañas */}
         <div className="p-6">
-          {activeTab === 'invoices' && (
+          {activeTab === "invoices" && (
             <InvoicesList
               invoices={invoices}
               filters={filters}
               setFilters={setFilters}
-              onSelectInvoice={handleSelectInvoice}
+              onSelectInvoice={(invoice) => {
+                setSelectedInvoice(invoice);
+                setShowInvoiceModal(true);
+              }}
               onPayInvoice={handlePayInvoice}
             />
           )}
-          {activeTab === 'payments' && (
+          {activeTab === "payments" && (
             <PaymentMethods
               paymentMethods={paymentMethods}
-              onAddMethod={handleAddPaymentMethod}
+              onAddMethod={() => setShowAddPaymentModal(true)}
               onSetDefault={handleSetDefaultPaymentMethod}
               onDeleteMethod={handleDeletePaymentMethod}
-              loading={loading}
+              loading={
+                setDefaultMethodMutation.isPending ||
+                deleteMethodMutation.isPending
+              }
             />
           )}
-          {activeTab === 'transactions' && (
+          {activeTab === "transactions" && (
             <Transactions
               transactions={transactions}
               filters={filters}
@@ -264,31 +289,46 @@ const ClientInvoicesPage = () => {
           )}
         </div>
       </div>
-      {/* Modals */}
+
+      {/* Modales */}
       <PaymentModal
         show={showPaymentModal}
         invoice={selectedInvoice}
         paymentMethods={paymentMethods}
         onClose={() => setShowPaymentModal(false)}
-        onPay={(invoiceId, methodId) => processPayment(invoiceId, methodId)}
+        onPay={processPayment}
+        isProcessing={processPaymentMutation.isPending}
       />
       <InvoiceDetailModal
         show={showInvoiceModal}
         invoice={selectedInvoice}
         onClose={() => setShowInvoiceModal(false)}
         onPay={(invoice) => {
-          // When paying from detail modal, open payment modal
           setShowInvoiceModal(false);
-          setSelectedInvoice(invoice);
-          setShowPaymentModal(true);
+          handlePayInvoice(invoice);
         }}
       />
       <AddPaymentMethodModal
         isOpen={showAddPaymentModal}
         onClose={() => setShowAddPaymentModal(false)}
         onSuccess={handlePaymentMethodAdded}
-        isDefault={paymentMethods.length === 0}
+        isDefault={paymentMethods?.length === 0}
       />
+
+      <ConfirmationModal
+        isOpen={!!methodToDelete}
+        onClose={() => setMethodToDelete(null)}
+        onConfirm={confirmDelete}
+        title="Eliminar Método de Pago"
+        confirmText="Sí, eliminar"
+        isConfirming={deleteMethodMutation.isPending}
+      >
+        <p>
+          ¿Estás seguro de que deseas eliminar la tarjeta que termina en
+          <strong className="text-foreground"> {methodToDelete?.last4}</strong>?
+          Esta acción no se puede deshacer.
+        </p>
+      </ConfirmationModal>
     </div>
   );
 };

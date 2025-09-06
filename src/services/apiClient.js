@@ -1,43 +1,57 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+let isAuthRedirecting = false;
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
+  withCredentials: true,
 });
 
-// Interceptor para añadir el token de autenticación a cada petición
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+export const initializeCsrf = async () => {
+  try {
+    // Usamos una URL absoluta porque esta ruta NO tiene el prefijo /api
+    await axios.get("http://localhost:8000/sanctum/csrf-cookie", {
+      withCredentials: true,
+    });
+    console.log("CSRF cookie initialized");
+  } catch (error) {
+    console.error("Could not initialize CSRF cookie", error);
   }
-);
+};
 
-// Interceptor para manejar errores de respuesta
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Aquí puedes manejar errores específicos, por ejemplo, redireccionar al login si el token expira
-    if (error.response && error.response.status === 401) {
-      console.error('Unauthorized, logging out...');
-      // Opcional: limpiar token y redirigir al login
-      localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+    const { response, config } = error || {};
+    const status = response?.status;
+
+    if (config && config._handle401 === false) {
+      return Promise.reject(error);
     }
+
+    if (!response) {
+      return Promise.reject(error);
+    }
+
+    // Trata 401 o 403 como sesión inválida
+    if ((status === 401 || status === 403) && !isAuthRedirecting) {
+      isAuthRedirecting = true;
+
+      // Evita loop si ya estás en /login
+      if (window.location.pathname !== '/login') {
+        window.location.replace('/login');
+      }
+    }
+
+    if (status === 419 && !isAuthRedirecting) { window.location.replace('/login'); }
+
     return Promise.reject(error);
   }
 );
 
 export default apiClient;
-
-

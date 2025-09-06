@@ -63,7 +63,7 @@ const AdminDashboardPage = () => {
       setRecentActivity(recentActivityResponse);
       
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error('Error fetching ashboard data:', error);
       // Set empty data on error to prevent crashes
       setStats({
         users: { total: 0, active: 0, pending: 0, suspended: 0, new_this_month: 0, growth_rate: 0 },

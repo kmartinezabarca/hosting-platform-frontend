@@ -1,17 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import sessionsService from '../services/sessionsService';
-import { queryConfigs } from '../config/queryConfig';
 
 /**
  * Hook para obtener sesiones/dispositivos activos
  */
-export const useSessions = (options = {}) => {
+export const useSessions = (page, perPage = 15) => {
   return useQuery({
-    queryKey: ['sessions'],
-    queryFn: sessionsService.getSessions,
-    select: (data) => data.data || [],
-    ...queryConfigs.session, // Usar configuración para datos de sesión
-    ...options,
+    queryKey: ['sessions', { page, perPage }],
+    queryFn: () => sessionsService.getSessions(page, perPage),
+    keepPreviousData: true,
     onError: (error) => {
       console.error("Error al obtener sesiones activas", error);
     },

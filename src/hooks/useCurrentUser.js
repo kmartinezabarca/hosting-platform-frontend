@@ -1,14 +1,13 @@
-// src/hooks/useCurrentUser.js
+// src/hooks/useCurrentUser.ts
 import { useQuery } from '@tanstack/react-query';
-import authService from '@/services/auth';
+import authService from '@/services/authService';
 
 export const useCurrentUser = () => {
-  const token = authService.getToken();
   return useQuery({
-    queryKey: ['auth', 'me', token],
+    queryKey: ['auth','me'],
     queryFn: ({ signal }) => authService.getCurrentUser(signal),
-    enabled: !!token,
-    staleTime: 5 * 60 * 1000, // 5 min
-    retry: (count, err) => (err?.status === 401 || err?.status === 403 ? false : count < 2),
+    select: (u) => u.data,
+    refetchOnWindowFocus: false,
+    retry: false,
   });
 };

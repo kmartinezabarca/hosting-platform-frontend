@@ -1,38 +1,37 @@
 // src/pages/client/ClientTicketsPage.jsx
-import React, { useEffect, useMemo, useState } from "react";
-import { useAuth } from "../../context/AuthContext";
-import FiltersBar from "../../components/ui/FiltersBar";
-import TicketsHeader from "../../components/tickets/TicketsHeader";
-import TicketsList from "../../components/tickets/TicketsList";
-import TicketCreateModal from "../../components/tickets/TicketCreateModal";
-import { useTicketChat } from "../../context/TicketChatContext";
-import ticketsService from "../../services/ticketService";
+import React, { useMemo, useState } from "react";
+import FiltersBar from "@/components/ui/FiltersBar";
+import TicketsHeader from "@/components/tickets/TicketsHeader";
+import TicketsList from "@/components/tickets/TicketsList";
+import TicketCreateModal from "@/components/tickets/TicketCreateModal";
+import { useTicketChat } from "@/context/TicketChatContext";
+import {
+  useTickets,
+  useCreateTicket,
+} from "@/hooks/useTickets";
+import { useQueryClient } from "@tanstack/react-query";
+import { ticketsKeys } from "../../hooks/useTickets";
 
 // Map de categoría (UI) -> department (API)
 const categoryToDepartment = {
   technical: "technical",
   billing: "billing",
-  general: "sales",        // ajusta si prefieres otro departamento por defecto
+  general: "sales",
   feature_request: "sales",
   bug_report: "technical",
 };
 
 const ClientTicketsPage = () => {
-  const { user } = useAuth();
+  const qc = useQueryClient();
 
-  // Estado base
-  const [tickets, setTickets] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  // filtros / búsqueda
+  // filtros / búsqueda (estado local de UI)
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
   const [priority, setPriority] = useState("all");
   const [category, setCategory] = useState("all");
 
-  // Crear ticket
+  // Crear ticket (modal + form)
   const [showCreate, setShowCreate] = useState(false);
-  const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({
     subject: "",
     description: "",
@@ -40,45 +39,23 @@ const ClientTicketsPage = () => {
     category: "general",
   });
 
-  // Dock chat (global)
-  const { openChat } = useTicketChat();
+  const apiParams = {
+    status: status !== "all" ? status : undefined,
+    priority: priority !== "all" ? priority : undefined,
+    department: category !== "all" ? categoryToDepartment[category] : undefined,
+    per_page: 50,
+  };
 
-  // --- Cargar tickets desde API ---
-  useEffect(() => {
-    let abort = new AbortController();
-    const load = async () => {
-      setLoading(true);
-      try {
-        const params = {
-          status: status !== "all" ? status : undefined,
-          priority: priority !== "all" ? priority : undefined,
-          department:
-            category !== "all"
-              ? categoryToDepartment[category] ?? undefined
-              : undefined,
-          per_page: 50,
-          signal: abort.signal,
-        };
-        const res = await ticketsService.getTickets(params);
-        // Laravel paginator: res.data = { data: [...], ... }
-        const rows = Array.isArray(res?.data?.data)
-          ? res.data.data
-          : Array.isArray(res?.data)
-          ? res.data
-          : [];
-        setTickets(rows);
-      } catch (e) {
-        console.error("Error loading tickets:", e);
-        setTickets([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-    return () => abort.abort();
-  }, [status, priority, category]);
+  // Listado desde hook
+  const {
+    data: tickets = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useTickets(apiParams);
 
-  // Filtro de búsqueda local (cliente)
+  // Búsqueda local
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
     return tickets.filter((t) => {
@@ -88,62 +65,60 @@ const ClientTicketsPage = () => {
     });
   }, [tickets, q]);
 
-  // Abrir chat: trae el detalle + replies reales
+  // Abrir chat: trae el detalle usando el QueryClient (sin crear hook “ad hoc”)
+  const { openChat } = useTicketChat();
   const onOpenChat = async (ticket) => {
     try {
-      // el index debe devolver uuid; si no, ajusta backend o mapea aquí
       const uuid = ticket.uuid;
       if (!uuid) {
-        console.warn("El ticket no trae UUID desde /tickets. Ajusta el backend para incluirlo.");
+        console.warn("El ticket no trae UUID en el listado. Ajusta backend o mapea.");
         openChat(ticket, ticket?.replies || []);
         return;
       }
-      const res = await ticketsService.getTicket(uuid);
-      const full = res?.data || {};
+      const detail = await qc.fetchQuery({
+        queryKey: ticketsKeys.detail(uuid),
+        queryFn: () => import('../../services/ticketService').then(m => m.default.getTicket(uuid)),
+        staleTime: 0,
+      });
+      const full = detail?.data ?? detail;
       openChat(full, full?.replies || []);
     } catch (e) {
       console.error("Error opening ticket:", e);
-      // abre con lo que tengamos
       openChat(ticket, ticket?.replies || []);
     }
   };
 
-  // Crear ticket: conecta con POST /tickets
+  // Crear ticket (hook)
+  const { mutateAsync: createTicket, isPending: creating } = useCreateTicket({
+    onSuccess: (res) => {
+      const created = res?.data ?? res;
+      // Prepend optimista (opcional): invalidamos lista y listo
+      // qc.invalidateQueries({ queryKey: ticketsKeys.all });
+      // O si quieres ver reflejado al instante sin esperar refetch:
+      qc.setQueryData(ticketsKeys.list(apiParams), (old) => {
+        const rows = Array.isArray(old) ? old : [];
+        return created ? [created, ...rows] : rows;
+      });
+      setShowCreate(false);
+      setForm({ subject: "", description: "", priority: "medium", category: "general" });
+    },
+  });
+
   const handleCreate = async (e) => {
     e.preventDefault();
-    setCreating(true);
-    try {
-      const department =
-        categoryToDepartment[form.category] ?? "technical"; // fallback seguro
-      const payload = {
-        subject: form.subject,
-        message: form.description, // API espera "message" para la 1a respuesta
-        priority: form.priority,
-        department,
-        // service_id: opcional si la UI lo pide
-      };
-      const res = await ticketsService.createTicket(payload);
-      const created = res?.data;
-      if (created) {
-        // Prepend para que aparezca arriba
-        setTickets((prev) => [created, ...prev]);
-        setShowCreate(false);
-        setForm({
-          subject: "",
-          description: "",
-          priority: "medium",
-          category: "general",
-        });
-      }
-    } catch (e) {
-      console.error("Error creating ticket:", e);
-    } finally {
-      setCreating(false);
-    }
+    const department = categoryToDepartment[form.category] ?? "technical";
+    const payload = {
+      subject: form.subject,
+      message: form.description, // backend espera "message" para la 1ª respuesta
+      priority: form.priority,
+      department,
+      // service_id: opcional
+    };
+    await createTicket(payload);
   };
 
-  // Skeleton
-  if (loading) {
+  // Skeleton simple (puedes reutilizar tu <Skeleton/> si prefieres)
+  if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8 mt-8 mb-10">
         <div className="loading-skeleton h-8 w-48 mb-4" />
@@ -159,7 +134,7 @@ const ClientTicketsPage = () => {
   }
 
   return (
-    <div className="mx-auto w/full max-w-screen-2xl px-4 sm:px-6 lg:px-8 mt-8 mb-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <TicketsHeader onCreate={() => setShowCreate(true)} />
 
       <FiltersBar
@@ -174,6 +149,7 @@ const ClientTicketsPage = () => {
               { value: "open", label: "Abierto" },
               { value: "in_progress", label: "En progreso" },
               { value: "waiting_customer", label: "Esperando respuesta" },
+              { value: "resolved", label: "Resuelto" },
               { value: "closed", label: "Cerrado" },
             ],
           },
@@ -189,7 +165,6 @@ const ClientTicketsPage = () => {
               { value: "low", label: "Baja" },
             ],
           },
-          // Mantenemos el control de "Categoría" pero lo mapeamos a department en la llamada
           {
             key: "category",
             label: "Categoría",
@@ -213,9 +188,12 @@ const ClientTicketsPage = () => {
 
       <TicketsList
         tickets={filtered}
-        isLoading={loading}
+        isLoading={isLoading}
+        isError={isError}
+        error={error}
         onOpenChat={onOpenChat}
         onCreate={() => setShowCreate(true)}
+        refetch={refetch}
       />
 
       <TicketCreateModal

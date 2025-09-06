@@ -63,7 +63,7 @@ function PaymentMethodCard({ method, onSetDefault, onDelete, index, activeDropdo
           {/* Menú de acciones */}
           <div className="relative">
             <button
-              onClick={() => setActiveDropdown(activeDropdown === method.id ? null : method.id)}
+              onClick={() => setActiveDropdown(activeDropdown === method.uuid ? null : method.uuid)}
               className="p-2 rounded-full hover:bg-muted/80 transition-colors"
               aria-label="Abrir acciones"
             >
@@ -71,7 +71,7 @@ function PaymentMethodCard({ method, onSetDefault, onDelete, index, activeDropdo
             </button>
 
             <AnimatePresence>
-              {activeDropdown === method.id && (
+              {activeDropdown === method.uuid && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -133,7 +133,7 @@ const PaymentMethods = ({ paymentMethods = [], onAddMethod, onSetDefault, onDele
         <AnimatePresence>
           {paymentMethods.map((method, index) => (
             <PaymentMethodCard
-              key={method.id}
+              key={method.uuid}
               method={method}
               index={index}
               onSetDefault={onSetDefault}

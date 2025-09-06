@@ -1,37 +1,13 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+import apiClient from './apiClient';
 
-// Get authentication token from localStorage
-const getAuthToken = () => {
-  return localStorage.getItem('auth_token');
-};
-
-// Create headers with authentication
-const createAuthHeaders = () => {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
-  };
-};
-
-// Payment services
+// --- Payment Services ---
 export const paymentService = {
   // Create payment intent for Stripe
   async createPaymentIntent(paymentData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/payments/intent`, {
-        method: 'POST',
-        headers: createAuthHeaders(),
-        body: JSON.stringify(paymentData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      // 3. Reemplazamos fetch por apiClient.post
+      const response = await apiClient.post('/payments/intent', paymentData);
+      return response.data; // 4. Devolvemos response.data
     } catch (error) {
       console.error('Error creating payment intent:', error);
       throw error;
@@ -41,18 +17,8 @@ export const paymentService = {
   // Process payment
   async processPayment(paymentData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/payments/process`, {
-        method: 'POST',
-        headers: createAuthHeaders(),
-        body: JSON.stringify(paymentData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.post('/payments/process', paymentData);
+      return response.data;
     } catch (error) {
       console.error('Error processing payment:', error);
       throw error;
@@ -62,17 +28,8 @@ export const paymentService = {
   // Get payment methods
   async getPaymentMethods() {
     try {
-      const response = await fetch(`${API_BASE_URL}/payments/methods`, {
-        method: 'GET',
-        headers: createAuthHeaders()
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.get('/payments/methods');
+      return response.data;
     } catch (error) {
       console.error('Error fetching payment methods:', error);
       throw error;
@@ -82,20 +39,32 @@ export const paymentService = {
   // Add payment method
   async addPaymentMethod(methodData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/payments/methods`, {
-        method: 'POST',
-        headers: createAuthHeaders(),
-        body: JSON.stringify(methodData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.post('/payments/methods', methodData);
+      return response.data;
     } catch (error) {
       console.error('Error adding payment method:', error);
+      throw error;
+    }
+  },
+
+  //Delete payment method
+  async deletePaymentMethod(methodId) {
+    try {
+      const response = await apiClient.delete(`/payments/methods/${methodId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting payment method:', error);
+      throw error;
+    }
+  },
+
+  // Set default payment method
+  async updatePaymentMethod(methodId, data) {
+    try {
+      const response = await apiClient.put(`/payments/methods/${methodId}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error setting default payment method:', error);
       throw error;
     }
   },
@@ -103,17 +72,8 @@ export const paymentService = {
   // Get transactions
   async getTransactions() {
     try {
-      const response = await fetch(`${API_BASE_URL}/payments/transactions`, {
-        method: 'GET',
-        headers: createAuthHeaders()
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.get('/payments/transactions');
+      return response.data;
     } catch (error) {
       console.error('Error fetching transactions:', error);
       throw error;
@@ -123,17 +83,8 @@ export const paymentService = {
   // Get payment stats
   async getPaymentStats() {
     try {
-      const response = await fetch(`${API_BASE_URL}/payments/stats`, {
-        method: 'GET',
-        headers: createAuthHeaders()
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.get('/payments/stats');
+      return response.data;
     } catch (error) {
       console.error('Error fetching payment stats:', error);
       throw error;
@@ -141,22 +92,13 @@ export const paymentService = {
   }
 };
 
-// Subscription services
+// --- Subscription Services ---
 export const subscriptionService = {
   // Get user subscriptions
   async getUserSubscriptions() {
     try {
-      const response = await fetch(`${API_BASE_URL}/subscriptions`, {
-        method: 'GET',
-        headers: createAuthHeaders()
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.get('/subscriptions');
+      return response.data;
     } catch (error) {
       console.error('Error fetching subscriptions:', error);
       throw error;
@@ -166,18 +108,8 @@ export const subscriptionService = {
   // Create subscription
   async createSubscription(subscriptionData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/subscriptions`, {
-        method: 'POST',
-        headers: createAuthHeaders(),
-        body: JSON.stringify(subscriptionData)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.post('/subscriptions', subscriptionData);
+      return response.data;
     } catch (error) {
       console.error('Error creating subscription:', error);
       throw error;
@@ -187,17 +119,8 @@ export const subscriptionService = {
   // Get subscription details
   async getSubscriptionDetails(subscriptionId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/subscriptions/${subscriptionId}`, {
-        method: 'GET',
-        headers: createAuthHeaders()
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.get(`/subscriptions/${subscriptionId}`);
+      return response.data;
     } catch (error) {
       console.error('Error fetching subscription details:', error);
       throw error;
@@ -207,18 +130,8 @@ export const subscriptionService = {
   // Cancel subscription
   async cancelSubscription(subscriptionId, reason) {
     try {
-      const response = await fetch(`${API_BASE_URL}/subscriptions/${subscriptionId}/cancel`, {
-        method: 'POST',
-        headers: createAuthHeaders(),
-        body: JSON.stringify({ reason })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.post(`/subscriptions/${subscriptionId}/cancel`, { reason });
+      return response.data;
     } catch (error) {
       console.error('Error canceling subscription:', error);
       throw error;
@@ -228,17 +141,8 @@ export const subscriptionService = {
   // Resume subscription
   async resumeSubscription(subscriptionId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/subscriptions/${subscriptionId}/resume`, {
-        method: 'POST',
-        headers: createAuthHeaders()
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.post(`/subscriptions/${subscriptionId}/resume`);
+      return response.data;
     } catch (error) {
       console.error('Error resuming subscription:', error);
       throw error;
@@ -246,5 +150,5 @@ export const subscriptionService = {
   }
 };
 
+// Exportamos ambos servicios para que puedan ser importados donde se necesiten.
 export default { paymentService, subscriptionService };
-

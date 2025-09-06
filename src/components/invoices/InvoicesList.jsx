@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import StatusFilterDropdown from '../filters/StatusFilterDropdown';
 import {
   Receipt,
   Eye,
@@ -50,21 +51,19 @@ const InvoicesList = ({ invoices, filters, setFilters, onSelectInvoice, onPayInv
               type="text"
               placeholder="Buscar facturas..."
               value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              onChange={(e) =>
+                setFilters({ ...filters, search: e.target.value })
+              }
               className="pl-10 pr-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary focus:border-transparent w-full"
             />
           </div>
           {/* Status filter */}
-          <select
+          <StatusFilterDropdown
             value={filters.status}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
-          >
-            <option value="all">Todos los estados</option>
-            <option value="paid">Pagadas</option>
-            <option value="pending">Pendientes</option>
-            <option value="overdue">Vencidas</option>
-          </select>
+            onChange={(newStatus) =>
+              setFilters({ ...filters, status: newStatus })
+            }
+          />
         </div>
       </div>
 
@@ -74,9 +73,12 @@ const InvoicesList = ({ invoices, filters, setFilters, onSelectInvoice, onPayInv
             <div className="p-4 bg-gray-100 dark:bg-gray-800/50 rounded-full mb-4 inline-block">
               <Receipt className="w-12 h-12 text-muted-foreground/60" />
             </div>
-            <h3 className="text-xl font-semibold text-foreground mb-2">No hay facturas</h3>
+            <h3 className="text-xl font-semibold text-foreground mb-2">
+              No hay facturas
+            </h3>
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-              Aún no tienes facturas generadas. Las facturas aparecerán aquí cuando realices compras.
+              Aún no tienes facturas generadas. Las facturas aparecerán aquí
+              cuando realices compras.
             </p>
           </div>
         ) : (
@@ -95,7 +97,9 @@ const InvoicesList = ({ invoices, filters, setFilters, onSelectInvoice, onPayInv
                     <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
                       {invoice.invoice_number}
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                          invoice.status
+                        )}`}
                       >
                         {getStatusIcon(invoice.status)}
                         {getStatusText(invoice.status)}
@@ -117,7 +121,9 @@ const InvoicesList = ({ invoices, filters, setFilters, onSelectInvoice, onPayInv
                   <div className="space-y-2 mb-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                     {invoice.items.map((item, idx) => (
                       <div key={idx} className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{item.description}</span>
+                        <span className="text-muted-foreground">
+                          {item.description}
+                        </span>
                         <span className="text-foreground font-medium">
                           {formatCurrency(item.total || item.amount)}
                         </span>
@@ -129,7 +135,7 @@ const InvoicesList = ({ invoices, filters, setFilters, onSelectInvoice, onPayInv
                 {/* Footer actions */}
                 <div className="flex justify-between items-center pt-4 border-t border-border">
                   <div className="text-sm text-muted-foreground">
-                    {invoice.status === 'paid'
+                    {invoice.status === "paid"
                       ? `Pagada el ${formatDate(invoice.paid_at)}`
                       : `Vence el ${formatDate(invoice.due_date)}`}
                   </div>
@@ -141,7 +147,8 @@ const InvoicesList = ({ invoices, filters, setFilters, onSelectInvoice, onPayInv
                       <Eye className="w-4 h-4" />
                       Ver Detalles
                     </button>
-                    {invoice.status === 'sent' || invoice.status === 'overdue' ? (
+                    {invoice.status === "sent" ||
+                    invoice.status === "overdue" ? (
                       <button
                         onClick={() => onPayInvoice(invoice)}
                         className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors"
@@ -150,9 +157,7 @@ const InvoicesList = ({ invoices, filters, setFilters, onSelectInvoice, onPayInv
                         Pagar Ahora
                       </button>
                     ) : (
-                      <button
-                        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground border border-border hover:bg-accent rounded-lg transition-colors"
-                      >
+                      <button className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground border border-border hover:bg-accent rounded-lg transition-colors">
                         <Download className="w-4 h-4" />
                         Descargar PDF
                       </button>

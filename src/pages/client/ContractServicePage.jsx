@@ -151,12 +151,12 @@ const ContractServicePage = () => {
   }
 
   return (
-    <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8 mt-8 mb-15 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-3"
+        className="text-center space-y-3 mb-4"
       >
         <h1 className="text-4xl font-bold text-foreground">
           Contratar Servicio
@@ -221,7 +221,7 @@ const ContractServicePage = () => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="flex justify-center"
+          className="flex justify-center mt-6 mb-8"
         >
           <div className="flex justify-center">
             <BillingCycleSwitch

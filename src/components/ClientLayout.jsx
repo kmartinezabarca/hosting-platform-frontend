@@ -8,7 +8,9 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import UserAvatar from '../components/UserAvatar';
+import { Skeleton } from '../components/ui/skeleton';
 import NewDashboard from '../pages/client/NewDashboard';
 import ClientServicesPage from '../pages/client/ClientServicesPage';
 import ClientInvoicesPage from '../pages/client/ClientInvoicesPage';
@@ -17,17 +19,19 @@ import ClientProfilePage from '../pages/client/ClientProfilePage';
 import ContractServicePage from '../pages/client/ContractServicePage';
 import CheckoutPage from '../pages/client/CheckoutPage';
 import CheckoutSuccessPage from '../pages/client/CheckoutSuccessPage';
+import ServiceManagementPage from '../pages/client/ServiceManagementPage';
+import ServiceDetailPage from '../pages/client/ServiceDetailPage';
 import logoROKE from "../assets/logo_v4.png";
 
 const ClientLayout = () => {
   const { theme, toggleTheme } = useTheme();
-  const { user, logout } = useAuth();
+  const { logout, isLoading } = useAuth();
+  const { data: user, isLoading: meLoading, isFetching: meFetching } = useCurrentUser();
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const isDark = theme === "dark";
-  const label = isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro";
   const dir = isDark ? -1 : 1; 
   const profileRef = useRef(null);
   const iconVariants = {
@@ -223,109 +227,121 @@ const ClientLayout = () => {
               </button>
 
               {/* Menú de perfil */}
-              <div className="relative">
-                <button
-                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                  className="flex items-center space-x-3 p-2 rounded-xl hover:bg-accent transition-colors"
-                >
-                  <UserAvatar user={user} size={32} />
-                  <div className="hidden sm:block text-left">
-                    <p className="text-sm font-medium text-foreground">
-                      {[user?.data?.first_name, user?.data?.last_name]
-                        .filter(Boolean)
-                        .join(" ") ||
-                        user?.data?.name ||
-                        "Usuario"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {user?.data?.email}
-                    </p>
+              <div className="relative" ref={profileRef}>
+                {(isLoading || meLoading || meFetching) ? (
+                  <div className="flex items-center space-x-3 p-2">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="hidden sm:block space-y-1">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-3 w-32" />
+                    </div>
                   </div>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                </button>
-
-                {/* Dropdown del perfil */}
-                <AnimatePresence>
-                  {isProfileMenuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                      transition={{ duration: 0.18 }}
-                      role="menu"
-                      className="
-                         absolute right-0 mt-2 w-72 z-[70]
-                         rounded-2xl p-2
-                         bg-white/95 dark:bg-[#121417]/95
-                         supports-[backdrop-filter]:backdrop-blur-md
-                         supports-[backdrop-filter]:bg-white/80
-                         supports-[backdrop-filter]:dark:bg-[#121417]/80
-                         border border-black/10 dark:border-white/10
-                         shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.45)]
-                         text-foreground
-                        "
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                      className="flex items-center space-x-3 p-2 rounded-xl hover:bg-accent transition-colors"
                     >
-                      {/* Caret */}
-                      <span
-                        aria-hidden
-                        className="
-                          absolute -top-2 right-6 w-3.5 h-3.5 rotate-45
-                          bg-white/95 dark:bg-[#121417]/95
-                          border-t border-l border-black/10 dark:border-white/10
-                          shadow-[0_2px_6px_rgba(0,0,0,0.06)]
-                         "
-                      />
-
-                      {/* Header */}
-                      <div className="px-3 py-2 border-b border-black/10 dark:border-white/10">
-                        <p className="font-semibold">
-                          {[user?.data?.first_name, user?.data?.last_name]
+                      <UserAvatar user={user} size={32} />
+                      <div className="hidden sm:block text-left">
+                        <p className="text-sm font-medium text-foreground">
+                          {[user?.first_name, user?.last_name]
                             .filter(Boolean)
                             .join(" ") ||
-                            user?.data?.name ||
+                            user?.name ||
                             "Usuario"}
                         </p>
-                        <p className="text-sm text-muted-foreground">
-                          {user?.data?.email}
+                        <p className="text-xs text-muted-foreground">
+                          {user?.email || ' '}
                         </p>
                       </div>
-
-                      {/* Items */}
-                      <div className="py-2">
-                        <Link
-                          to="/client/profile"
-                          onClick={() => setIsProfileMenuOpen(false)}
-                          className="group flex items-center gap-3 px-3 py-2 rounded-lg
-                            hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                      <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                    
+                    {/* Dropdown del perfil */}
+                    <AnimatePresence>
+                      {isProfileMenuOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                          transition={{ duration: 0.18 }}
+                          role="menu"
+                          className="
+                            absolute right-0 mt-2 w-72 z-[70]
+                            rounded-2xl p-2
+                            bg-white/95 dark:bg-[#121417]/95
+                            supports-[backdrop-filter]:backdrop-blur-md
+                            supports-[backdrop-filter]:bg-white/80
+                            supports-[backdrop-filter]:dark:bg-[#121417]/80
+                            border border-black/10 dark:border-white/10
+                            shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.45)]
+                            text-foreground
+                          "
                         >
-                          <User className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
-                          <span className="text-sm">Mi Perfil</span>
-                        </Link>
+                          {/* Caret */}
+                          <span
+                            aria-hidden
+                            className="
+                              absolute -top-2 right-6 w-3.5 h-3.5 rotate-45
+                              bg-white/95 dark:bg-[#121417]/95
+                              border-t border-l border-black/10 dark:border-white/10
+                              shadow-[0_2px_6px_rgba(0,0,0,0.06)]
+                            "
+                          />
 
-                        <Link
-                          to="/client/profile"
-                          onClick={() => setIsProfileMenuOpen(false)}
-                          className="group flex items-center gap-3 px-3 py-2 rounded-lg
-                            hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-                        >
-                          <Settings className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
-                          <span className="text-sm">Configuración</span>
-                        </Link>
-                      </div>
+                          {/* Header */}
+                          <div className="px-3 py-2 border-b border-black/10 dark:border-white/10">
+                            <p className="font-semibold">
+                              {[user?.first_name, user?.last_name]
+                                .filter(Boolean)
+                                .join(" ") ||
+                                user?.name ||
+                                "Usuario"}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {user?.email}
+                            </p>
+                          </div>
 
-                      <div className="border-t border-black/10 dark:border-white/10 pt-2">
-                        <button
-                          onClick={handleLogout}
-                          className="group flex items-center gap-3 px-3 py-2 rounded-lg w-full text-left
-                            hover:bg-red-500/10 hover:text-red-500 transition-colors"
-                        >
-                          <LogOut className="w-4 h-4 text-muted-foreground group-hover:text-red-500" />
-                          <span className="text-sm">Cerrar Sesión</span>
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                          {/* Items */}
+                          <div className="py-2">
+                            <Link
+                              to="/client/profile"
+                              onClick={() => setIsProfileMenuOpen(false)}
+                              className="group flex items-center gap-3 px-3 py-2 rounded-lg
+                                hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                            >
+                              <User className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
+                              <span className="text-sm">Mi Perfil</span>
+                            </Link>
+
+                            <Link
+                              to="/client/profile"
+                              onClick={() => setIsProfileMenuOpen(false)}
+                              className="group flex items-center gap-3 px-3 py-2 rounded-lg
+                                hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                            >
+                              <Settings className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
+                              <span className="text-sm">Configuración</span>
+                            </Link>
+                          </div>
+
+                          <div className="border-t border-black/10 dark:border-white/10 pt-2">
+                            <button
+                              onClick={handleLogout}
+                              className="group flex items-center gap-3 px-3 py-2 rounded-lg w-full text-left
+                                hover:bg-red-500/10 hover:text-red-500 transition-colors"
+                            >
+                              <LogOut className="w-4 h-4 text-muted-foreground group-hover:text-red-500" />
+                              <span className="text-sm">Cerrar Sesión</span>
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -469,6 +485,8 @@ const ClientLayout = () => {
             <Routes>
               <Route path="/dashboard" element={<NewDashboard />} />
               <Route path="/services" element={<ClientServicesPage />} />
+              <Route path="services/:serviceId/manage" element={<ServiceManagementPage />} />
+               <Route path="services/:serviceId" element={<ServiceDetailPage />} />
               <Route path="/invoices" element={<ClientInvoicesPage />} />
               <Route path="/tickets" element={<ClientTicketsPage />} />
               <Route path="/profile" element={<ClientProfilePage />} />
@@ -485,4 +503,3 @@ const ClientLayout = () => {
 };
 
 export default ClientLayout;
-

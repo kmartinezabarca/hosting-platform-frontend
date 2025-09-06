@@ -28,6 +28,15 @@ export default function ReviewAndPay({
       if (def) setSelectedPaymentMethodId(def.stripe_payment_method_id);
     }
   }, [useNewCard, paymentMethods, selectedPaymentMethodId, setSelectedPaymentMethodId]);
+
+  const InfoRow = ({ label, value, fullWidth = false }) => (
+    <div className={`py-3 ${fullWidth ? "col-span-2" : ""}`}>
+      <dt className="text-sm text-muted-foreground">{label}</dt>
+      <dd className="mt-1 text-base font-semibold text-foreground truncate">
+        {value || "-"}
+      </dd>
+    </div>
+  );
   
   return (
     <div className="space-y-8">
@@ -85,56 +94,46 @@ export default function ReviewAndPay({
         </div>
 
         {formData.requireInvoice && (
-          <div className="md:col-span-2 card-premium p-5 rounded-2xl border border-black/10 dark:border-white/10">
-            <h3 className="text-lg font-semibold text-foreground mb-3">
-              Datos fiscales (CFDI 4.0)
+          <div className="md:col-span-2 card-premium p-6 rounded-2xl border border-border bg-background">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              Datos Fiscales (CFDI 4.0)
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">RFC:</span>
-                <span className="text-foreground font-medium">
-                  {formData.invoiceRfc}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  Razón social / Nombre:
-                </span>
-                <span className="text-foreground font-medium">
-                  {formData.invoiceName}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">CP fiscal:</span>
-                <span className="text-foreground font-medium">
-                  {formData.invoiceZip}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Régimen:</span>
-                <span className="text-foreground font-medium">
-                  {REGIMENES.find((r) => r.id === formData.invoiceRegimen)
-                    ?.label || "-"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Uso CFDI:</span>
-                <span className="text-foreground font-medium">
-                  {
-                    USOS_CFDI.find((u) => u.id === formData.invoiceUsoCfdi)
-                      ?.label
-                  }
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Constancia:</span>
-                <span className="text-foreground font-medium">
-                  {formData.invoiceConstanciaName
-                    ? formData.invoiceConstanciaName
-                    : "No adjunta"}
-                </span>
-              </div>
-            </div>
+
+            {/* Usamos un grid para una alineación perfecta y responsiva */}
+            <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 divide-y divide-border">
+              <InfoRow label="RFC" value={formData.invoiceRfc} />
+
+              <InfoRow
+                label="Razón Social / Nombre"
+                value={formData.invoiceName}
+              />
+
+              <InfoRow
+                label="Código Postal Fiscal"
+                value={formData.invoiceZip}
+              />
+
+              <InfoRow
+                label="Régimen Fiscal"
+                value={
+                  REGIMENES.find((r) => r.id === formData.invoiceRegimen)?.label
+                }
+              />
+
+              <InfoRow
+                label="Uso de CFDI"
+                value={
+                  USOS_CFDI.find((u) => u.id === formData.invoiceUsoCfdi)?.label
+                }
+                fullWidth={true} // Ocupa todo el ancho si es el último impar
+              />
+
+              <InfoRow
+                label="Constancia de Situación Fiscal"
+                value={formData.invoiceConstanciaName || "No adjunta"}
+                fullWidth={true}
+              />
+            </dl>
           </div>
         )}
       </div>

@@ -28,7 +28,7 @@ export default function CheckoutPage() {
     firstName: user?.first_name || "",
     lastName: user?.last_name || "",
     email: user?.email || "",
-    phone: "",
+    phone: user?.phone || "",
     serviceName: "",
     domain: "",
     autoRenew: true,
@@ -45,19 +45,8 @@ export default function CheckoutPage() {
 
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
-
-  /**
-   * addons: list of available add-ons for the selected plan fetched from API
-   * selectedAddOns: ids of add-ons user chooses to include
-   */
   const [addons, setAddons] = useState([]);
   const [selectedAddOns, setSelectedAddOns] = useState([]);
-
-  /**
-   * paymentMethods: saved methods for the user
-   * selectedPaymentMethodId: id of the method chosen for payment
-   * showAddMethodModal: controls whether modal for adding new method is open
-   */
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState(null);
   const [showAddMethodModal, setShowAddMethodModal] = useState(false);

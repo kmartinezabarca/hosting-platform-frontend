@@ -1,47 +1,69 @@
-import React, { createContext, useContext } from 'react';
-import { useCurrentUser } from '@/hooks/useAuth';
-import {  useLogin, useLoginWithGoogle, useVerify2FA, useLogout, useRegister } from '@/hooks/useAuth';
+import React, { createContext, useContext, useMemo } from 'react'; // 1. Importa useMemo
+import PropTypes from 'prop-types';
+import { useCurrentUser } from '../hooks/useCurrentUser';
+import {
+  useLogin,
+  useLogout,
+  useRegister,
+  useLoginWithGoogle,
+  useVerify2FA,
+} from '../hooks/useAuth';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
+  const userQuery = useCurrentUser(); 
+  
+  const { mutateAsync: login, isPending: isLoggingIn } = useLogin();
+  const { mutateAsync: logout, isPending: isLoggingOut } = useLogout();
+  const { mutateAsync: register, isPending: isRegistering } = useRegister();
+  const { mutateAsync: loginWithGoogle, isPending: isLoggingInWithGoogle } = useLoginWithGoogle();
+  const { mutateAsync: verifyTwoFactor, isPending: isVerifying2FA } = useVerify2FA();
 
-  const { data: user, isLoading: loading, refetch: refetchUser } = useCurrentUser();
+  const user = userQuery.data ?? null;
+  const isLoading = userQuery.isLoading;
+  const isAuthenticated = !!user && !userQuery.isError;
+  const isAdmin = isAuthenticated && user.role === 'admin';
+  const isClient = isAuthenticated && user.role === 'client';
 
-  const { mutateAsync: loginMutation } = useLogin();
-  const login = async (email, password) => {
-    const res = await loginMutation({ email, password });
-    return res;
-  };
+  const value = useMemo(() => ({
+    // Datos y estado del usuario
+    user,
+    isLoading,
+    isAuthenticated,
+    isAdmin,
+    isClient,
 
-  const { mutateAsync: loginWithGoogleMutation } = useLoginWithGoogle();
-  const loginWithGoogle = async (googleData) => {
-    const res = await loginWithGoogleMutation(googleData);
-    return res;
-  };
+    // Acciones de mutación
+    login,
+    logout,
+    register,
+    loginWithGoogle,
+    verifyTwoFactor,
 
-  const { mutateAsync: verifyTwoFactorMutation } = useVerify2FA();
-  const verifyTwoFactor = async (email, code) => {
-    const res = await verifyTwoFactorMutation({ email, code });
-    return res;
-  };
+    // Estados de las mutaciones
+    isLoggingIn,
+    isLoggingOut,
+    isRegistering,
+    isLoggingInWithGoogle,
+    isVerifying2FA,
+  }), [
+    user, isLoading, isAuthenticated, isAdmin, isClient,
+    login, logout, register, loginWithGoogle, verifyTwoFactor,
+    isLoggingIn, isLoggingOut, isRegistering, isLoggingInWithGoogle, isVerifying2FA
+  ]);
 
-  const { mutateAsync: logoutMutation } = useLogout();
-  const logout = async () => {
-    await logoutMutation();
-  };
-
-  const { mutateAsync: registerMutation } = useRegister();
-  const register = async (payload) => {
-    const res = await registerMutation(payload);
-    return res;
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, loading, login, logout, register, loginWithGoogle, verifyTwoFactor, refetchUser }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => useContext(AuthContext);
+AuthProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

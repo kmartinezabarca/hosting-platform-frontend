@@ -3,11 +3,11 @@ import clsx from "clsx";
 import { motion } from "framer-motion";
 import ResourceUsageBar from "./resource-usage-bar";
 import {
-  MoreVertical, Copy, Check, PowerOff, RotateCcw, Power,
+  MoreVertical, FilePenLine, Copy, Check, PowerOff, RotateCcw, Power,
   Eye, Settings, RefreshCw,
 } from "lucide-react";
 
-/* TONES con clases *estáticas* (Tailwind-safe) */
+/* TONES con clases estáticas (Tailwind-safe) */
 const TONES = {
   success: {
     text: "text-emerald-600 dark:text-emerald-400",
@@ -51,7 +51,8 @@ const statusTone = (status) =>
 const ServiceCard = ({
   service,
   onAction,
-  onDetails,
+  onQuickView,
+  onManage,
   onSettings,
   actionLoading,
   getTypeIcon,
@@ -63,7 +64,33 @@ const ServiceCard = ({
 }) => {
   const TypeIcon = getTypeIcon(service.type);
   const [copied, setCopied] = useState("");
-  const tone = TONES[statusTone(service.status)];
+
+  /** --- Helpers de estado transitorio por acción --- */
+  const isActionKey = (action) =>
+    !!(actionLoading?.[`${service?.uuid}-${action}`] || actionLoading?.[`${service?.id}-${action}`]);
+
+  const restarting = isActionKey("restart");
+  const starting   = isActionKey("start");
+  const stopping   = isActionKey("stop");
+
+  // Si hay acción en curso, forzamos tono "warning" y label transitorio
+  const toneKey = (restarting || starting || stopping)
+    ? "warning"
+    : statusTone(service.status);
+  const tone = TONES[toneKey];
+
+  const statusLabel = (() => {
+    if (restarting) return "Reiniciando";
+    if (starting)   return "Iniciando";
+    if (stopping)   return "Deteniendo";
+    switch (service.status) {
+      case "active": return "Activo";
+      case "maintenance": return "Mantenimiento";
+      case "suspended": return "Suspendido";
+      case "stopped": return "Detenido";
+      default: return "Desconocido";
+    }
+  })();
 
   const handleCopy = (text, field) => {
     if (!text) return;
@@ -72,23 +99,36 @@ const ServiceCard = ({
     setTimeout(() => setCopied(""), 2000);
   };
 
+  /** Botón genérico de acción con feedback de loading */
   const ActionButton = ({ action, title, Icon, toneKey }) => {
     const t = TONES[toneKey];
-    const isLoading = actionLoading[`${service.id}-${action}`];
+    const loading = isActionKey(action);
+
+    // Icono con animación según acción
+    const LoadingIcon =
+      action === "restart" ? RotateCcw :
+      action === "start"   ? Power :
+      action === "stop"    ? PowerOff :
+      RefreshCw;
+
+    const loadingClass =
+      action === "restart" ? "animate-spin" : "animate-pulse";
+
     return (
       <button
-        onClick={() => onAction(service.id, action)}
-        disabled={isLoading}
+        onClick={() => onAction(service.uuid, action)}
+        disabled={loading}
         title={title}
         className={clsx(
           "p-2 rounded-lg transition-all",
           "text-muted-foreground",
           t.hoverText,
-          t.hoverBg
+          t.hoverBg,
+          loading && "cursor-wait"
         )}
       >
-        {isLoading ? (
-          <RefreshCw className="w-4 h-4 animate-spin" />
+        {loading ? (
+          <LoadingIcon className={clsx("w-4 h-4", loadingClass)} />
         ) : (
           <Icon className="w-4 h-4" />
         )}
@@ -110,15 +150,10 @@ const ServiceCard = ({
         shadow-sm hover:shadow-lg transition-shadow
       "
     >
-      {/* Header (sin tintes que laven el texto en dark) */}
-      <div
-        className="
-          flex items-start justify-between p-5
-          border-b border-black/5 dark:border-white/10
-        "
-      >
+      {/* Header */}
+      <div className="flex items-start justify-between p-5 border-b border-black/5 dark:border-white/10">
         <div className="flex items-center gap-3">
-          {/* Icon chip con ring visible en dark */}
+          {/* Icon chip; gira si está reiniciando */}
           <span
             className={clsx(
               "inline-flex items-center justify-center p-2.5 rounded-xl",
@@ -126,10 +161,16 @@ const ServiceCard = ({
               "ring-1 ring-black/10 dark:ring-white/10"
             )}
           >
-            <TypeIcon className={clsx("w-5 h-5", tone.text)} />
+            <TypeIcon
+              className={clsx(
+                "w-5 h-5",
+                tone.text,
+                restarting
+              )}
+            />
           </span>
           <div>
-            <h3 className="font-semibold text-foreground leading-5">
+            <h3 className="font-semibold text-foreground leading-5 truncate max-w-[16rem]">
               {service.name}
             </h3>
             <p className="text-sm text-muted-foreground leading-5">
@@ -138,26 +179,19 @@ const ServiceCard = ({
           </div>
         </div>
 
-        {/* Estado con dot + ring del tono */}
+        {/* Status chip (amarillo mientras hay acción) */}
         <span
           className={clsx(
             "inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-medium",
             "ring-1",
             tone.chipBg,
             tone.text,
-            tone.ring
+            tone.ring,
+            (restarting || starting || stopping) && "animate-pulse"
           )}
         >
           <span className={clsx("size-1.5 rounded-full", tone.dot)} />
-          {service.status === "active"
-            ? "Activo"
-            : service.status === "maintenance"
-            ? "Mantenimiento"
-            : service.status === "suspended"
-            ? "Suspendido"
-            : service.status === "stopped"
-            ? "Detenido"
-            : "Desconocido"}
+          {statusLabel}
         </span>
       </div>
 
@@ -191,7 +225,9 @@ const ServiceCard = ({
           <div className="group flex items-center justify-between">
             <span className="text-muted-foreground">Dirección IP:</span>
             <div className="flex items-center gap-2">
-              <span className="font-medium text-foreground">{service.ip_address}</span>
+              <span className="font-medium text-foreground">
+                {service.ip_address}
+              </span>
               <button
                 onClick={() => handleCopy(service.ip_address, "ip")}
                 className="transition-opacity opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary"
@@ -217,7 +253,9 @@ const ServiceCard = ({
         {/* Uso de recursos */}
         {service.metrics && (
           <div className="space-y-4 pt-5 border-t border-black/5 dark:border-white/10">
-            <h4 className="text-sm font-semibold text-foreground">Uso de Recursos</h4>
+            <h4 className="text-sm font-semibold text-foreground">
+              Uso de Recursos
+            </h4>
             <ResourceUsageBar
               name="CPU"
               usage={service.metrics.cpu_usage}
@@ -268,11 +306,21 @@ const ServiceCard = ({
             )}
 
             <button
-              onClick={() => onDetails(service)}
-              title="Ver Detalles"
+              onClick={() => onQuickView(service)}
+              title="Vista Rápida"
               className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition"
             >
               <Eye className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onManage(service);
+              }}
+              className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition"
+              title="Gestionar Servicio"
+            >
+              <FilePenLine className="w-4 h-4" />
             </button>
             <button
               onClick={() => onSettings(service)}
@@ -284,7 +332,9 @@ const ServiceCard = ({
           </div>
 
           <div className="text-right">
-            <p className="text-xl font-bold text-foreground">${service.price}</p>
+            <p className="text-xl font-bold text-foreground">
+              ${service.price}
+            </p>
             <p className="text-xs text-muted-foreground">
               /{service.billing_cycle === "monthly" ? "mes" : "año"}
             </p>

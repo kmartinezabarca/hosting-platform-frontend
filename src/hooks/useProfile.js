@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import profileService from '../services/profileService';
+import { useAuth } from '@/context/AuthContext';
 import { queryConfigs } from '../config/queryConfig';
 
 /**
@@ -62,12 +63,18 @@ export const useUploadAvatar = () => {
   return useMutation({
     mutationFn: profileService.uploadAvatar,
     onSuccess: (data) => {
-      // Actualizar cache con la nueva URL del avatar
+      const newAvatarUrl = data.data.avatar_url;
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      queryClient.refetchQueries({ queryKey: ['auth', 'me'] });
       queryClient.setQueryData(['profile'], (old) => ({
         ...old,
-        data: { ...old?.data, avatar_url: data.data.avatar_url }
+        data: { ...old?.data, avatar_url: newAvatarUrl }
       }));
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.setQueryData(['auth', 'me'], (old) => ({
+        ...old,
+        data: { ...old?.data, avatar_url: newAvatarUrl }
+      }));
     },
     onError: (error) => {
       console.error("Error al subir avatar", error);

@@ -1,16 +1,9 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import authService from '../services/authService';
 
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
-  const isAuthenticated = authService.isAuthenticated();
-  const isAdmin = authService.isAdmin();
-  const user = JSON.parse(localStorage.getItem("user_data"));
-
-  // Check if user is authenticated
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+   const { user, isAdmin } = useAuth(); 
 
   // Check if admin access is required
   if (requireAdmin && !isAdmin) {

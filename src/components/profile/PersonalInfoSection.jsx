@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Phone, Globe, MapPin, Save, RotateCcw } from 'lucide-react';
+import CountrySelector from '../../components/forms/CountrySelector'; 
 import FormField from './FormField';
 import { cn } from '../../lib/utils';
 
@@ -89,17 +90,10 @@ const PersonalInfoSection = ({ profile, onUpdate, saving }) => {
     setErrors({});
   };
 
-  const countries = [
-    { code: 'MX', name: 'México', flag: '🇲🇽' },
-    { code: 'US', name: 'Estados Unidos', flag: '🇺🇸' },
-    { code: 'CA', name: 'Canadá', flag: '🇨🇦' },
-    { code: 'ES', name: 'España', flag: '🇪🇸' }
-  ];
-
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* Información básica */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+      <div className="rounded-2xl border p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
             <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -117,8 +111,8 @@ const PersonalInfoSection = ({ profile, onUpdate, saving }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             label="Nombre"
-            value={formData.first_name || ''}
-            onChange={(e) => handleChange('first_name', e.target.value)}
+            value={formData.first_name || ""}
+            onChange={(e) => handleChange("first_name", e.target.value)}
             placeholder="Tu nombre"
             error={errors.first_name}
             required
@@ -126,8 +120,8 @@ const PersonalInfoSection = ({ profile, onUpdate, saving }) => {
 
           <FormField
             label="Apellido"
-            value={formData.last_name || ''}
-            onChange={(e) => handleChange('last_name', e.target.value)}
+            value={formData.last_name || ""}
+            onChange={(e) => handleChange("last_name", e.target.value)}
             placeholder="Tu apellido"
             error={errors.last_name}
             required
@@ -137,7 +131,7 @@ const PersonalInfoSection = ({ profile, onUpdate, saving }) => {
             <FormField
               label="Correo electrónico"
               type="email"
-              value={formData.email || ''}
+              value={formData.email || ""}
               icon={Mail}
               disabled
               description="Tu dirección de correo no se puede cambiar por seguridad"
@@ -147,7 +141,7 @@ const PersonalInfoSection = ({ profile, onUpdate, saving }) => {
       </div>
 
       {/* Información de contacto */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+      <div className="rounded-2xl border p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
             <Phone className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -166,42 +160,31 @@ const PersonalInfoSection = ({ profile, onUpdate, saving }) => {
           <FormField
             label="Teléfono"
             type="tel"
-            value={formData.phone || ''}
-            onChange={(e) => handleChange('phone', e.target.value)}
+            value={formData.phone || ""}
+            onChange={(e) => handleChange("phone", e.target.value)}
             placeholder="+52 55 1234 5678"
             icon={Phone}
             error={errors.phone}
           />
 
           <div>
-            <label className="block text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">
+            <label
+              htmlFor="country-selector"
+              className="block text-sm font-medium text-foreground mb-2"
+            >
               País
             </label>
-            <div className="relative">
-              <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <select
-                value={formData.country || 'MX'}
-                onChange={(e) => handleChange('country', e.target.value)}
-                className={cn(
-                  'w-full pl-10 pr-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600',
-                  'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100',
-                  'focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500',
-                  'transition-all duration-200'
-                )}
-              >
-                {countries.map(country => (
-                  <option key={country.code} value={country.code}>
-                    {country.flag} {country.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <CountrySelector
+              id="country-selector"
+              value={formData.country || "MX"}
+              onChange={(countryCode) => handleChange("country", countryCode)}
+            />
           </div>
         </div>
       </div>
 
       {/* Dirección */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+      <div className="rounded-2xl border p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
             <MapPin className="w-5 h-5 text-purple-600 dark:text-purple-400" />
@@ -219,8 +202,8 @@ const PersonalInfoSection = ({ profile, onUpdate, saving }) => {
         <div className="space-y-6">
           <FormField
             label="Dirección"
-            value={formData.address || ''}
-            onChange={(e) => handleChange('address', e.target.value)}
+            value={formData.address || ""}
+            onChange={(e) => handleChange("address", e.target.value)}
             placeholder="Calle, número, colonia..."
             icon={MapPin}
           />
@@ -228,23 +211,23 @@ const PersonalInfoSection = ({ profile, onUpdate, saving }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <FormField
               label="Ciudad"
-              value={formData.city || ''}
-              onChange={(e) => handleChange('city', e.target.value)}
+              value={formData.city || ""}
+              onChange={(e) => handleChange("city", e.target.value)}
               placeholder="Tu ciudad"
             />
 
             <FormField
               label="Estado/Provincia"
-              value={formData.state || ''}
-              onChange={(e) => handleChange('state', e.target.value)}
+              value={formData.state || ""}
+              onChange={(e) => handleChange("state", e.target.value)}
               placeholder="Estado o provincia"
             />
 
             <FormField
               label="Código Postal"
-              value={formData.postal_code || ''}
-              onChange={(e) => handleChange('postal_code', e.target.value)}
-              placeholder={formData.country === 'MX' ? '12345' : '12345-6789'}
+              value={formData.postal_code || ""}
+              onChange={(e) => handleChange("postal_code", e.target.value)}
+              placeholder={formData.country === "MX" ? "12345" : "12345-6789"}
               error={errors.postal_code}
             />
           </div>
@@ -259,13 +242,13 @@ const PersonalInfoSection = ({ profile, onUpdate, saving }) => {
             onClick={handleReset}
             disabled={saving}
             className={cn(
-              'inline-flex items-center gap-2 px-4 py-2 rounded-lg',
-              'border border-slate-300 dark:border-slate-600',
-              'text-slate-700 dark:text-slate-300',
-              'hover:bg-slate-100 dark:hover:bg-slate-700',
-              'focus:outline-none focus:ring-2 focus:ring-slate-500/20',
-              'transition-all duration-200',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
+              "inline-flex items-center gap-2 px-4 py-2 rounded-lg",
+              "border border-slate-300 dark:border-slate-600",
+              "text-slate-700 dark:text-slate-300",
+              "hover:bg-slate-100 dark:hover:bg-slate-700",
+              "focus:outline-none focus:ring-2 focus:ring-slate-500/20",
+              "transition-all duration-200",
+              "disabled:opacity-50 disabled:cursor-not-allowed"
             )}
           >
             <RotateCcw className="w-4 h-4" />
@@ -276,11 +259,11 @@ const PersonalInfoSection = ({ profile, onUpdate, saving }) => {
             type="submit"
             disabled={saving || Object.keys(errors).length > 0}
             className={cn(
-              'inline-flex items-center gap-2 px-6 py-2 rounded-lg',
-              'bg-blue-600 hover:bg-blue-700 text-white',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500/20',
-              'transition-all duration-200',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
+              "inline-flex items-center gap-2 px-6 py-2 rounded-lg",
+              "bg-blue-600 hover:bg-blue-700 text-white",
+              "focus:outline-none focus:ring-2 focus:ring-blue-500/20",
+              "transition-all duration-200",
+              "disabled:opacity-50 disabled:cursor-not-allowed"
             )}
           >
             {saving ? (

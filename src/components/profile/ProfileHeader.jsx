@@ -1,204 +1,116 @@
 import React, { useState } from 'react';
-import { Camera, Upload, X } from 'lucide-react';
+import { Camera, CheckCircle, AlertTriangle } from 'lucide-react';
 import ReactCountryFlag from "react-country-flag";
 import { countryName } from "../../lib/geo";
 import { cn } from '../../lib/utils';
+import AvatarUploader from './AvatarUploader'; // ¡Importamos nuestro nuevo componente!
+
+// --- Componentes de UI Internos y Rediseñados ---
+
+const StatBox = ({ value, label }) => (
+  <div className="text-center">
+    <p className="text-2xl font-bold text-foreground">{value}</p>
+    <p className="text-xs text-muted-foreground">{label}</p>
+  </div>
+);
+
+const VerificationBadge = ({ isVerified }) => {
+  const config = isVerified
+    ? { text: 'Cuenta verificada', iconColor: 'text-green-500', bgColor: 'bg-green-500/15' }
+    : { text: 'Verifica tu correo', iconColor: 'text-yellow-500', bgColor: 'bg-yellow-500/15' };
+  
+  const Icon = isVerified ? CheckCircle : AlertTriangle;
+
+  return (
+    <div className={cn("inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium", config.bgColor, config.iconColor)}>
+      <Icon className="w-4 h-4" />
+      <span>{config.text}</span>
+    </div>
+  );
+};
+
 
 const ProfileHeader = ({ profile, onAvatarChange }) => {
-  const [isHovering, setIsHovering] = useState(false);
+  const [showUploader, setShowUploader] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleAvatarUpload = async (event) => {
-    const file = event.target.files[0];
+  const handleAvatarUpload = async (file) => {
     if (!file) return;
-
-    // Validar tipo de archivo
-    if (!file.type.startsWith('image/')) {
-      alert('Por favor selecciona una imagen válida');
-      return;
-    }
-
-    // Validar tamaño (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('La imagen debe ser menor a 5MB');
-      return;
-    }
-
     setIsUploading(true);
-    
     try {
-      // Aquí iría la lógica de upload real
-      // Por ahora simulamos el proceso
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      // Aquí iría la lógica de upload real a tu backend
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulación
       if (onAvatarChange) {
-        onAvatarChange(file);
+        onAvatarChange(file); // Pasamos el archivo recortado al padre
       }
+      setShowUploader(false); // Cerramos el modal al éxito
     } catch (error) {
       console.error('Error uploading avatar:', error);
-      alert('Error al subir la imagen');
+      // Aquí podrías usar un toast de error
     } finally {
       setIsUploading(false);
     }
   };
 
-  const avatarUrl = profile.avatar_url || 
-    `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(
-      profile.first_name || 'user'
-    )}`;
-
-  const isVerified = Boolean(profile?.email_verified_at);
+  const avatarUrl = profile.avatar_url || `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(profile.first_name || 'user' )}`;
 
   return (
-    <div className="relative">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-800 dark:to-slate-900 rounded-2xl" />
-
-      <div className="relative p-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-          {/* Avatar con upload */}
-          <div className="relative">
-            <div
-              className={cn(
-                "relative w-24 h-24 rounded-2xl overflow-hidden border-4 border-white dark:border-slate-700 shadow-lg transition-all duration-200",
-                isHovering && "scale-105 shadow-xl"
-              )}
-              onMouseEnter={() => setIsHovering(true)}
-              onMouseLeave={() => setIsHovering(false)}
-            >
-              <img
-                src={avatarUrl}
-                alt="Avatar"
-                className="w-full h-full object-cover"
-              />
-
-              {/* Overlay de upload */}
-              <div
-                className={cn(
-                  "absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200",
-                  isHovering ? "opacity-100" : "opacity-0"
-                )}
-              >
-                {isUploading ? (
-                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Camera className="w-6 h-6 text-white" />
-                )}
-              </div>
-            </div>
-
-            {/* Input de archivo oculto */}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              disabled={isUploading}
+    <>
+      <div className="bg-card border border-border rounded-2xl p-8">
+        <div className="flex flex-col sm:flex-row items-center gap-6">
+          
+          {/* --- Avatar Simplificado --- */}
+          <div className="relative flex-shrink-0">
+            <img
+              src={avatarUrl}
+              alt="Avatar"
+              className="w-24 h-24 rounded-2xl object-cover border-4 border-background shadow-md"
             />
-
-            {/* Botón de upload visible */}
             <button
-              type="button"
-              className={cn(
-                "absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-blue-600 text-white shadow-lg transition-all duration-200",
-                "hover:bg-blue-700 hover:scale-110",
-                "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
-                isUploading && "opacity-50 cursor-not-allowed"
-              )}
-              disabled={isUploading}
+              onClick={() => setShowUploader(true)}
+              className="absolute -bottom-2 -right-2 w-8 h-8 flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110"
+              title="Cambiar avatar"
             >
-              <Upload className="w-4 h-4 mx-auto" />
+              <Camera className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Información del usuario */}
-          <div className="flex-1 min-w-0">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-                {profile.first_name && profile.last_name
-                  ? `${profile.first_name} ${profile.last_name}`
-                  : "Mi Perfil"}
-              </h1>
-
-              <p className="text-slate-600 dark:text-slate-300">
-                {profile.email}
-              </p>
-
-              <div className="flex flex-wrap gap-3 mt-4">
-                {/* Badge de verificación */}
-                {isVerified ? (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium">
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                    Cuenta verificada
-                  </div>
-                ) : (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-sm font-medium">
-                    <div className="w-2 h-2 rounded-full bg-amber-500" />
-                    Verifica tu correo
-                  </div>
-                )}
-
-                {/* Badge de ubicación si existe */}
-                {profile?.country && (
-                  <div
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm"
-                    aria-label={`Ubicación: ${
-                      profile.city ? profile.city + ", " : ""
-                    }${countryName(profile.country)}`}
-                  >
-                    <ReactCountryFlag
-                      countryCode={profile.country}
-                      svg
-                      style={{
-                        width: "1.25rem",
-                        height: "1.25rem",
-                        borderRadius: "2px",
-                      }}
-                      title={profile.country}
-                      aria-label={countryName(profile.country)}
-                    />
-                    <span className="truncate">
-                      {profile.city || countryName(profile.country)}
-                    </span>
-                  </div>
-                )}
-              </div>
+          {/* --- Información del Usuario --- */}
+          <div className="flex-1 text-center sm:text-left">
+            <h1 className="text-3xl font-bold text-foreground">
+              {profile.first_name && profile.last_name ? `${profile.first_name} ${profile.last_name}` : "Mi Perfil"}
+            </h1>
+            <p className="text-muted-foreground mt-1">{profile.email}</p>
+            
+            <div className="flex flex-wrap justify-center sm:justify-start gap-3 mt-4">
+              <VerificationBadge isVerified={Boolean(profile?.email_verified_at)} />
+              {profile?.country && (
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-sm dark:text-muted-foreground">
+                  <ReactCountryFlag countryCode={profile.country} svg style={{ width: "1.25rem", height: "1.25rem", borderRadius: "2px" }} />
+                  <span>{profile.city || countryName(profile.country)}</span>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Estadísticas rápidas */}
-          <div className="flex sm:flex-col gap-4 sm:gap-2 text-center">
-            <div className="px-4 py-2 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {profile.years_with_us || 0}
-              </div>
-              <div className="text-xs text-slate-600 dark:text-slate-400">
-                Años con nosotros
-              </div>
-            </div>
-
-            <div className="px-4 py-2 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                {profile.active_services || 0}
-              </div>
-              <div className="text-xs text-slate-600 dark:text-slate-400">
-                Servicios activos
-              </div>
-            </div>
+          {/* --- Estadísticas Rápidas --- */}
+          <div className="flex gap-8 sm:border-l sm:border-border sm:pl-8">
+            <StatBox value={profile.years_with_us || 0} label="Años con nosotros" />
+            <StatBox value={profile.active_services || 0} label="Servicios activos" />
           </div>
-        </div>
-
-        {/* Descripción adicional */}
-        <div className="mt-6 pt-6 border-t border-white/20 dark:border-slate-700/50">
-          <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-            Gestiona tu información personal, configuración de seguridad y
-            dispositivos conectados desde este panel de control.
-          </p>
         </div>
       </div>
-    </div>
+
+      {/* --- El Modal de Subida y Recorte --- */}
+      {showUploader && (
+        <AvatarUploader
+          onAvatarChange={handleAvatarUpload}
+          onClose={() => setShowUploader(false)}
+          isUploading={isUploading}
+        />
+      )}
+    </>
   );
 };
 
 export default ProfileHeader;
-

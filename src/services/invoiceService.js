@@ -1,26 +1,14 @@
-import authService from './authService';
+import apiClient from './apiClient'; // 1. Importamos el cliente de API centralizado.
+import { paymentService } from './paymentService'; // 2. Importamos paymentService con desestructuración.
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+// 3. Eliminamos la dependencia de authService y la lógica de tokens.
 
 class InvoicesService {
   async getInvoices(params = {}) {
     try {
-      const token = authService.getToken();
-      const queryParams = new URLSearchParams(params).toString();
-      const url = `${API_BASE_URL}/invoices${queryParams ? `?${queryParams}` : ''}`;
-      
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      // 4. Reemplazamos fetch por apiClient y pasamos los params directamente.
+      const response = await apiClient.get('/invoices');
+      return response.data; // 5. Devolvemos response.data
     } catch (error) {
       console.error('Error fetching invoices:', error);
       throw error;
@@ -29,19 +17,8 @@ class InvoicesService {
 
   async getInvoice(uuid) {
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_BASE_URL}/invoices/${uuid}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.get(`/invoices/${uuid}`);
+      return response.data;
     } catch (error) {
       console.error('Error fetching invoice:', error);
       throw error;
@@ -50,19 +27,8 @@ class InvoicesService {
 
   async getInvoiceStats() {
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_BASE_URL}/invoices/stats`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.get('/invoices/stats');
+      return response.data;
     } catch (error) {
       console.error('Error fetching invoice stats:', error);
       throw error;
@@ -71,22 +37,8 @@ class InvoicesService {
 
   async getTransactions(params = {}) {
     try {
-      const token = authService.getToken();
-      const queryParams = new URLSearchParams(params).toString();
-      const url = `${API_BASE_URL}/transactions${queryParams ? `?${queryParams}` : ''}`;
-      
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.get('/transactions',);
+      return response.data;
     } catch (error) {
       console.error('Error fetching transactions:', error);
       throw error;
@@ -95,19 +47,8 @@ class InvoicesService {
 
   async getTransaction(uuid) {
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_BASE_URL}/transactions/${uuid}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.get(`/transactions/${uuid}`);
+      return response.data;
     } catch (error) {
       console.error('Error fetching transaction:', error);
       throw error;
@@ -116,19 +57,8 @@ class InvoicesService {
 
   async getTransactionStats() {
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_BASE_URL}/transactions/stats`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.get('/transactions/stats');
+      return response.data;
     } catch (error) {
       console.error('Error fetching transaction stats:', error);
       throw error;
@@ -137,59 +67,32 @@ class InvoicesService {
 
   async getRecentTransactions(limit = 10) {
     try {
-      const token = authService.getToken();
-      const response = await fetch(`${API_BASE_URL}/transactions/recent?limit=${limit}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      const response = await apiClient.get('/transactions/recent', { params: { limit } });
+      return response.data;
     } catch (error) {
       console.error('Error fetching recent transactions:', error);
       throw error;
     }
   }
 
+  // --- Métodos delegados a paymentService ---
+  // Estos ya estaban bien, asumiendo que la importación es correcta.
+  // Solo nos aseguramos de que la importación sea nombrada.
+
   async getPaymentMethods() {
-    try {
-return paymentService.getPaymentMethods();
-    } catch (error) {
-      console.error('Error fetching payment methods:', error);
-      throw error;
-    }
+    return paymentService.getPaymentMethods();
   }
 
   async createSetupIntent() {
-    try {
-return paymentService.createSetupIntent();
-    } catch (error) {
-      console.error('Error creating setup intent:', error);
-      throw error;
-    }
+    return paymentService.createPaymentIntent();
   }
 
   async addPaymentMethod(methodData) {
-    try {
-return paymentService.addPaymentMethod(methodData);
-    } catch (error) {
-      console.error('Error adding payment method:', error);
-      throw error;
-    }
+    return paymentService.addPaymentMethod(methodData);
   }
 
   async updatePaymentMethod(id, data) {
-    try {
-return paymentService.updatePaymentMethod(id, data);
-    } catch (error) {
-      console.error('Error updating payment method:', error);
-      throw error;
-    }
+    return paymentService.updatePaymentMethod(id, data);
   }
 
   async setDefaultPaymentMethod(id) {
@@ -197,12 +100,7 @@ return paymentService.updatePaymentMethod(id, data);
   }
 
   async deletePaymentMethod(id) {
-    try {
     return paymentService.deletePaymentMethod(id);
-    } catch (error) {
-      console.error('Error deleting payment method:', error);
-      throw error;
-    }
   }
 
   async processPayment(paymentData) {
@@ -210,17 +108,9 @@ return paymentService.updatePaymentMethod(id, data);
   }
 
   async getPaymentStats() {
-    try {
-return paymentService.getPaymentStats();
-    } catch (error) {
-      console.error('Error fetching payment stats:', error);
-      throw error;
-    }
+    return paymentService.getPaymentStats();
   }
 }
 
+// Exportamos una única instancia de la clase.
 export default new InvoicesService();
-
-
-import paymentService from './paymentService';
-

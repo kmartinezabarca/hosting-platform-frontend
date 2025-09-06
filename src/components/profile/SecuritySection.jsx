@@ -82,8 +82,7 @@ const SecuritySection = ({
 
   const handlePasswordSubmit = (e) => {
     e.preventDefault();
-    
-    // Validar todos los campos
+
     Object.keys(passwordData).forEach(key => {
       validatePassword(key, passwordData[key]);
     });

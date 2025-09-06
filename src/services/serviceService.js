@@ -1,36 +1,12 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+import apiClient from './apiClient';
+import paymentService from './paymentService';
 
-// Get authentication token from localStorage
-const getAuthToken = () => {
-  return localStorage.getItem('auth_token');
-};
-
-// Create headers with authentication
-const createAuthHeaders = () => {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
-  };
-};
-
-// Services API service
 export const servicesService = {
   // Get available service plans
   async getServicePlans() {
     try {
-      const response = await fetch(`${API_BASE_URL}/services/plans`, {
-        method: "GET",
-        headers: createAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.get('/services/plans');
+      return response.data;
     } catch (error) {
       console.error("Error fetching service plans:", error);
       throw error;
@@ -38,72 +14,41 @@ export const servicesService = {
   },
 
   /**
-   * Fetch the list of add-ons available for the specified plan. The API
-   * endpoint must return an object with `success` boolean and `data` array.
+   * Fetch the list of add-ons available for the specified plan.
    * @param {string|number} planId Identifier of the plan (uuid or slug)
-   * @returns {Promise<{success: boolean, data?: any[]}>}
    */
   async getPlanAddOns(planId) {
     try {
-      const res = await fetch(`${API_BASE_URL}/service-plans/add-ons/${planId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      const data = await res.json();
-      return data;
+      const response = await apiClient.get(`/service-plans/add-ons/${planId}`);
+      return response.data;
     } catch (err) {
       console.error("getPlanAddOns error:", err);
-      return { success: false, message: "Error fetching plan add-ons" };
+      // Lanzamos el error para que React Query pueda manejarlo.
+      throw err;
     }
   },
 
   // Contract a new service
   async contractService(serviceData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/services/contract`, {
-        method: "POST",
-        headers: createAuthHeaders(),
-        body: JSON.stringify(serviceData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.post('/services/contract', serviceData);
+      return response.data;
     } catch (error) {
       console.error("Error contracting service:", error);
       throw error;
     }
   },
 
-  // Process payment for service
+  // Process payment for service (delegado a paymentService)
   async processPayment(paymentData) {
-    try {
-      return paymentService.processPayment(paymentData);
-    } catch (error) {
-      console.error("Error processing payment:", error);
-      throw error;
-    }
+    return paymentService.processPayment(paymentData);
   },
 
   // Get user's services
   async getUserServices() {
     try {
-      const response = await fetch(`${API_BASE_URL}/services/user`, {
-        method: "GET",
-        headers: createAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.get('/services/user');
+      return response.data;
     } catch (error) {
       console.error("Error fetching user services:", error);
       throw error;
@@ -113,17 +58,8 @@ export const servicesService = {
   // Get service details
   async getServiceDetails(serviceId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/services/${serviceId}`, {
-        method: "GET",
-        headers: createAuthHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.get(`/services/${serviceId}`);
+      return response.data;
     } catch (error) {
       console.error("Error fetching service details:", error);
       throw error;
@@ -133,21 +69,8 @@ export const servicesService = {
   // Update service configuration
   async updateServiceConfig(serviceId, configData) {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/services/${serviceId}/config`,
-        {
-          method: "PUT",
-          headers: createAuthHeaders(),
-          body: JSON.stringify(configData),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.put(`/services/${serviceId}/config`, configData);
+      return response.data;
     } catch (error) {
       console.error("Error updating service config:", error);
       throw error;
@@ -157,21 +80,8 @@ export const servicesService = {
   // Cancel service
   async cancelService(serviceId, reason) {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/services/${serviceId}/cancel`,
-        {
-          method: "POST",
-          headers: createAuthHeaders(),
-          body: JSON.stringify({ reason }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.post(`/services/${serviceId}/cancel`, { reason });
+      return response.data;
     } catch (error) {
       console.error("Error canceling service:", error);
       throw error;
@@ -181,21 +91,8 @@ export const servicesService = {
   // Suspend service
   async suspendService(serviceId, reason) {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/services/${serviceId}/suspend`,
-        {
-          method: "POST",
-          headers: createAuthHeaders(),
-          body: JSON.stringify({ reason }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.post(`/services/${serviceId}/suspend`, { reason });
+      return response.data;
     } catch (error) {
       console.error("Error suspending service:", error);
       throw error;
@@ -205,20 +102,8 @@ export const servicesService = {
   // Reactivate service
   async reactivateService(serviceId) {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/services/${serviceId}/reactivate`,
-        {
-          method: "POST",
-          headers: createAuthHeaders(),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.post(`/services/${serviceId}/reactivate`);
+      return response.data;
     } catch (error) {
       console.error("Error reactivating service:", error);
       throw error;
@@ -228,20 +113,8 @@ export const servicesService = {
   // Get service usage statistics
   async getServiceUsage(serviceId) {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/services/${serviceId}/usage`,
-        {
-          method: "GET",
-          headers: createAuthHeaders(),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.get(`/services/${serviceId}/usage`);
+      return response.data;
     } catch (error) {
       console.error("Error fetching service usage:", error);
       throw error;
@@ -251,20 +124,8 @@ export const servicesService = {
   // Get service backups
   async getServiceBackups(serviceId) {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/services/${serviceId}/backups`,
-        {
-          method: "GET",
-          headers: createAuthHeaders(),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.get(`/services/${serviceId}/backups`);
+      return response.data;
     } catch (error) {
       console.error("Error fetching service backups:", error);
       throw error;
@@ -274,21 +135,8 @@ export const servicesService = {
   // Create service backup
   async createServiceBackup(serviceId, backupName) {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/services/${serviceId}/backups`,
-        {
-          method: "POST",
-          headers: createAuthHeaders(),
-          body: JSON.stringify({ name: backupName }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.post(`/services/${serviceId}/backups`, { name: backupName });
+      return response.data;
     } catch (error) {
       console.error("Error creating service backup:", error);
       throw error;
@@ -298,29 +146,33 @@ export const servicesService = {
   // Restore service backup
   async restoreServiceBackup(serviceId, backupId) {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/services/${serviceId}/backups/${backupId}/restore`,
-        {
-          method: "POST",
-          headers: createAuthHeaders(),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
+      const response = await apiClient.post(`/services/${serviceId}/backups/${backupId}/restore`);
+      return response.data;
     } catch (error) {
       console.error("Error restoring service backup:", error);
+      throw error;
+    }
+  },
+
+  async updateServiceConfiguration(serviceId, config) {
+    try {
+    const response = await apiClient.patch(`/services/${serviceId}/configuration`, config);
+    return response.data;
+    } catch (error) {
+      console.error("Error updating service configuration:", error);
+      throw error;
+    }
+  },
+
+  async getServiceInvoices(serviceId) {
+    try {
+      const response = await apiClient.get(`/services/${serviceId}/invoices`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching service invoices:", error);
       throw error;
     }
   },
 };
 
 export default servicesService;
-
-
-import paymentService from './paymentService';
-

@@ -76,8 +76,8 @@ const ClientProfilePageNew = () => {
   const handle2FAGenerate = async () => {
     try {
       const res = await generate2FAMutation.mutateAsync();
-      setQrCode(res.qr_code);
-      setTwoFactorSecret(res.secret);
+      setQrCode(res?.data?.qr_code);
+      setTwoFactorSecret(res?.data?.secret);
     } catch (error) {
       console.error("Error generating 2FA:", error);
       toast.error(error.message || "Error al generar 2FA");
@@ -130,7 +130,7 @@ const ClientProfilePageNew = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto" />
           <p className="text-slate-600 dark:text-slate-400">Cargando perfil...</p>
@@ -141,7 +141,7 @@ const ClientProfilePageNew = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
           <p className="text-red-600">Error al cargar el perfil</p>
           <button 
@@ -156,7 +156,7 @@ const ClientProfilePageNew = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="max-w-6xl mx-auto px-4 space-y-8">
         <ProfileHeader profile={profile} onAvatarChange={handleAvatarChange} />
 

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from "react-router-dom";
 import { useGoogleLogin } from '@react-oauth/google';
 import { motion } from "framer-motion";
@@ -12,7 +13,6 @@ import {
   Zap,
   Globe,
 } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
 import { useLogin, useLoginWithGoogle } from "../hooks/useAuth";
 import logoROKE from "../assets/ROKEIndustriesFusionLogo.png";
 
@@ -23,11 +23,12 @@ const LoginPage = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [formErrors, setFormErrors] = useState({});
-  const { mutate: login, isLoading: isLoginLoading } = useLogin();
+  const { mutateAsync: login, isPending: isLoginLoading } = useLogin();
   const { mutateAsync: loginWithGoogle, isPending: isGoogleLoginLoading } = useLoginWithGoogle();
   const isLoading = isLoginLoading || isGoogleLoginLoading;
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const handleChange = (e) => {
     setFormData({
@@ -67,10 +68,12 @@ const LoginPage = () => {
       try {
         const response = await login(formData.email, formData.password);
 
+        await queryClient.refetchQueries({ queryKey: ['auth', 'me'] });
+
         if (response.two_factor_required) {
           navigate("/verify-2fa", { state: { email: formData.email } });
         } else {
-          navigate("/client/dashboard");
+          window.location.href = '/client/dashboard';
         }
       } catch (err) {
         setError(
@@ -83,11 +86,8 @@ const LoginPage = () => {
   function normalizeAuthResponse(resp) {
     console.log("Normalizando respuesta de autenticación:", resp);
     return {
-      token: resp.token || resp.access_token || null,
-      tokenType: resp.token_type || "Bearer",
       twoFactorRequired: !!resp.two_factor_required,
       email: resp.email || resp.user?.email || null,
-      user: resp.user ?? null,
     };
   }
 
@@ -113,16 +113,15 @@ const LoginPage = () => {
       const backendResponse = await loginWithGoogle(googleUserInfo);
       console.log("Respuesta del backend:", backendResponse);
 
-      const { token, tokenType, twoFactorRequired, email, user } = normalizeAuthResponse(backendResponse);
+       await queryClient.refetchQueries({ queryKey: ['auth', 'me'] });
+
+      const { twoFactorRequired, email } = normalizeAuthResponse(backendResponse);
 
       if (twoFactorRequired) {
         console.log("2FA requerido. Redirigiendo a la página de verificación...");
         navigate("/verify-2fa", { state: { email: email } });
-      } else if (token) {
-        console.log("Login con Google exitoso. Redirigiendo al dashboard...");
-        navigate("/client/dashboard");
       } else {
-        throw new Error("Respuesta inesperada del servidor.");
+        window.location.href = '/client/dashboard';
       }
 
     } catch (err) {

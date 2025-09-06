@@ -5,11 +5,27 @@ import apiClient from './apiClient';
  */
 const sessionsService = {
   /**
-   * Obtener lista de dispositivos/sesiones activas
+   * Obtiene una lista paginada de las sesiones del usuario.
+   *
+   * @param {number} page - El número de página a solicitar.
+   * @param {number} perPage - El número de sesiones por página.
+   * @returns {Promise<object>} La respuesta paginada de la API.
    */
-  getSessions: async () => {
-    const response = await apiClient.get('/profile/devices');
-    return response.data;
+  getSessions: async (page = 1, perPage = 10) => {
+    try {
+      const response = await apiClient.get('/profile/devices', {
+        params: {
+          page: page,
+          per_page: perPage,
+        },
+      });
+      
+      return response.data;
+
+    } catch (error) {
+      console.error('Error al obtener las sesiones:', error);
+      throw error;
+    }
   },
 
   /**
@@ -24,7 +40,7 @@ const sessionsService = {
    * Cerrar sesión en todos los otros dispositivos
    */
   logoutOtherSessions: async () => {
-    const response = await apiClient.delete('/profile/sessions/others');
+    const response = await apiClient.post('/profile/devices/revoke-others');
     return response.data;
   },
 };
