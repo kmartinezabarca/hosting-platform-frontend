@@ -66,7 +66,16 @@ const AdminUsersPage = () => {
         role: roleFilter !== 'all' ? roleFilter : undefined
       });
       
-      setUsers(response.data || response);
+      // Manejar la estructura anidada de la respuesta de la API
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        setUsers(response.data.data);
+      } else if (response.data && Array.isArray(response.data)) {
+        setUsers(response.data);
+      } else if (Array.isArray(response)) {
+        setUsers(response);
+      } else {
+        setUsers([]);
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
       setUsers([]);
