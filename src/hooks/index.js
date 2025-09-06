@@ -22,6 +22,9 @@ export * from './useBillingCycles';
 // Hooks de dashboard
 export * from './useDashboard';
 
+// Hooks de dashboard de administración
+export * from './useAdminDashboard';
+
 // Hooks de servicios
 export * from './useServices';
 
