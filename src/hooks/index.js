@@ -34,3 +34,6 @@ export * from './useUsers';
 // Hooks de servicios de administración
 export * from './useAdminServices';
 
+// Hooks de planes de servicio de administración
+export * from './useAdminServicePlans';
+
