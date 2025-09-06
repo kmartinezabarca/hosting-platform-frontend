@@ -28,3 +28,6 @@ export * from './useAdminDashboard';
 // Hooks de servicios
 export * from './useServices';
 
+// Hooks de usuarios
+export * from './useUsers';
+
