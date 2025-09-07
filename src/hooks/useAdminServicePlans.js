@@ -22,26 +22,14 @@ export const useAdminServicePlans = (filters = {}) => {
     queryFn: () => adminServicePlansService.getAll(filters),
     ...queryConfigs.dynamic,
     select: (data) => {
-      // Asumiendo que la API devuelve una estructura paginada similar a la de servicios
+      // Manejar la estructura real de la API: {success: true, data: [...], pagination: {...}}
       if (data.success && data.data) {
         return {
-          plans: data.data.data || [],
-          pagination: {
-            current_page: data.data.current_page,
-            last_page: data.data.last_page,
-            per_page: data.data.per_page,
-            total: data.data.total,
-            from: data.data.from,
-            to: data.data.to,
-            first_page_url: data.data.first_page_url,
-            last_page_url: data.data.last_page_url,
-            next_page_url: data.data.next_page_url,
-            prev_page_url: data.data.prev_page_url,
-            links: data.data.links || []
-          }
+          data: data.data || [],
+          pagination: data.pagination || null
         };
       }
-      return { plans: [], pagination: null };
+      return { data: [], pagination: null };
     },
   });
 };

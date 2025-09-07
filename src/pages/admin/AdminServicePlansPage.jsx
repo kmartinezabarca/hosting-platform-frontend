@@ -72,8 +72,8 @@ const AdminServicePlansPage = () => {
   const updatePlanMutation = useUpdateAdminServicePlan();
   const deletePlanMutation = useDeleteAdminServicePlan();
 
-  // Extraer datos de las respuestas
-  const servicePlans = plansData?.plans || [];
+  // Extraer datos de las respuestas según la estructura real de la API
+  const servicePlans = plansData?.data || [];
   const pagination = plansData?.pagination;
   const categories = categoriesData?.data || [];
   const billingCycles = billingCyclesData?.data || [];
