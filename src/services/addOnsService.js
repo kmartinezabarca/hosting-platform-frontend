@@ -1,156 +1,81 @@
-import axios from 'axios';
+// src/services/addOnsService.js
+import apiClient from './apiClient';
+import { buildQuery } from '../lib/query'; 
 
-const API_BASE_URL = 'http://localhost:8000/api';
+const addOnsService = {
+  /* ----------- Públicos ----------- */
 
-// Configure axios defaults
-axios.defaults.baseURL = API_BASE_URL;
-
-class AddOnsService {
-  // Get authentication headers
-  getAuthHeaders() {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }
-
-  // Public methods (no authentication required)
+  // GET /add-ons?is_active=true&search=...
   async getAddOns(params = {}) {
-    try {
-      const queryParams = new URLSearchParams();
-      
-      if (params.is_active !== undefined) {
-        queryParams.append('is_active', params.is_active);
-      }
-      if (params.search) {
-        queryParams.append('search', params.search);
-      }
+    const qs = buildQuery(params);
+    const url = `/admin/add-ons${qs ? `?${qs}` : ''}`;
+    const res = await apiClient.get(url);
+    return res.data;
+  },
 
-      const endpoint = `/add-ons${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
-      const response = await axios.get(endpoint);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching add-ons:', error);
-      throw error;
-    }
-  }
-
+  // GET /add-ons/active
   async getActiveAddOns() {
-    try {
-      const response = await axios.get('/add-ons/active');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching active add-ons:', error);
-      throw error;
-    }
-  }
+    const res = await apiClient.get('/add-ons/active');
+    return res.data;
+  },
 
+  // GET /add-ons/:uuid
   async getAddOn(uuid) {
-    try {
-      const response = await axios.get(`/add-ons/${uuid}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching add-on:', error);
-      throw error;
-    }
-  }
+    const res = await apiClient.get(`/add-ons/${uuid}`);
+    return res.data;
+  },
 
+  // GET /add-ons/service-plan/:planUuid
   async getAddOnsByServicePlan(planUuid) {
-    try {
-      const response = await axios.get(`/add-ons/service-plan/${planUuid}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching add-ons by service plan:', error);
-      throw error;
-    }
-  }
+    const res = await apiClient.get(`/add-ons/service-plan/${planUuid}`);
+    return res.data;
+  },
 
-  // Admin methods (authentication required)
-  async createAddOn(addOnData) {
-    try {
-      const response = await axios.post('/admin/add-ons', addOnData, {
-        headers: this.getAuthHeaders()
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error creating add-on:', error);
-      throw error;
-    }
-  }
+  /* ----------- Admin (requiere auth; la maneja apiClient) ----------- */
 
-  async updateAddOn(uuid, addOnData) {
-    try {
-      const response = await axios.put(`/admin/add-ons/${uuid}`, addOnData, {
-        headers: this.getAuthHeaders()
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error updating add-on:', error);
-      throw error;
-    }
-  }
+  // POST /admin/add-ons
+  async createAddOn(data) {
+    const res = await apiClient.post('/admin/add-ons', data);
+    return res.data;
+  },
 
+  // PUT /admin/add-ons/:uuid
+  async updateAddOn(uuid, data) {
+    const res = await apiClient.put(`/admin/add-ons/${uuid}`, data);
+    return res.data;
+  },
+
+  // DELETE /admin/add-ons/:uuid
   async deleteAddOn(uuid) {
-    try {
-      const response = await axios.delete(`/admin/add-ons/${uuid}`, {
-        headers: this.getAuthHeaders()
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error deleting add-on:', error);
-      throw error;
-    }
-  }
+    const res = await apiClient.delete(`/admin/add-ons/${uuid}`);
+    return res.data;
+  },
 
-  async attachAddOnToPlan(addOnUuid, planData) {
-    try {
-      const response = await axios.post(`/admin/add-ons/${addOnUuid}/attach-plan`, planData, {
-        headers: this.getAuthHeaders()
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error attaching add-on to plan:', error);
-      throw error;
-    }
-  }
+  // POST /admin/add-ons/:addOnUuid/attach-to-plan
+  // payload sugerido: { plan_uuid: string } o { plan_id: number }
+  async attachAddOnToPlan(addOnUuid, payload) {
+    const res = await apiClient.post(
+      `/admin/add-ons/${addOnUuid}/attach-to-plan`,
+      payload
+    );
+    return res.data;
+  },
 
-  async detachAddOnFromPlan(addOnUuid, planData) {
-    try {
-      const response = await axios.post(`/admin/add-ons/${addOnUuid}/detach-plan`, planData, {
-        headers: this.getAuthHeaders()
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error detaching add-on from plan:', error);
-      throw error;
-    }
-  }
+  // POST /admin/add-ons/:addOnUuid/detach-from-plan
+  async detachAddOnFromPlan(addOnUuid, payload) {
+    const res = await apiClient.post(
+      `/admin/add-ons/${addOnUuid}/detach-from-plan`,
+      payload
+    );
+    return res.data;
+  },
 
-  // Helper methods
-  async getServicePlans() {
-    try {
-      const response = await axios.get('/service-plans');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching service plans:', error);
-      throw error;
-    }
-  }
-}
+  // GET /admin/service-plans?is_active=true...
+  async getServicePlans(params = {}) {
+    const qs = new URLSearchParams(params).toString();
+    const res = await apiClient.get(`/admin/service-plans${qs ? `?${qs}` : ''}`);
+    return res.data;
+  },
+};
 
-// Create and export a singleton instance
-const addOnsService = new AddOnsService();
 export default addOnsService;
-
-// Export individual methods for convenience
-export const {
-  getAddOns,
-  getActiveAddOns,
-  getAddOn,
-  getAddOnsByServicePlan,
-  createAddOn,
-  updateAddOn,
-  deleteAddOn,
-  attachAddOnToPlan,
-  detachAddOnFromPlan,
-  getServicePlans,
-} = addOnsService;
-

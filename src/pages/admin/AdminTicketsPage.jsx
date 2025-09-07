@@ -475,7 +475,7 @@ const AdminTicketsPage = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los agentes</SelectItem>
-                <SelectItem value="">Sin asignar</SelectItem>
+                <SelectItem value="unassigned">Sin asignar</SelectItem>
                 {agents.map((agent) => (
                   <SelectItem key={agent.id} value={agent.id.toString()}>
                     {agent.first_name} {agent.last_name}
@@ -568,7 +568,7 @@ const AdminTicketsPage = () => {
                         <UserCheck className="h-4 w-4" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Sin asignar</SelectItem>
+                        <SelectItem value="unassigned">Sin asignar</SelectItem>
                         {agents.map((agent) => (
                           <SelectItem key={agent.id} value={agent.id.toString()}>
                             {agent.first_name} {agent.last_name}
