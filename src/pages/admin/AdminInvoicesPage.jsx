@@ -88,7 +88,7 @@ const AdminInvoicesPage = () => {
       }
 
       const response = await adminInvoicesService.getAll(params);
-      setInvoices(response.data || response);
+      setInvoices(response.data.data || []);
     } catch (error) {
       console.error('Error fetching invoices:', error);
       setInvoices([]);
