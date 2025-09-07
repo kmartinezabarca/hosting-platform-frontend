@@ -79,7 +79,7 @@ const AdminTicketsPage = () => {
       };
 
       const response = await adminTicketsService.getAll(params);
-      setTickets(response.data || response);
+      setTickets(response.data.data || []);
     } catch (error) {
       console.error('Error fetching tickets:', error);
       setTickets([]);
@@ -91,7 +91,7 @@ const AdminTicketsPage = () => {
   const fetchCategories = async () => {
     try {
       const response = await adminTicketsService.getCategories();
-      setCategories(response.data || response);
+      setCategories(response.data.data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
       setCategories([]);
@@ -101,7 +101,7 @@ const AdminTicketsPage = () => {
   const fetchAgents = async () => {
     try {
       const response = await adminTicketsService.getAgents();
-      setAgents(response.data || response);
+      setAgents(response.data.data || []);
     } catch (error) {
       console.error('Error fetching agents:', error);
       setAgents([]);
