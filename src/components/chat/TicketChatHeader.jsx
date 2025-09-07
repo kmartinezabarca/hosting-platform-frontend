@@ -11,7 +11,7 @@ export const TicketChatHeader = ({ ticket, onMinimize, onClose }) => {
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold truncate text-foreground">
-            #{ticket?.ticket_number} {ticket?.subject}
+            #{ticket?.id} {ticket?.subject}
           </span>
           <span className={`text-[11px] px-2 py-0.5 rounded-full ${headerBadge.cls}`}>
             {headerBadge.text}

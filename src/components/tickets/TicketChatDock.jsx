@@ -85,7 +85,7 @@ const TicketChatDock = ({
             exit={{ y: 80, opacity: 0 }}
             onClick={() => onMinimizeChange(false)}
             className="pointer-events-auto fixed bottom-5 right-5 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-xl grid place-items-center"
-            title={`Abrir chat #${ticket?.ticket_number}`}
+            title={`Abrir chat #${ticket?.id}`}
             aria-label="Abrir chat"
           >
             <MessageSquare className="w-6 h-6" />

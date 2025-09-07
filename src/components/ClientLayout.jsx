@@ -3,9 +3,10 @@ import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, Server, FileText, MessageSquare, User, 
-  LogOut, Menu, X, Bell, Search, Settings, ChevronDown,
+  LogOut, Menu, X, Search, Settings, ChevronDown,
   Sun, Moon, Zap, Shield
 } from 'lucide-react';
+import NotificationDropdown from './NotificationDropdown';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -163,28 +164,7 @@ const ClientLayout = () => {
             {/* Acciones del header */}
             <div className="flex items-center space-x-3">
               {/* Notificaciones */}
-              <button
-                aria-label="Notificaciones"
-                title="Notificaciones"
-                className="
-                   relative p-2 rounded-xl transition-colors
-                   text-muted-foreground hover:text-foreground
-                   hover:bg-accent
-                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40
-                   active:bg-accent/70
-                  "
-              >
-                <Bell className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-40" />
-                  <span
-                    className="
-                      relative inline-flex h-3 w-3 rounded-full bg-error
-                      ring-2 ring-white dark:ring-card
-                     "
-                  />
-                </span>
-              </button>
+              <NotificationDropdown isAdmin={false} />
 
               {/* Toggle tema */}
               <button
