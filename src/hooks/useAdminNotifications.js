@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import adminNotificationsService from '@/services/adminNotificationsService';
-import { subscribeToChannel } from '@/services/pusherService';
+import echoInstance from '@/services/echoService';
 
 // Query Keys
 const QK = {
@@ -152,17 +152,15 @@ export const useAdminNotificationsHub = (params = {}) => {
 
   // Suscripciones en tiempo real
   useEffect(() => {
-    const unbind = subscribeToChannel(
-      'private-admin-notifications',
-      'Illuminate\\Notifications\\Events\\BroadcastNotificationCreated',
-      () => {
+    echoInstance.private('admin.notifications')
+      .listen('notification.received', (e) => {
+        console.log('Reverb: Nueva notificación de admin recibida:', e);
         qc.invalidateQueries({ queryKey: QK.base });
         qc.invalidateQueries({ queryKey: QK.stats });
-      }
-    );
+      });
 
     return () => {
-      try { unbind?.(); } catch {}
+      echoInstance.leave('admin.notifications');
     };
   }, [qc]);
 

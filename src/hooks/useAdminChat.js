@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/services/apiClient";
 // Importa las funciones refactorizadas de tu servicio de Pusher
-import { subscribeToChannel, unsubscribeFromChannel } from "@/services/pusherService";
+import echoInstance from "@/services/echoService";
 
 // Claves de query para React Query, tu estructura es perfecta.
 const qk = {
@@ -75,48 +75,33 @@ export function useAdminChat({ enabled = true } = {}) {
        
         if (!enabled) return;
 
-        const setupPusherSubscriptions = async () => {
-            try {
-                const msgChannel = await subscribeToChannel("private-admin-chat");
-                msgChannel.bind(
-                    "Illuminate\\Broadcasting\\Channel\\MessageSent",
-                    () => {
-                        console.log("Pusher: Nuevo mensaje recibido. Invalidando queries...");
-                        qc.invalidateQueries({ queryKey: qk.active });
-                        qc.invalidateQueries({ queryKey: qk.unread });
-                        if (selectedChatRoom?.id) {
-                            qc.invalidateQueries({ queryKey: qk.msgs(selectedChatRoom.id) });
-                        }
+        const setupReverbSubscriptions = () => {
+            echoInstance.private("admin.chat")
+                .listen("MessageSent", () => {
+                    console.log("Reverb: Nuevo mensaje recibido. Invalidando queries...");
+                    qc.invalidateQueries({ queryKey: qk.active });
+                    qc.invalidateQueries({ queryKey: qk.unread });
+                    if (selectedChatRoom?.id) {
+                        qc.invalidateQueries({ queryKey: qk.msgs(selectedChatRoom.id) });
                     }
-                );
-            } catch (error) {
-                console.error("Error al suscribirse al canal de mensajes de Pusher:", error);
-            }
+                });
 
-            try {
-                const statusChannel = await subscribeToChannel("private-admin-chat-status");
-
-                statusChannel.bind(
-                    "Illuminate\\Broadcasting\\Channel\\ChatRoomStatusUpdated",
-                    () => {
-                        console.log("Pusher: Estado de sala actualizado. Invalidando queries...");
-                        qc.invalidateQueries({ queryKey: qk.active });
-                        qc.invalidateQueries({ queryKey: qk.all });
-                        qc.invalidateQueries({ queryKey: qk.stats });
-                        qc.invalidateQueries({ queryKey: qk.unread });
-                    }
-                );
-            } catch (error) {
-                console.error("Error al suscribirse al canal de estado de Pusher:", error);
-            }
+            echoInstance.private("admin.chat.status")
+                .listen("ChatRoomStatusUpdated", () => {
+                    console.log("Reverb: Estado de sala actualizado. Invalidando queries...");
+                    qc.invalidateQueries({ queryKey: qk.active });
+                    qc.invalidateQueries({ queryKey: qk.all });
+                    qc.invalidateQueries({ queryKey: qk.stats });
+                    qc.invalidateQueries({ queryKey: qk.unread });
+                });
         };
 
-        setupPusherSubscriptions();
+        setupReverbSubscriptions();
 
         return () => {
-            console.log("Limpiando y cancelando suscripciones de Pusher...");
-            unsubscribeFromChannel("private-admin-chat");
-            unsubscribeFromChannel("private-admin-chat-status");
+            console.log("Limpiando y cancelando suscripciones de Reverb...");
+            echoInstance.leave("admin.chat");
+            echoInstance.leave("admin.chat.status");
         };
     }, [enabled, qc, selectedChatRoom?.id]);
 

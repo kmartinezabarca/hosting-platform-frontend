@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clientNotificationsService from '@/services/clientNotificationsService';
-import { subscribeToChannel } from '@/services/pusherService';
+import echoInstance from '@/services/echoService';
 
 const QK = {
   list: (params) => ['notifications', 'client', 'list', params || {}],
@@ -79,20 +79,18 @@ export const useClientNotifications = (params = {}) => {
 
   // Suscripción a notificaciones en tiempo real para el usuario
   useEffect(() => {
-    const userId = localStorage.getItem('userId');
-    const channelName = userId ? `private-users.${userId}` : 'private-users';
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
 
-    const off = subscribeToChannel(
-      channelName,
-      'Illuminate\\Notifications\\Events\\BroadcastNotificationCreated',
-      () => {
+    echoInstance.private(`user.${userId}`)
+      .listen("notification.received", (e) => {
+        console.log("Reverb: Nueva notificación de cliente recibida:", e);
         qc.invalidateQueries({ queryKey: QK.list(params) });
         qc.invalidateQueries({ queryKey: QK.unread });
-      }
-    );
+      });
 
     return () => {
-      try { off?.(); } catch {}
+      echoInstance.leave(`user.${userId}`);
     };
   }, [qc, JSON.stringify(params)]);
 
@@ -131,17 +129,14 @@ export const useUnreadNotificationCount = () => {
   });
 
   useEffect(() => {
-    const userId = localStorage.getItem('userId');
-    const channelName = userId ? `private-users.${userId}` : 'private-users';
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
 
-    const off = subscribeToChannel(
-      channelName,
-      'Illuminate\\Notifications\\Events\\BroadcastNotificationCreated',
-      () => qc.invalidateQueries({ queryKey: QK.unread })
-    );
+    echoInstance.private(`user.${userId}`)
+      .listen("notification.received", () => qc.invalidateQueries({ queryKey: QK.unread }));
 
     return () => {
-      try { off?.(); } catch {}
+      echoInstance.leave(`user.${userId}`);
     };
   }, [qc]);
 

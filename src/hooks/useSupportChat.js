@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/services/apiClient";
-import { subscribeToChannel } from "@/services/pusherService";
+import echoInstance from "@/services/echoService";
 
 const qk = {
   room: ["chat", "support-room"],
@@ -49,17 +49,15 @@ export function useSupportChat({ enabled = true } = {}) {
   useEffect(() => {
     if (!enabled || !room?.uuid) return;
 
-    const ch = subscribeToChannel(
-      `private-chat.${room.uuid}`,
-      "Illuminate\\Broadcasting\\Channel\\MessageSent",
-      () => {
+    echoInstance.private(`chat.${room.uuid}`)
+      .listen("MessageSent", () => {
+        console.log("Reverb: Nuevo mensaje en chat de soporte.");
         qc.invalidateQueries({ queryKey: qk.msgs(room.id) });
         qc.invalidateQueries({ queryKey: qk.unread });
-      }
-    );
+      });
 
     return () => {
-      ch?.unbind_all?.(); ch?.unsubscribe?.();
+      echoInstance.leave(`chat.${room.uuid}`);
     };
   }, [enabled, room?.uuid, room?.id, qc]);
 
