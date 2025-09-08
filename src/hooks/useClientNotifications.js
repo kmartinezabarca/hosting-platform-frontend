@@ -1,121 +1,149 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+// src/hooks/useClientNotifications.js
 import { useEffect } from 'react';
-import { subscribeToChannel } from '../services/pusherService';
-import axios from 'axios';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clientNotificationsService from '@/services/clientNotificationsService';
+import { subscribeToChannel } from '@/services/pusherService';
 
-const API_URL = import.meta.env.VITE_API_URL;
-
-// Fetch client notifications
-const fetchClientNotifications = async () => {
-  const { data } = await axios.get(`${API_URL}/notifications`);
-  return data;
+const QK = {
+  list: (params) => ['notifications', 'client', 'list', params || {}],
+  unread: ['notifications', 'client', 'unreadCount'],
 };
 
-// Mark notification as read
-const markNotificationAsRead = async (notificationId) => {
-  const { data } = await axios.put(`${API_URL}/notifications/${notificationId}/read`);
-  return data;
+// Normaliza respuesta: soporta { data: [...] }, { data: { data:[...], ... } } o arreglo plano
+const selectNotifications = (resp) => {
+  const paged = resp?.data?.data;
+  const flatFromData = Array.isArray(resp?.data) ? resp.data : null;
+  const flatDirect = Array.isArray(resp) ? resp : null;
+
+  const list = Array.isArray(paged)
+    ? paged
+    : Array.isArray(flatFromData)
+    ? flatFromData
+    : Array.isArray(flatDirect)
+    ? flatDirect
+    : [];
+
+  const pagination = Array.isArray(paged)
+    ? {
+        current_page: resp?.data?.current_page ?? 1,
+        last_page: resp?.data?.last_page ?? 1,
+        per_page: resp?.data?.per_page ?? list.length,
+        total: resp?.data?.total ?? list.length,
+      }
+    : null;
+
+  return { list, pagination, raw: resp };
 };
 
-// Mark all notifications as read
-const markAllNotificationsAsRead = async () => {
-  const { data } = await axios.put(`${API_URL}/notifications/mark-all-read`);
-  return data;
-};
+/* =========================
+   LISTA Y ACCIONES DE CLIENTE
+========================= */
+export const useClientNotifications = (params = {}) => {
+  const qc = useQueryClient();
 
-// Delete notification
-const deleteNotification = async (notificationId) => {
-  const { data } = await axios.delete(`${API_URL}/notifications/${notificationId}`);
-  return data;
-};
-
-export const useClientNotifications = () => {
-  const queryClient = useQueryClient();
-
-  const { data: notifications, isLoading, error } = useQuery({
-    queryKey: ["clientNotifications"],
-    queryFn: fetchClientNotifications,
+  const {
+    data,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: QK.list(params),
+    queryFn: () => clientNotificationsService.list(params),
+    select: selectNotifications,
+    keepPreviousData: true,
+    staleTime: 60_000,
   });
 
-  const markAsReadMutation = useMutation({
-    mutationFn: markNotificationAsRead,
-    onSuccess: () => {
-      queryClient.invalidateQueries(["clientNotifications"]);
-      queryClient.invalidateQueries(["unreadNotificationCount"]);
+  const markAsRead = useMutation({
+    mutationFn: (id) => clientNotificationsService.markRead(id),
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: QK.list(params) });
+      qc.invalidateQueries({ queryKey: QK.unread });
     },
   });
 
-  const markAllAsReadMutation = useMutation({
-    mutationFn: markAllNotificationsAsRead,
+  const markAllAsRead = useMutation({
+    mutationFn: () => clientNotificationsService.markAllRead(),
     onSuccess: () => {
-      queryClient.invalidateQueries(["clientNotifications"]);
-      queryClient.invalidateQueries(["unreadNotificationCount"]);
+      qc.invalidateQueries({ queryKey: QK.list(params) });
+      qc.invalidateQueries({ queryKey: QK.unread });
     },
   });
 
-  const deleteNotificationMutation = useMutation({
-    mutationFn: deleteNotification,
+  const deleteNotification = useMutation({
+    mutationFn: (id) => clientNotificationsService.remove(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(["clientNotifications"]);
-      queryClient.invalidateQueries(["unreadNotificationCount"]);
+      qc.invalidateQueries({ queryKey: QK.list(params) });
+      qc.invalidateQueries({ queryKey: QK.unread });
     },
   });
 
+  // Suscripción a notificaciones en tiempo real para el usuario
   useEffect(() => {
-    const channel = subscribeToChannel(
-      `private-users.${localStorage.getItem("userId")}`,
-      "Illuminate\\Notifications\\Events\\BroadcastNotificationCreated",
-      (notification) => {
-        queryClient.invalidateQueries(["clientNotifications"]);
-        queryClient.invalidateQueries(["unreadNotificationCount"]);
+    const userId = localStorage.getItem('userId');
+    const channelName = userId ? `private-users.${userId}` : 'private-users';
+
+    const off = subscribeToChannel(
+      channelName,
+      'Illuminate\\Notifications\\Events\\BroadcastNotificationCreated',
+      () => {
+        qc.invalidateQueries({ queryKey: QK.list(params) });
+        qc.invalidateQueries({ queryKey: QK.unread });
       }
     );
 
     return () => {
-      // Pusher channel will be unsubscribed when component unmounts
-      // or when the channel name changes.
-      // For now, we rely on the global disconnect on app unmount.
+      try { off?.(); } catch {}
     };
-  }, [queryClient]);
+  }, [qc, JSON.stringify(params)]);
 
   return {
-    notifications,
+    notifications: data?.list ?? [],
+    pagination: data?.pagination ?? null,
     isLoading,
     error,
-    markAsRead: markAsReadMutation.mutate,
-    markAllAsRead: markAllAsReadMutation.mutate,
-    deleteNotification: deleteNotificationMutation.mutate,
+    markAsRead: markAsRead.mutate,
+    markAllAsRead: markAllAsRead.mutate,
+    deleteNotification: deleteNotification.mutate,
   };
 };
 
-// Fetch unread notification count
-const fetchUnreadNotificationCount = async () => {
-  const { data } = await axios.get(`${API_URL}/notifications/unread-count`);
-  return data.count;
-};
-
+/* =========================
+   CONTADOR DE NO LEÍDOS
+========================= */
 export const useUnreadNotificationCount = () => {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
 
-  const { data: unreadCount, isLoading, error } = useQuery({
-    queryKey: ["unreadNotificationCount"],
-    queryFn: fetchUnreadNotificationCount,
+  const {
+    data,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: QK.unread,
+    queryFn: () => clientNotificationsService.unreadCount(),
+    select: (resp) => {
+      if (typeof resp === 'number') return resp;
+      if (typeof resp?.count === 'number') return resp.count;
+      if (typeof resp?.data?.count === 'number') return resp.data.count;
+      return 0;
+    },
+    staleTime: 15_000,
+    refetchInterval: 15_000, // opcional si confías en Pusher
   });
 
   useEffect(() => {
-    const channel = subscribeToChannel(
-      `private-users.${localStorage.getItem("userId")}`,
-      "Illuminate\\Notifications\\Events\\BroadcastNotificationCreated",
-      (notification) => {
-        queryClient.invalidateQueries(["unreadNotificationCount"]);
-      }
+    const userId = localStorage.getItem('userId');
+    const channelName = userId ? `private-users.${userId}` : 'private-users';
+
+    const off = subscribeToChannel(
+      channelName,
+      'Illuminate\\Notifications\\Events\\BroadcastNotificationCreated',
+      () => qc.invalidateQueries({ queryKey: QK.unread })
     );
 
     return () => {
-      // Cleanup if necessary
+      try { off?.(); } catch {}
     };
-  }, [queryClient]);
+  }, [qc]);
 
-  return { unreadCount, isLoading, error };
+  return { unreadCount: data ?? 0, isLoading, error };
 };
-
