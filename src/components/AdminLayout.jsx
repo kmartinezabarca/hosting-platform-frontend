@@ -10,7 +10,6 @@ import NotificationDropdown from './NotificationDropdown';
 import AuthGuard from './AuthGuard';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
 import UserAvatar from '../components/UserAvatar';
 import { Skeleton } from '../components/ui/skeleton';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
@@ -90,8 +89,7 @@ const AdminLayout = () => {
 // Componente separado para el contenido del layout
 const AdminLayoutContent = () => {
   const { theme, toggleTheme } = useTheme();
-  const { logout, isLoading } = useAuth();
-  const { data: user, isLoading: meLoading, isFetching: meFetching } = useCurrentUser();
+  const { user, logout, isLoading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
