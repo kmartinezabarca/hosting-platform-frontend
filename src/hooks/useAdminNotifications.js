@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import adminNotificationsService from '@/services/adminNotificationsService';
 import echoInstance from '@/services/echoService';
+import { useAuth } from '@/context/AuthContext';
 
 // Query Keys
 const QK = {
@@ -35,23 +36,35 @@ const selectNotifications = (resp) => {
    QUERIES
 ========================= */
 
-export const useAdminNotifications = (params = {}, options = {}) =>
-  useQuery({
+export const useAdminNotifications = (params = {}, options = {}) => {
+  const { isAuthReady, isAuthenticated, isAdmin } = useAuth();
+  const shouldFetch = isAuthReady && isAuthenticated && isAdmin;
+
+  return useQuery({
     queryKey: QK.list(params),
     queryFn: () => adminNotificationsService.getNotifications(params),
     select: selectNotifications,
+    enabled: shouldFetch,
     keepPreviousData: true,
     staleTime: 60 * 1000,
+    retry: false,
     ...options,
   });
+};
 
-export const useAdminNotificationStats = (options = {}) =>
-  useQuery({
+export const useAdminNotificationStats = (options = {}) => {
+  const { isAuthReady, isAuthenticated, isAdmin } = useAuth();
+  const shouldFetch = isAuthReady && isAuthenticated && isAdmin;
+
+  return useQuery({
     queryKey: QK.stats,
     queryFn: adminNotificationsService.getStats,
+    enabled: shouldFetch,
     staleTime: 60 * 1000,
+    retry: false,
     ...options,
   });
+};
 
 /* =========================
    MUTATIONS
@@ -130,7 +143,9 @@ export const useAdminDeleteNotification = (options = {}) => {
 ========================= */
 
 export const useAdminNotificationsHub = (params = {}) => {
+  const { user, isAuthReady, isAuthenticated, isAdmin } = useAuth();
   const qc = useQueryClient();
+  const shouldFetch = isAuthReady && isAuthenticated && isAdmin && user?.uuid;
 
   const {
     data: notificationsResp,
@@ -150,31 +165,60 @@ export const useAdminNotificationsHub = (params = {}) => {
   const markAllAsRead = useAdminMarkAllNotificationsAsRead();
   const remove = useAdminDeleteNotification();
 
-  // Suscripciones en tiempo real
+  // Suscripciones en tiempo real - solo cuando está autenticado como admin
   useEffect(() => {
-    echoInstance.private('admin.notifications')
-      .listen('notification.received', (e) => {
+    if (!shouldFetch) return;
+
+    try {
+      const channel = echoInstance.private('admin.notifications');
+      
+      const handler = (e) => {
         console.log('Reverb: Nueva notificación de admin recibida:', e);
         qc.invalidateQueries({ queryKey: QK.base });
         qc.invalidateQueries({ queryKey: QK.stats });
+      };
+
+      // Escuchar múltiples eventos de admin
+      const events = [
+        'notification.received',
+        'admin.service.purchased',
+        'admin.invoice.generated',
+        'admin.payment.processed',
+        'admin.service.status'
+      ];
+
+      events.forEach(eventName => {
+        channel.listen(eventName, handler);
       });
 
-    return () => {
-      echoInstance.leave('admin.notifications');
-    };
-  }, [qc]);
+      return () => {
+        try {
+          events.forEach(eventName => {
+            channel.stopListening(eventName, handler);
+          });
+          echoInstance.leave('admin.notifications');
+        } catch (error) {
+          console.warn('Error al desconectar listeners de admin:', error);
+        }
+      };
+    } catch (error) {
+      console.error('Error al configurar canal de admin:', error);
+    }
+  }, [shouldFetch, qc]);
 
   return {
     // datos
-    list: notificationsResp?.list ?? [],
+    notifications: notificationsResp?.list ?? [],
     pagination: notificationsResp?.pagination ?? null,
     stats,
+    unreadCount: stats?.unread_count ?? 0,
 
     // loaders / errores
-    isLoading,
+    isLoading: isLoading && shouldFetch,
     error,
-    isLoadingStats,
+    isLoadingStats: isLoadingStats && shouldFetch,
     statsError,
+    isReady: shouldFetch,
 
     // acciones
     broadcastNotification: broadcast.mutate,
@@ -184,3 +228,4 @@ export const useAdminNotificationsHub = (params = {}) => {
     deleteNotification: remove.mutate,
   };
 };
+

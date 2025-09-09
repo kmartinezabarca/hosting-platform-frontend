@@ -226,5 +226,8 @@ export const useToast = () => {
   };
 };
 
+// Agregar el hook al componente para fácil acceso
+NotificationToast.useToast = useToast;
+
 export default NotificationToast;
 

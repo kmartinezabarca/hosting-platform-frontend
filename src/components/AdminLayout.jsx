@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -7,6 +7,7 @@ import {
   ChevronDown, Sun, Moon, Shield, Zap
 } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';
+import AuthGuard from './AuthGuard';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -65,6 +66,62 @@ const AdminLayout = () => {
     { name: 'Facturas', href: '/admin/invoices', icon: FileText, description: 'Control de facturación' },
     { name: 'Tickets', href: '/admin/tickets', icon: HelpCircle, description: 'Soporte y asistencia' },
   ];
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
+
+  const isActiveRoute = (href) => {
+    return location.pathname.startsWith(href);
+  };
+
+  return (
+    <AuthGuard requireAuth={true} requireAdmin={true}>
+      <AdminLayoutContent />
+    </AuthGuard>
+  );
+};
+
+// Componente separado para el contenido del layout
+const AdminLayoutContent = () => {
+  const { theme, toggleTheme } = useTheme();
+  const { logout, isLoading } = useAuth();
+  const { data: user, isLoading: meLoading, isFetching: meFetching } = useCurrentUser();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const isDark = theme === "dark";
+  const dir = isDark ? -1 : 1;
+  const profileRef = useRef(null);
+  const iconVariants = {
+    enter: (d) => ({ rotate: d * 90, opacity: 0, scale: 0.9 }),
+    center: { rotate: 0, opacity: 1, scale: 1 },
+    exit: (d) => ({ rotate: -d * 90, opacity: 0, scale: 0.9 }),
+  };
+
+  useEffect(() => {
+    setIsSidebarOpen(false);
+    setIsProfileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Cerrar menú de perfil al hacer click fuera
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [profileRef]);
 
   const handleLogout = async () => {
     try {
