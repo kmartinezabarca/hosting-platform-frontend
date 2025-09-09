@@ -8,6 +8,8 @@ export const useCurrentUser = () => {
     queryFn: ({ signal }) => authService.getCurrentUser(signal),
     select: (u) => u.data,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     retry: false,
+    staleTime: 5 * 60 * 1000,
   });
 };

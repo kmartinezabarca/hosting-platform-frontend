@@ -20,14 +20,12 @@ export default function ReviewAndPay({
   selectedAddOns = [],
 }) {
 
-  const [useNewCard, setUseNewCard] = useState(paymentMethods.length === 0);
-
   useEffect(() => {
-    if (!useNewCard && paymentMethods.length > 0 && !selectedPaymentMethodId) {
+    if (paymentMethods.length > 0 && !selectedPaymentMethodId) {
       const def = paymentMethods.find((m) => m.is_default) || paymentMethods[0];
       if (def) setSelectedPaymentMethodId(def.stripe_payment_method_id);
     }
-  }, [useNewCard, paymentMethods, selectedPaymentMethodId, setSelectedPaymentMethodId]);
+  }, [paymentMethods, selectedPaymentMethodId, setSelectedPaymentMethodId]);
 
   const InfoRow = ({ label, value, fullWidth = false }) => (
     <div className={`py-3 ${fullWidth ? "col-span-2" : ""}`}>
@@ -175,11 +173,9 @@ export default function ReviewAndPay({
               methods={paymentMethods}
               selectedStripePmId={selectedPaymentMethodId || ""}
               onSelect={(pmId) => {
-                setUseNewCard(false);
                 setSelectedPaymentMethodId(pmId);
               }}
               onChooseNew={() => {
-                setUseNewCard(true);
                 setSelectedPaymentMethodId("");
               }}
               onAddSaved={onAddMethod}

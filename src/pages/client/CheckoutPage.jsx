@@ -14,6 +14,7 @@ import ReviewAndPay from "../../components/checkout/ReviewAndPay";
 import OrderSummary from "../../components/checkout/OrderSummary";
 import { usePlanAddons, usePaymentMethods } from "../../hooks/useCheckout";
 import AddPaymentMethodModal from "../../components/invoices/AddPaymentMethodModal";
+import { queryClient } from "@/lib/react-query";
 
 export default function CheckoutPage() {
   const location = useLocation();

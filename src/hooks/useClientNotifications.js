@@ -1,15 +1,27 @@
-// src/hooks/useClientNotifications.js
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clientNotificationsService from '@/services/clientNotificationsService';
 import echoInstance from '@/services/echoService';
+import { useAuth } from '@/context/AuthContext';
 
 const QK = {
-  list: (params) => ['notifications', 'client', 'list', params || {}],
+  list: (normKey) => ['notifications', 'client', 'list', normKey], // normKey estable (string)
   unread: ['notifications', 'client', 'unreadCount'],
 };
 
-// Normaliza respuesta: soporta { data: [...] }, { data: { data:[...], ... } } o arreglo plano
+// Normaliza params a un objeto con claves ordenadas y sin undefined/null/''.
+const normalizeParams = (params = {}) => {
+  const cleaned = {};
+  Object.keys(params)
+    .sort()
+    .forEach((k) => {
+      const v = params[k];
+      if (v !== undefined && v !== null && v !== '') cleaned[k] = v;
+    });
+  return cleaned;
+};
+
+// Normaliza respuesta: { data: [...] } | { data: { data:[...], ... } } | arreglo plano
 const selectNotifications = (resp) => {
   const paged = resp?.data?.data;
   const flatFromData = Array.isArray(resp?.data) ? resp.data : null;
@@ -36,27 +48,31 @@ const selectNotifications = (resp) => {
 };
 
 /* =========================
-   LISTA Y ACCIONES DE CLIENTE
+   LISTA Y ACCIONES (CLIENTE)
 ========================= */
 export const useClientNotifications = (params = {}) => {
+  const { user, isAuthenticated } = useAuth();
   const qc = useQueryClient();
 
-  const {
-    data,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: QK.list(params),
-    queryFn: () => clientNotificationsService.list(params),
+  // Parametros estables
+  const normParams = useMemo(() => normalizeParams(params), [params]);
+  const normKey = useMemo(() => JSON.stringify(normParams), [normParams]);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: QK.list(normKey),
+    queryFn: () => clientNotificationsService.list(normParams),
     select: selectNotifications,
+    enabled: isAuthenticated, // <- NO consultes si no hay sesión
     keepPreviousData: true,
     staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: false,
   });
 
   const markAsRead = useMutation({
     mutationFn: (id) => clientNotificationsService.markRead(id),
-    onSuccess: (_data, id) => {
-      qc.invalidateQueries({ queryKey: QK.list(params) });
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: QK.list(normKey) });
       qc.invalidateQueries({ queryKey: QK.unread });
     },
   });
@@ -64,7 +80,7 @@ export const useClientNotifications = (params = {}) => {
   const markAllAsRead = useMutation({
     mutationFn: () => clientNotificationsService.markAllRead(),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: QK.list(params) });
+      qc.invalidateQueries({ queryKey: QK.list(normKey) });
       qc.invalidateQueries({ queryKey: QK.unread });
     },
   });
@@ -72,27 +88,36 @@ export const useClientNotifications = (params = {}) => {
   const deleteNotification = useMutation({
     mutationFn: (id) => clientNotificationsService.remove(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: QK.list(params) });
+      qc.invalidateQueries({ queryKey: QK.list(normKey) });
       qc.invalidateQueries({ queryKey: QK.unread });
     },
   });
 
-  // Suscripción a notificaciones en tiempo real para el usuario
+  // Suscripción realtime SOLO cuando hay usuario autenticado
   useEffect(() => {
-    const userId = localStorage.getItem("userId");
-    if (!userId) return;
+    if (!isAuthenticated || !user?.uuid) return;
 
-    echoInstance.private(`user.${userId}`)
-      .listen("notification.received", (e) => {
-        console.log("Reverb: Nueva notificación de cliente recibida:", e);
-        qc.invalidateQueries({ queryKey: QK.list(params) });
-        qc.invalidateQueries({ queryKey: QK.unread });
-      });
+    const channelName = `user.${user.uuid}`;
+    const channel = echoInstance.private(channelName);
+
+    const handler = (e) => {
+      // console.log('Reverb: notif cliente recibida:', e);
+      qc.invalidateQueries({ queryKey: QK.list(normKey) });
+      qc.invalidateQueries({ queryKey: QK.unread });
+    };
+
+    // IMPORTANTE: usa exactamente el nombre que emite tu backend
+    channel.listen('notification.received', handler);
 
     return () => {
-      echoInstance.leave(`user.${userId}`);
+      try {
+        channel.stopListening('notification.received', handler);
+      } catch {}
+      try {
+        echoInstance.leave(channelName);
+      } catch {}
     };
-  }, [qc, JSON.stringify(params)]);
+  }, [isAuthenticated, user?.uuid, qc, normKey]);
 
   return {
     notifications: data?.list ?? [],
@@ -110,12 +135,9 @@ export const useClientNotifications = (params = {}) => {
 ========================= */
 export const useUnreadNotificationCount = () => {
   const qc = useQueryClient();
+  const { user, isAuthenticated } = useAuth();
 
-  const {
-    data,
-    isLoading,
-    error,
-  } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: QK.unread,
     queryFn: () => clientNotificationsService.unreadCount(),
     select: (resp) => {
@@ -124,21 +146,32 @@ export const useUnreadNotificationCount = () => {
       if (typeof resp?.data?.count === 'number') return resp.data.count;
       return 0;
     },
+    enabled: isAuthenticated, // <- NO consultes si no hay sesión
+    refetchInterval: isAuthenticated ? 10000 : false,
+    refetchOnWindowFocus: false,
+    retry: false,
     staleTime: 15_000,
-    refetchInterval: 15_000, // opcional si confías en Pusher
   });
 
   useEffect(() => {
-    const userId = localStorage.getItem("userId");
-    if (!userId) return;
+    if (!isAuthenticated || !user?.uuid) return;
 
-    echoInstance.private(`user.${userId}`)
-      .listen("notification.received", () => qc.invalidateQueries({ queryKey: QK.unread }));
+    const channelName = `user.${user.uuid}`;
+    const channel = echoInstance.private(channelName);
+
+    const handler = () => qc.invalidateQueries({ queryKey: QK.unread });
+
+    channel.listen('notification.received', handler);
 
     return () => {
-      echoInstance.leave(`user.${userId}`);
+      try {
+        channel.stopListening('notification.received', handler);
+      } catch {}
+      try {
+        echoInstance.leave(channelName);
+      } catch {}
     };
-  }, [qc]);
+  }, [isAuthenticated, user?.uuid, qc]);
 
   return { unreadCount: data ?? 0, isLoading, error };
 };

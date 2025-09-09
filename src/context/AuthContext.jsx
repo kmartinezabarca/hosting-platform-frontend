@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
 
   const user = userQuery.data ?? null;
   const isLoading = userQuery.isLoading;
-  const isAuthenticated = !!user && !userQuery.isError;
+  const isAuthenticated= !!user?.id; 
   const isAdmin = isAuthenticated && user.role === 'admin';
   const isClient = isAuthenticated && user.role === 'client';
 

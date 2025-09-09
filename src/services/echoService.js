@@ -1,30 +1,37 @@
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
+import apiClient from './apiClient';
 
 window.Pusher = Pusher;
 
-const ECHO_APP_KEY = import.meta.env.VITE_REVERB_APP_KEY;
-const ECHO_HOST = import.meta.env.VITE_REVERB_HOST;
-const ECHO_PORT = import.meta.env.VITE_REVERB_PORT;
-const ECHO_SCHEME = import.meta.env.VITE_REVERB_SCHEME;
-
 const echoInstance = new Echo({
     broadcaster: 'reverb',
-    key: ECHO_APP_KEY,
-    wsHost: ECHO_HOST,
-    wsPort: ECHO_PORT,
-    wssPort: ECHO_PORT,
-    forceTLS: ECHO_SCHEME === 'https',
+    key: import.meta.env.VITE_REVERB_APP_KEY,
+    wsHost: import.meta.env.VITE_REVERB_HOST,
+    wsPort: import.meta.env.VITE_REVERB_PORT,
+    wssPort: import.meta.env.VITE_REVERB_PORT,
+    forceTLS: import.meta.env.VITE_REVERB_SCHEME === 'https',
     enabledTransports: ['ws', 'wss'],
-    cluster: 'mt1', // Reverb no usa clusters de Pusher, pero Echo lo requiere
-    channelAuthorization: {
-        endpoint: `${import.meta.env.VITE_API_URL}/broadcasting/auth`,
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-        },
+
+    cluster: import.meta.env.VITE_REVERB_CLUSTER || 'mt1',
+
+    authorizer: (channel, options ) => {
+        return {
+            authorize: (socketId, callback) => {
+                apiClient.postRoot('/broadcasting/auth', {
+                    socket_id: socketId,
+                    channel_name: channel.name
+                })
+                .then(response => {
+                    callback(false, response.data);
+                })
+                .catch(error => {
+                    console.error("Channel Authorization Failed:", error);
+                    callback(true, error);
+                });
+            }
+        };
     },
 });
 
 export default echoInstance;
-
-

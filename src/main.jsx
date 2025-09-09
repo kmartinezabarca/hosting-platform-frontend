@@ -10,7 +10,7 @@ import { ThemeProvider } from './context/ThemeContext.jsx'
 import { TicketChatProvider } from "./context/TicketChatContext.jsx";
 import TicketChatDockPortal from "./components/tickets/TicketChatDockPortal.jsx";
 import { ToastProvider } from "@/components/ToastProvider";
-import { initializeCsrf } from '@/services/apiClient';
+import { initializeCsrf } from './lib/bootstrap';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;

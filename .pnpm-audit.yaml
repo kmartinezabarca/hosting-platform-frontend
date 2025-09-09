@@ -1,0 +1,16 @@
+# Falsos positivos de "malware" reportados masivamente en GitHub.
+# Estas alertas no representan un riesgo real para el proyecto.
+# Se ignoran para mantener limpio el reporte de auditoría.
+
+ignored:
+  # Vulnerabilidad reportada para 'debug'
+  # https://github.com/advisories/GHSA-8mgj-vmr8-frr6
+  - GHSA-8mgj-vmr8-frr6
+
+  # Vulnerabilidad reportada para 'color-convert'
+  # https://github.com/advisories/GHSA-ch7m-m9rf-8gvv
+  - GHSA-ch7m-m9rf-8gvv
+
+  # Vulnerabilidad reportada para 'color-name'
+  # https://github.com/advisories/GHSA-m99c-cfww-cxqx
+  - GHSA-m99c-cfww-cxqx

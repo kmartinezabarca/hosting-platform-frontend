@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import profileService from '../services/profileService';
-import { useAuth } from '@/context/AuthContext';
 import { queryConfigs } from '../config/queryConfig';
 
 /**

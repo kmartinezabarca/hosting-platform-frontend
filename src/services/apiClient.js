@@ -1,57 +1,64 @@
+// Renombrado a ApiService.js (o como prefieras)
+
 import axios from "axios";
 
+// --- 1. Define tus URLs base ---
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+const ROOT_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 let isAuthRedirecting = false;
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  withCredentials: true,
-});
+const createApiClient = (baseURL ) => {
+  const client = axios.create({
+    baseURL: baseURL,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    withCredentials: true,
+  });
 
-export const initializeCsrf = async () => {
-  try {
-    // Usamos una URL absoluta porque esta ruta NO tiene el prefijo /api
-    await axios.get("http://localhost:8000/sanctum/csrf-cookie", {
-      withCredentials: true,
-    });
-    console.log("CSRF cookie initialized");
-  } catch (error) {
-    console.error("Could not initialize CSRF cookie", error);
-  }
+  client.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      const { response, config } = error || {};
+      const status = response?.status;
+
+      if (config && config._handle401 === false) {
+        return Promise.reject(error);
+      }
+      if (!response) {
+        return Promise.reject(error);
+      }
+      if ((status === 401 || status === 403) && !isAuthRedirecting) {
+        isAuthRedirecting = true;
+        if (window.location.pathname !== '/login') {
+          // window.location.replace('/login');
+        }
+      }
+      if (status === 419 && !isAuthRedirecting) {
+        // window.location.replace('/login');
+      }
+      return Promise.reject(error);
+    }
+  );
+
+  return client;
 };
 
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const { response, config } = error || {};
-    const status = response?.status;
 
-    if (config && config._handle401 === false) {
-      return Promise.reject(error);
-    }
+const apiClient = createApiClient(API_BASE_URL);
+const rootApiClient = createApiClient(ROOT_URL);
 
-    if (!response) {
-      return Promise.reject(error);
-    }
+const ApiService = {
+  client: apiClient,
+  rootClient: rootApiClient,
 
-    // Trata 401 o 403 como sesión inválida
-    if ((status === 401 || status === 403) && !isAuthRedirecting) {
-      isAuthRedirecting = true;
+  get: (url, config) => apiClient.get(url, config),
+  post: (url, data, config) => apiClient.post(url, data, config),
+  put: (url, data, config) => apiClient.put(url, data, config),
+  delete: (url, config) => apiClient.delete(url, config),
+  getRoot: (url, config) => rootApiClient.get(url, config),
+  postRoot: (url, data, config) => rootApiClient.post(url, data, config),
+};
 
-      // Evita loop si ya estás en /login
-      if (window.location.pathname !== '/login') {
-        window.location.replace('/login');
-      }
-    }
-
-    if (status === 419 && !isAuthRedirecting) { window.location.replace('/login'); }
-
-    return Promise.reject(error);
-  }
-);
-
-export default apiClient;
+export default ApiService;
