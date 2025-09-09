@@ -6,7 +6,6 @@ import {
   Sun, Moon, Zap, Shield
 } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';
-import AuthGuard from './AuthGuard';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import UserAvatar from '../components/UserAvatar';
@@ -14,15 +13,6 @@ import { Skeleton } from '../components/ui/skeleton';
 import NewDashboard from '../pages/client/NewDashboard';
 
 const ClientLayout = () => {
-  return (
-    <AuthGuard requireAuth={true} requireClient={true}>
-      <ClientLayoutContent />
-    </AuthGuard>
-  );
-};
-
-// Componente separado para el contenido del layout
-const ClientLayoutContent = () => {
   const { theme, toggleTheme } = useTheme();
   const { user, logout, isLoading } = useAuth();
   const location = useLocation();

@@ -6,7 +6,6 @@ import {
   ChevronDown, Sun, Moon, Shield, Zap
 } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';
-import AuthGuard from './AuthGuard';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import UserAvatar from '../components/UserAvatar';
@@ -14,15 +13,6 @@ import { Skeleton } from '../components/ui/skeleton';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 
 const AdminLayout = () => {
-  return (
-    <AuthGuard requireAuth={true} requireAdmin={true}>
-      <AdminLayoutContent />
-    </AuthGuard>
-  );
-};
-
-// Componente separado para el contenido del layout
-const AdminLayoutContent = () => {
   const { theme, toggleTheme } = useTheme();
   const { user, logout, isLoading } = useAuth();
   const location = useLocation();
