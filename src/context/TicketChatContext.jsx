@@ -8,7 +8,8 @@ import ticketsService from "../services/ticketService"; // Este servicio lo vamo
 const TicketChatContext = createContext(null);
 
 export const TicketChatProvider = ({ children }) => {
-  const { user } = useAuth();
+  const authContext = useAuth();
+  const user = authContext?.user || null;
 
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
