@@ -1,29 +1,158 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, X, CheckCircle, Trash2, ExternalLink } from 'lucide-react';
+import { Bell, X, CheckCircle, Trash2, ExternalLink, AlertCircle, Info, DollarSign, Package, Wrench } from 'lucide-react';
 import { useClientNotifications, useUnreadNotificationCount } from '../hooks/useClientNotifications';
-import { useAdminNotifications } from '../hooks/useAdminNotifications';
+import { useAdminNotificationsHub } from '../hooks/useAdminNotifications';
 import { Skeleton } from './ui/skeleton';
+import AuthGuard from './AuthGuard';
 
+// Iconos por tipo de notificación
+const getNotificationIcon = (type) => {
+  const iconMap = {
+    'service_purchased': Package,
+    'service_ready': CheckCircle,
+    'service_status': Package,
+    'service_maintenance_scheduled': Wrench,
+    'service_maintenance_completed': CheckCircle,
+    'invoice_generated': DollarSign,
+    'invoice_status_changed': DollarSign,
+    'payment_processed': CheckCircle,
+    'payment_failed': AlertCircle,
+    'ticket_replied': Info,
+    'default': Bell
+  };
+  
+  return iconMap[type] || iconMap.default;
+};
+
+// Colores por tipo de notificación
+const getNotificationColor = (type) => {
+  const colorMap = {
+    'service_purchased': 'text-green-600 bg-green-100',
+    'service_ready': 'text-green-600 bg-green-100',
+    'service_status': 'text-blue-600 bg-blue-100',
+    'service_maintenance_scheduled': 'text-yellow-600 bg-yellow-100',
+    'service_maintenance_completed': 'text-green-600 bg-green-100',
+    'invoice_generated': 'text-purple-600 bg-purple-100',
+    'invoice_status_changed': 'text-purple-600 bg-purple-100',
+    'payment_processed': 'text-green-600 bg-green-100',
+    'payment_failed': 'text-red-600 bg-red-100',
+    'ticket_replied': 'text-blue-600 bg-blue-100',
+    'default': 'text-gray-600 bg-gray-100'
+  };
+  
+  return colorMap[type] || colorMap.default;
+};
+
+// Componente de notificación individual
+const NotificationItem = ({ notification, onMarkAsRead, onDelete, isAdmin = false }) => {
+  const Icon = getNotificationIcon(notification.type);
+  const colorClass = getNotificationColor(notification.type);
+  const isUnread = !notification.read_at;
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = (now - date) / (1000 * 60 * 60);
+    
+    if (diffInHours < 1) {
+      return 'Hace unos minutos';
+    } else if (diffInHours < 24) {
+      return `Hace ${Math.floor(diffInHours)} horas`;
+    } else {
+      return date.toLocaleDateString('es-ES', { 
+        day: 'numeric', 
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+        isUnread ? 'bg-blue-50/50' : ''
+      }`}
+    >
+      <div className="flex items-start space-x-3">
+        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${colorClass}`}>
+          <Icon className="w-4 h-4" />
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className={`text-sm font-medium text-gray-900 ${isUnread ? 'font-semibold' : ''}`}>
+                {notification.data?.title || 'Notificación'}
+              </p>
+              <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                {notification.data?.message || notification.data?.text || 'Sin mensaje'}
+              </p>
+              <p className="text-xs text-gray-400 mt-2">
+                {formatDate(notification.created_at)}
+              </p>
+            </div>
+            
+            {isUnread && (
+              <div className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full ml-2 mt-1"></div>
+            )}
+          </div>
+          
+          <div className="flex items-center space-x-2 mt-3">
+            {isUnread && (
+              <button
+                onClick={() => onMarkAsRead(notification.id)}
+                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+              >
+                Marcar como leída
+              </button>
+            )}
+            <button
+              onClick={() => onDelete(notification.id)}
+              className="text-xs text-red-600 hover:text-red-800 font-medium"
+            >
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// Componente principal
 const NotificationDropdown = ({ isAdmin = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  const { 
-    notifications, 
-    isLoading: loadingNotifications, 
-    error: notificationsError, 
-    markAsRead, 
-    markAllAsRead, 
-    deleteNotification 
-  } = isAdmin ? useAdminNotifications() : useClientNotifications();
+  // Hooks condicionales basados en el tipo de usuario
+  const clientHooks = useClientNotifications();
+  const clientUnreadHooks = useUnreadNotificationCount();
+  const adminHooks = useAdminNotificationsHub();
 
-  const { 
-    unreadCount, 
-    isLoading: loadingUnreadCount, 
-    error: unreadCountError 
-  } = isAdmin ? useAdminNotifications() : useUnreadNotificationCount();
+  // Seleccionar los hooks correctos
+  const {
+    notifications,
+    isLoading: loadingNotifications,
+    error: notificationsError,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    isReady: notificationsReady
+  } = isAdmin ? adminHooks : clientHooks;
 
+  const {
+    unreadCount,
+    isLoading: loadingUnreadCount,
+    error: unreadCountError,
+    isReady: unreadReady
+  } = isAdmin ? adminHooks : clientUnreadHooks;
+
+  // Cerrar dropdown al hacer clic fuera
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -34,7 +163,7 @@ const NotificationDropdown = ({ isAdmin = false }) => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [dropdownRef]);
+  }, []);
 
   const handleMarkAllAsRead = () => {
     if (notifications && notifications.length > 0) {
@@ -50,126 +179,144 @@ const NotificationDropdown = ({ isAdmin = false }) => {
     deleteNotification(id);
   };
 
-  const handleNotificationClick = (notification) => {
-    if (notification.data.action_url) {
-      window.open(notification.data.action_url, "_blank");
-    }
-    handleMarkAsRead(notification.id);
-    setIsOpen(false);
-  };
+  // Componente de carga
+  const LoadingState = () => (
+    <div className="p-4 space-y-3">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="flex items-start space-x-3">
+          <Skeleton className="w-8 h-8 rounded-full" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
-  const sortedNotifications = notifications ? [...notifications].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) : [];
+  // Componente de error
+  const ErrorState = () => (
+    <div className="p-4 text-center">
+      <AlertCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
+      <p className="text-sm text-gray-600">Error al cargar notificaciones</p>
+    </div>
+  );
+
+  // Componente de estado vacío
+  const EmptyState = () => (
+    <div className="p-8 text-center">
+      <Bell className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+      <p className="text-sm text-gray-500">No hay notificaciones</p>
+    </div>
+  );
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        aria-label="Notificaciones"
-        title="Notificaciones"
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-xl transition-colors text-muted-foreground hover:text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:bg-accent/70"
-      >
-        <Bell className="w-5 h-5" />
-        {(unreadCount > 0 && !loadingUnreadCount) && (
-          <span className="absolute -top-1 -right-1 flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-40" />
-            <span className="relative inline-flex h-3 w-3 rounded-full bg-error ring-2 ring-white dark:ring-card" />
-          </span>
-        )}
-      </button>
+    <AuthGuard 
+      requireAuth={true}
+      requireAdmin={isAdmin}
+      requireClient={!isAdmin}
+      fallback={<div className="w-6 h-6 animate-pulse bg-gray-200 rounded"></div>}
+    >
+      <div className="relative" ref={dropdownRef}>
+        {/* Botón de notificaciones */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <Bell className="w-6 h-6" />
+          {unreadReady && unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </button>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.98 }}
-            transition={{ duration: 0.18 }}
-            className="absolute right-0 mt-2 w-80 md:w-96 z-[80] rounded-2xl p-2 bg-white/95 dark:bg-[#121417]/95 supports-[backdrop-filter]:backdrop-blur-md supports-[backdrop-filter]:bg-white/80 supports-[backdrop-filter]:dark:bg-[#121417]/80 border border-black/10 dark:border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.45)] text-foreground"
-          >
-            <span aria-hidden className="absolute -top-2 right-6 w-3.5 h-3.5 rotate-45 bg-white/95 dark:bg-[#121417]/95 border-t border-l border-black/10 dark:border-white/10 shadow-[0_2px_6px_rgba(0,0,0,0.06)]" />
-            
-            <div className="flex justify-between items-center px-3 py-2 border-b border-black/10 dark:border-white/10">
-              <h3 className="font-semibold text-lg">Notificaciones</h3>
-              <button
-                onClick={handleMarkAllAsRead}
-                className="text-sm text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!notifications || notifications.filter(n => !n.read_at).length === 0}
-              >
-                Marcar todas como leídas
-              </button>
-            </div>
+        {/* Dropdown */}
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-hidden"
+            >
+              {/* Header */}
+              <div className="p-4 border-b border-gray-200 bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Notificaciones
+                  </h3>
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                {notificationsReady && notifications && notifications.length > 0 && (
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-sm text-gray-600">
+                      {unreadCount > 0 ? `${unreadCount} sin leer` : 'Todas leídas'}
+                    </span>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={handleMarkAllAsRead}
+                        className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        Marcar todas como leídas
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
 
-            <div className="py-2 max-h-80 overflow-y-auto custom-scrollbar">
-              {loadingNotifications && (
-                <div className="px-3 py-2 space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-5/6" />
-                  <Skeleton className="h-4 w-full" />
+              {/* Content */}
+              <div className="max-h-80 overflow-y-auto">
+                {!notificationsReady || loadingNotifications ? (
+                  <LoadingState />
+                ) : notificationsError ? (
+                  <ErrorState />
+                ) : !notifications || notifications.length === 0 ? (
+                  <EmptyState />
+                ) : (
+                  <div>
+                    {notifications.map((notification) => (
+                      <NotificationItem
+                        key={notification.id}
+                        notification={notification}
+                        onMarkAsRead={handleMarkAsRead}
+                        onDelete={handleDeleteNotification}
+                        isAdmin={isAdmin}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              {notificationsReady && notifications && notifications.length > 0 && (
+                <div className="p-3 border-t border-gray-200 bg-gray-50">
+                  <button
+                    onClick={() => {
+                      setIsOpen(false);
+                      // Navegar a la página de notificaciones si existe
+                      window.location.href = isAdmin ? '/admin/notifications' : '/client/notifications';
+                    }}
+                    className="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    Ver todas las notificaciones
+                  </button>
                 </div>
               )}
-              {notificationsError && <p className="text-error px-3 py-2">Error al cargar notificaciones: {notificationsError.message}</p>}
-              
-              {!loadingNotifications && sortedNotifications.length === 0 && (
-                <p className="text-muted-foreground px-3 py-2">No hay notificaciones.</p>
-              )}
-
-              {!loadingNotifications && sortedNotifications.length > 0 && (
-                <ul>
-                  {sortedNotifications.map(notification => (
-                    <li 
-                      key={notification.id} 
-                      className={`flex items-start gap-2 px-3 py-2 rounded-lg transition-colors ${notification.read_at ? "bg-muted/20" : "bg-primary/5 hover:bg-primary/10"}`}
-                    >
-                      <div className="flex-1 cursor-pointer" onClick={() => handleNotificationClick(notification)}>
-                        <p className={`text-sm font-medium ${notification.read_at ? "text-muted-foreground" : "text-foreground"}`}>
-                          {notification.data.title || "Nueva Notificación"}
-                        </p>
-                        <p className={`text-xs ${notification.read_at ? "text-muted-foreground" : "text-foreground/80"}`}>
-                          {notification.data.message}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(notification.created_at).toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        {!notification.read_at && (
-                          <button 
-                            onClick={() => handleMarkAsRead(notification.id)}
-                            className="p-1 rounded-full hover:bg-accent text-muted-foreground hover:text-primary transition-colors"
-                            title="Marcar como leída"
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                          </button>
-                        )}
-                        {notification.data.action_url && (
-                          <button 
-                            onClick={() => handleNotificationClick(notification)}
-                            className="p-1 rounded-full hover:bg-accent text-muted-foreground hover:text-primary transition-colors"
-                            title="Ver detalle"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </button>
-                        )}
-                        <button 
-                          onClick={() => handleDeleteNotification(notification.id)}
-                          className="p-1 rounded-full hover:bg-accent text-muted-foreground hover:text-error transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </AuthGuard>
   );
 };
 
 export default NotificationDropdown;
-
 
