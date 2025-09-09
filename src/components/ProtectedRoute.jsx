@@ -5,6 +5,9 @@ import authService from '../services/authService';
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
    const { user, isAdmin } = useAuth(); 
 
+   console.log("ProtectedRoute: user:", user);
+  console.log("ProtectedRoute: isAdmin:", isAdmin);
+
   // Check if admin access is required
   if (requireAdmin && !isAdmin) {
     return (
