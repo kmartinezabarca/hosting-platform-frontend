@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/services/apiClient";
-// Importa las funciones refactorizadas de tu servicio de Pusher
 import echoInstance from "@/services/echoService";
+import { useAuth } from "@/context/AuthContext";
 
-// Claves de query para React Query, tu estructura es perfecta.
+// Claves de query para React Query
 const qk = {
     active: ["admin", "chat", "active-rooms"],
     all: ["admin", "chat", "all-rooms"],
@@ -14,46 +14,55 @@ const qk = {
 };
 
 export function useAdminChat({ enabled = true } = {}) {
+    const { user, isAuthReady, isAuthenticated, isAdmin } = useAuth();
     const qc = useQueryClient();
     const [selectedChatRoom, setSelectedChatRoom] = useState(null);
 
-    // --- QUERIES (sin cambios, tu lógica es sólida) ---
+    // Solo ejecutar si está autenticado como admin
+    const shouldFetch = isAuthReady && isAuthenticated && isAdmin && user?.uuid && enabled;
+
+    // --- QUERIES ---
     const { data: activeResp } = useQuery({
         queryKey: qk.active,
         queryFn: async () => (await apiClient.get("/admin/chat/active-rooms")).data,
-        enabled,
+        enabled: shouldFetch,
         refetchOnWindowFocus: false,
+        retry: false,
     });
 
     useQuery({
         queryKey: qk.all,
         queryFn: async () => (await apiClient.get("/admin/chat/all-rooms")).data,
-        enabled,
+        enabled: shouldFetch,
         refetchOnWindowFocus: false,
+        retry: false,
     });
 
     useQuery({
         queryKey: qk.stats,
         queryFn: async () => (await apiClient.get("/admin/chat/stats")).data,
-        enabled,
+        enabled: shouldFetch,
         refetchOnWindowFocus: false,
+        retry: false,
     });
 
     const { data: unreadCount } = useQuery({
         queryKey: qk.unread,
         queryFn: async () => (await apiClient.get("/admin/chat/unread-count")).data?.unread_count ?? 0,
-        enabled,
+        enabled: shouldFetch,
         refetchOnWindowFocus: false,
+        retry: false,
     });
 
     const { data: messages, isLoading: isLoadingMessages } = useQuery({
         queryKey: qk.msgs(selectedChatRoom?.id),
         queryFn: async () => (await apiClient.get(`/admin/chat/${selectedChatRoom.id}/messages`)).data?.data ?? [],
-        enabled: enabled && Boolean(selectedChatRoom?.id),
+        enabled: shouldFetch && Boolean(selectedChatRoom?.id),
         refetchOnWindowFocus: false,
+        retry: false,
     });
 
-    // --- MUTATIONS (sin cambios) ---
+    // --- MUTATIONS ---
     const sendMessageMut = useMutation({
         mutationFn: async ({ chatRoomId, text }) => (await apiClient.post(`/admin/chat/${chatRoomId}/messages`, { message: text })).data,
         onSuccess: (_d, v) => {
@@ -71,13 +80,16 @@ export function useAdminChat({ enabled = true } = {}) {
         },
     });
 
+    // --- REVERB SUBSCRIPTIONS ---
     useEffect(() => {
-       
-        if (!enabled) return;
+        if (!shouldFetch) return;
 
-        const setupReverbSubscriptions = () => {
-            echoInstance.private("admin.chat")
-                .listen("MessageSent", () => {
+        try {
+            const setupReverbSubscriptions = () => {
+                const chatChannel = echoInstance.private("admin.chat");
+                const statusChannel = echoInstance.private("admin.chat.status");
+
+                chatChannel.listen("MessageSent", () => {
                     console.log("Reverb: Nuevo mensaje recibido. Invalidando queries...");
                     qc.invalidateQueries({ queryKey: qk.active });
                     qc.invalidateQueries({ queryKey: qk.unread });
@@ -86,24 +98,32 @@ export function useAdminChat({ enabled = true } = {}) {
                     }
                 });
 
-            echoInstance.private("admin.chat.status")
-                .listen("ChatRoomStatusUpdated", () => {
+                statusChannel.listen("ChatRoomStatusUpdated", () => {
                     console.log("Reverb: Estado de sala actualizado. Invalidando queries...");
                     qc.invalidateQueries({ queryKey: qk.active });
                     qc.invalidateQueries({ queryKey: qk.all });
                     qc.invalidateQueries({ queryKey: qk.stats });
                     qc.invalidateQueries({ queryKey: qk.unread });
                 });
-        };
 
-        setupReverbSubscriptions();
+                console.log("Reverb: Conectado a canales de admin chat");
+            };
 
-        return () => {
-            console.log("Limpiando y cancelando suscripciones de Reverb...");
-            echoInstance.leave("admin.chat");
-            echoInstance.leave("admin.chat.status");
-        };
-    }, [enabled, qc, selectedChatRoom?.id]);
+            setupReverbSubscriptions();
+
+            return () => {
+                try {
+                    console.log("Limpiando y cancelando suscripciones de Reverb...");
+                    echoInstance.leave("admin.chat");
+                    echoInstance.leave("admin.chat.status");
+                } catch (error) {
+                    console.warn("Error al desconectar canales de admin chat:", error);
+                }
+            };
+        } catch (error) {
+            console.error("Error al configurar canales de admin chat:", error);
+        }
+    }, [shouldFetch, qc, selectedChatRoom?.id]);
 
     const activeRooms = activeResp?.data ?? [];
 
@@ -113,8 +133,10 @@ export function useAdminChat({ enabled = true } = {}) {
         selectedChatRoom,
         setSelectedChatRoom,
         messages: messages ?? [],
-        isLoadingMessages: !!isLoadingMessages,
+        isLoadingMessages: !!isLoadingMessages && shouldFetch,
         sendMessage: (p) => sendMessageMut.mutate(p),
         closeChatRoom: (id) => closeRoomMut.mutate(id),
+        isReady: shouldFetch,
     };
 }
+

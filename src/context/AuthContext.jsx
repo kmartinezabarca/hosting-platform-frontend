@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import {
@@ -13,6 +13,8 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [isInitialized, setIsInitialized] = useState(false);
+  const initializationRef = useRef(false);
+  
   const userQuery = useCurrentUser(); 
   
   const { mutateAsync: login, isPending: isLoggingIn } = useLogin();
@@ -33,48 +35,97 @@ export const AuthProvider = ({ children }) => {
   // Estado de inicialización: true cuando ya se completó la primera carga (exitosa o fallida)
   const isAuthReady = !isLoading && isInitialized;
 
-  // Marcar como inicializado cuando termine la primera carga
+  // Marcar como inicializado cuando termine la primera carga - solo una vez
   useEffect(() => {
-    if (!isLoading && !isInitialized) {
+    if (!isLoading && !initializationRef.current) {
+      initializationRef.current = true;
       setIsInitialized(true);
+      console.log('AuthContext: Inicialización completada', { 
+        isAuthenticated, 
+        user: user?.email || 'No user',
+        isError 
+      });
     }
-  }, [isLoading, isInitialized]);
+  }, [isLoading, isAuthenticated, user?.email, isError]);
 
   // Funciones de autenticación mejoradas
   const enhancedLogin = async (...args) => {
-    const result = await login(...args);
-    // Invalidar y refetch del usuario después del login
-    userQuery.refetch();
-    return result;
+    try {
+      const result = await login(...args);
+      // Invalidar y refetch del usuario después del login
+      await userQuery.refetch();
+      console.log('AuthContext: Login exitoso, usuario refetcheado');
+      return result;
+    } catch (error) {
+      console.error('AuthContext: Error en login:', error);
+      throw error;
+    }
   };
 
   const enhancedLogout = async (...args) => {
-    const result = await logout(...args);
-    // Limpiar datos del usuario después del logout
-    userQuery.remove();
-    setIsInitialized(false);
-    return result;
+    try {
+      const result = await logout(...args);
+      // Limpiar datos del usuario después del logout
+      userQuery.remove();
+      setIsInitialized(false);
+      initializationRef.current = false;
+      console.log('AuthContext: Logout exitoso, datos limpiados');
+      return result;
+    } catch (error) {
+      console.error('AuthContext: Error en logout:', error);
+      throw error;
+    }
   };
 
   const enhancedRegister = async (...args) => {
-    const result = await register(...args);
-    // Refetch del usuario después del registro
-    userQuery.refetch();
-    return result;
+    try {
+      const result = await register(...args);
+      // Refetch del usuario después del registro
+      await userQuery.refetch();
+      console.log('AuthContext: Registro exitoso, usuario refetcheado');
+      return result;
+    } catch (error) {
+      console.error('AuthContext: Error en registro:', error);
+      throw error;
+    }
   };
 
   const enhancedLoginWithGoogle = async (...args) => {
-    const result = await loginWithGoogle(...args);
-    // Refetch del usuario después del login con Google
-    userQuery.refetch();
-    return result;
+    try {
+      const result = await loginWithGoogle(...args);
+      // Refetch del usuario después del login con Google
+      await userQuery.refetch();
+      console.log('AuthContext: Login con Google exitoso, usuario refetcheado');
+      return result;
+    } catch (error) {
+      console.error('AuthContext: Error en login con Google:', error);
+      throw error;
+    }
   };
 
   const enhancedVerifyTwoFactor = async (...args) => {
-    const result = await verifyTwoFactor(...args);
-    // Refetch del usuario después de verificar 2FA
-    userQuery.refetch();
-    return result;
+    try {
+      const result = await verifyTwoFactor(...args);
+      // Refetch del usuario después de verificar 2FA
+      await userQuery.refetch();
+      console.log('AuthContext: 2FA verificado exitosamente, usuario refetcheado');
+      return result;
+    } catch (error) {
+      console.error('AuthContext: Error en verificación 2FA:', error);
+      throw error;
+    }
+  };
+
+  // Función para refrescar manualmente los datos del usuario
+  const refetchUser = async () => {
+    try {
+      const result = await userQuery.refetch();
+      console.log('AuthContext: Usuario refetcheado manualmente');
+      return result;
+    } catch (error) {
+      console.error('AuthContext: Error al refetchear usuario:', error);
+      throw error;
+    }
   };
 
   const value = useMemo(() => ({
@@ -102,16 +153,29 @@ export const AuthProvider = ({ children }) => {
     isLoggingInWithGoogle,
     isVerifying2FA,
 
-    // Métodos de utilidad
-    refetchUser: userQuery.refetch,
+    // Utilidades
+    refetchUser,
   }), [
-    user, isLoading, isError, isAuthenticated, isAdmin, isClient, isAuthReady, isInitialized,
-    enhancedLogin, enhancedLogout, enhancedRegister, enhancedLoginWithGoogle, enhancedVerifyTwoFactor,
-    isLoggingIn, isLoggingOut, isRegistering, isLoggingInWithGoogle, isVerifying2FA,
-    userQuery.refetch
+    user,
+    isLoading,
+    isError,
+    isAuthenticated,
+    isAdmin,
+    isClient,
+    isAuthReady,
+    isInitialized,
+    isLoggingIn,
+    isLoggingOut,
+    isRegistering,
+    isLoggingInWithGoogle,
+    isVerifying2FA,
   ]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 AuthProvider.propTypes = {
