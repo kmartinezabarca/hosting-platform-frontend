@@ -1,24 +1,13 @@
-import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:8000/api';
-
-// Configure axios defaults
-axios.defaults.baseURL = API_BASE_URL;
+import apiClient from './apiClient';
 
 class ServicePlansService {
-  // Get authentication headers
-  getAuthHeaders() {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }
-
   // Public methods (no authentication required)
   async getServicePlans(categoryId = null) {
     try {
       const endpoint = categoryId 
         ? `/service-plans?category_id=${categoryId}` 
         : '/service-plans';
-      const response = await axios.get(endpoint);
+      const response = await apiClient.get(endpoint);
       return response.data;
     } catch (error) {
       console.error('Error fetching service plans:', error);
@@ -28,7 +17,7 @@ class ServicePlansService {
 
   async getServicePlansByCategorySlug(categorySlug) {
     try {
-      const response = await axios.get(`/service-plans/category/${categorySlug}`);
+      const response = await apiClient.get(`/service-plans/category/${categorySlug}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching service plans by category:', error);
@@ -38,7 +27,7 @@ class ServicePlansService {
 
   async getServicePlan(uuid) {
     try {
-      const response = await axios.get(`/service-plans/${uuid}`);
+      const response = await apiClient.get(`/service-plans/${uuid}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching service plan:', error);
@@ -48,7 +37,7 @@ class ServicePlansService {
 
   async getServicePlanAddOns(planSlug) {
     try {
-      const response = await axios.get(`/service-plans/add-ons/${planSlug}`);
+      const response = await apiClient.get(`/service-plans/add-ons/${planSlug}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching service plan add-ons:', error);
@@ -59,9 +48,7 @@ class ServicePlansService {
   // Admin methods (authentication required)
   async createServicePlan(planData) {
     try {
-      const response = await axios.post('/admin/service-plans', planData, {
-        headers: this.getAuthHeaders()
-      });
+      const response = await apiClient.post('/admin/service-plans', planData);
       return response.data;
     } catch (error) {
       console.error('Error creating service plan:', error);
@@ -71,9 +58,7 @@ class ServicePlansService {
 
   async updateServicePlan(uuid, planData) {
     try {
-      const response = await axios.put(`/admin/service-plans/${uuid}`, planData, {
-        headers: this.getAuthHeaders()
-      });
+      const response = await apiClient.put(`/admin/service-plans/${uuid}`, planData);
       return response.data;
     } catch (error) {
       console.error('Error updating service plan:', error);
@@ -83,9 +68,7 @@ class ServicePlansService {
 
   async deleteServicePlan(uuid) {
     try {
-      const response = await axios.delete(`/admin/service-plans/${uuid}`, {
-        headers: this.getAuthHeaders()
-      });
+      const response = await apiClient.delete(`/admin/service-plans/${uuid}`);
       return response.data;
     } catch (error) {
       console.error('Error deleting service plan:', error);
@@ -96,7 +79,7 @@ class ServicePlansService {
   // Helper methods
   async getCategories() {
     try {
-      const response = await axios.get('/categories');
+      const response = await apiClient.get('/categories');
       return response.data;
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -106,7 +89,7 @@ class ServicePlansService {
 
   async getBillingCycles() {
     try {
-      const response = await axios.get('/billing-cycles');
+      const response = await apiClient.get('/billing-cycles');
       return response.data;
     } catch (error) {
       console.error('Error fetching billing cycles:', error);

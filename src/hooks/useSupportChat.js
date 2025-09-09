@@ -49,15 +49,15 @@ export function useSupportChat({ enabled = true } = {}) {
   useEffect(() => {
     if (!enabled || !room?.uuid) return;
 
-    echoInstance.private(`chat.${room.uuid}`)
-      .listen("MessageSent", () => {
-        console.log("Reverb: Nuevo mensaje en chat de soporte.");
+    echoInstance.private(`ticket.${room.uuid}`)
+      .listen("ticket.replied", () => {
+        console.log("Reverb: Nueva respuesta en ticket de soporte.");
         qc.invalidateQueries({ queryKey: qk.msgs(room.id) });
         qc.invalidateQueries({ queryKey: qk.unread });
       });
 
     return () => {
-      echoInstance.leave(`chat.${room.uuid}`);
+      echoInstance.leave(`ticket.${room.uuid}`);
     };
   }, [enabled, room?.uuid, room?.id, qc]);
 

@@ -1,43 +1,32 @@
 // Admin API service for communicating with the backend
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+import apiClient from './apiClient';
 
 class AdminApiService {
   constructor() {
-    this.baseURL = API_BASE_URL;
+    this.apiClient = apiClient;
   }
 
   async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`;
-    const token = localStorage.getItem('auth_token');
-    
-    const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-        ...options.headers,
-      },
-      ...options,
-    };
-
     try {
-      const response = await fetch(url, config);
+      const method = options.method || 'GET';
+      const data = options.body ? JSON.parse(options.body) : undefined;
       
-      if (response.status === 401) {
-        // Token expired or invalid
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user_data');
-        window.location.href = '/login';
-        return;
+      let response;
+      switch (method.toLowerCase()) {
+        case 'post':
+          response = await this.apiClient.post(endpoint, data);
+          break;
+        case 'put':
+          response = await this.apiClient.put(endpoint, data);
+          break;
+        case 'delete':
+          response = await this.apiClient.delete(endpoint);
+          break;
+        default:
+          response = await this.apiClient.get(endpoint);
       }
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'API request failed');
-      }
-
-      return data;
+      
+      return response.data;
     } catch (error) {
       console.error('Admin API Error:', error);
       throw error;
