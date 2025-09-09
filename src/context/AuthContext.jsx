@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { useCurrentUser } from '../hooks/useCurrentUser';
+import { useQuery } from '@tanstack/react-query';
+import authService from '../services/authService';
 import {
   useLogin,
   useLogout,
@@ -13,9 +14,17 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [isInitialized, setIsInitialized] = useState(false);
-  const initializationRef = useRef(false);
   
-  const userQuery = useCurrentUser(); 
+  // UNA SOLA QUERY - ESTA ES LA CLAVE
+  const userQuery = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: ({ signal }) => authService.getCurrentUser(signal),
+    select: (u) => u?.data || null,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
   
   const { mutateAsync: login, isPending: isLoggingIn } = useLogin();
   const { mutateAsync: logout, isPending: isLoggingOut } = useLogout();
@@ -23,138 +32,74 @@ export const AuthProvider = ({ children }) => {
   const { mutateAsync: loginWithGoogle, isPending: isLoggingInWithGoogle } = useLoginWithGoogle();
   const { mutateAsync: verifyTwoFactor, isPending: isVerifying2FA } = useVerify2FA();
 
-  const user = userQuery.data ?? null;
+  const user = userQuery.data;
   const isLoading = userQuery.isLoading;
   const isError = userQuery.isError;
   
-  // Estados de autenticación más robustos
+  // Estados simples
   const isAuthenticated = !!user?.uuid;
   const isAdmin = isAuthenticated && user?.role === 'admin';
   const isClient = isAuthenticated && user?.role === 'client';
-  
-  // Estado de inicialización: true cuando ya se completó la primera carga (exitosa o fallida)
-  const isAuthReady = !isLoading && isInitialized;
+  const isAuthReady = !isLoading; // SIMPLE: cuando no está cargando, está listo
 
-  // Marcar como inicializado cuando termine la primera carga - solo una vez
+  // Marcar como inicializado cuando termine la primera carga
   useEffect(() => {
-    if (!isLoading && !initializationRef.current) {
-      initializationRef.current = true;
+    if (!isLoading && !isInitialized) {
       setIsInitialized(true);
-      console.log('AuthContext: Inicialización completada', { 
-        isAuthenticated, 
-        user: user?.email || 'No user',
-        isError 
-      });
     }
-  }, [isLoading, isAuthenticated, user?.email, isError]);
+  }, [isLoading, isInitialized]);
 
-  // Funciones de autenticación mejoradas
+  // Funciones simples
   const enhancedLogin = async (...args) => {
-    try {
-      const result = await login(...args);
-      // Invalidar y refetch del usuario después del login
-      await userQuery.refetch();
-      console.log('AuthContext: Login exitoso, usuario refetcheado');
-      return result;
-    } catch (error) {
-      console.error('AuthContext: Error en login:', error);
-      throw error;
-    }
+    const result = await login(...args);
+    userQuery.refetch();
+    return result;
   };
 
   const enhancedLogout = async (...args) => {
-    try {
-      const result = await logout(...args);
-      // Limpiar datos del usuario después del logout
-      userQuery.remove();
-      setIsInitialized(false);
-      initializationRef.current = false;
-      console.log('AuthContext: Logout exitoso, datos limpiados');
-      return result;
-    } catch (error) {
-      console.error('AuthContext: Error en logout:', error);
-      throw error;
-    }
+    const result = await logout(...args);
+    userQuery.remove();
+    setIsInitialized(false);
+    return result;
   };
 
   const enhancedRegister = async (...args) => {
-    try {
-      const result = await register(...args);
-      // Refetch del usuario después del registro
-      await userQuery.refetch();
-      console.log('AuthContext: Registro exitoso, usuario refetcheado');
-      return result;
-    } catch (error) {
-      console.error('AuthContext: Error en registro:', error);
-      throw error;
-    }
+    const result = await register(...args);
+    userQuery.refetch();
+    return result;
   };
 
   const enhancedLoginWithGoogle = async (...args) => {
-    try {
-      const result = await loginWithGoogle(...args);
-      // Refetch del usuario después del login con Google
-      await userQuery.refetch();
-      console.log('AuthContext: Login con Google exitoso, usuario refetcheado');
-      return result;
-    } catch (error) {
-      console.error('AuthContext: Error en login con Google:', error);
-      throw error;
-    }
+    const result = await loginWithGoogle(...args);
+    userQuery.refetch();
+    return result;
   };
 
   const enhancedVerifyTwoFactor = async (...args) => {
-    try {
-      const result = await verifyTwoFactor(...args);
-      // Refetch del usuario después de verificar 2FA
-      await userQuery.refetch();
-      console.log('AuthContext: 2FA verificado exitosamente, usuario refetcheado');
-      return result;
-    } catch (error) {
-      console.error('AuthContext: Error en verificación 2FA:', error);
-      throw error;
-    }
-  };
-
-  // Función para refrescar manualmente los datos del usuario
-  const refetchUser = async () => {
-    try {
-      const result = await userQuery.refetch();
-      console.log('AuthContext: Usuario refetcheado manualmente');
-      return result;
-    } catch (error) {
-      console.error('AuthContext: Error al refetchear usuario:', error);
-      throw error;
-    }
+    const result = await verifyTwoFactor(...args);
+    userQuery.refetch();
+    return result;
   };
 
   const value = useMemo(() => ({
-    // Datos y estado del usuario
     user,
     isLoading,
     isError,
     isAuthenticated,
     isAdmin,
     isClient,
-    isAuthReady, // Nuevo: indica si la autenticación está lista para usar
-    isInitialized, // Nuevo: indica si ya se completó la inicialización
-
-    // Acciones de mutación mejoradas
+    isAuthReady,
+    isInitialized,
     login: enhancedLogin,
     logout: enhancedLogout,
     register: enhancedRegister,
     loginWithGoogle: enhancedLoginWithGoogle,
     verifyTwoFactor: enhancedVerifyTwoFactor,
-
-    // Estados de las mutaciones
     isLoggingIn,
     isLoggingOut,
     isRegistering,
     isLoggingInWithGoogle,
     isVerifying2FA,
-
-    // Utilidades
-    refetchUser,
   }), [
     user,
     isLoading,
