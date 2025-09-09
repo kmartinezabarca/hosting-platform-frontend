@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
+import { AuthWrapper } from './components/AuthWrapper';
 
 import AdminLayout from './components/AdminLayout';
 import ClientLayout from './components/ClientLayout';
@@ -21,7 +22,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <Routes>
+        <AuthWrapper>
+          <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -77,6 +79,7 @@ function App() {
           </div>
         } />
       </Routes>
+        </AuthWrapper>
     </Router>
     <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

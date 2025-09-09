@@ -5,7 +5,6 @@ import App from './App.jsx'
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from '@/lib/react-query';
-import { AuthProvider } from './context/AuthContext.jsx'
 import { NotificationProvider } from './context/NotificationContext.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import { TicketChatProvider } from "./context/TicketChatContext.jsx";
@@ -22,16 +21,14 @@ initializeCsrf().then(() => {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-            <AuthProvider>
-              <ToastProvider>
-                <NotificationProvider>
-                  <TicketChatProvider>
-                    <App />
-                    <TicketChatDockPortal />
-                  </TicketChatProvider>
-                </NotificationProvider>
-              </ToastProvider>
-            </AuthProvider>
+            <ToastProvider>
+              <NotificationProvider>
+                <TicketChatProvider>
+                  <App />
+                  <TicketChatDockPortal />
+                </TicketChatProvider>
+              </NotificationProvider>
+            </ToastProvider>
             <ReactQueryDevtools initialIsOpen={false} />
           </GoogleOAuthProvider>
         </ThemeProvider>

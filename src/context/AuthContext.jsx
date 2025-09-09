@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 import PropTypes from 'prop-types';
 import { useQuery } from '@tanstack/react-query';
 import authService from '../services/authService';
+import { useRouteContext } from '../components/AuthWrapper';
 import {
   useLogin,
   useLogout,
@@ -14,12 +15,14 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [isInitialized, setIsInitialized] = useState(false);
+  const { isPublicRoute } = useRouteContext() || { isPublicRoute: false };
   
-  // UNA SOLA QUERY - Con retry false para no causar problemas en login
+  // UNA SOLA QUERY - NO ejecutar en rutas públicas
   const userQuery = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: ({ signal }) => authService.getCurrentUser(signal),
     select: (u) => u?.data || null,
+    enabled: !isPublicRoute, // NO ejecutar en rutas públicas
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: false, // No reintentar si falla (importante para login)
