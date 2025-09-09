@@ -59,7 +59,7 @@ export const useClientNotifications = (params = {}) => {
   const normKey = useMemo(() => JSON.stringify(normParams), [normParams]);
 
   // Solo ejecutar query cuando la autenticación esté lista Y el usuario esté autenticado
-  const shouldFetch = isAuthReady && isAuthenticated && user?.uuid;
+  const shouldFetch = Boolean(isAuthReady && isAuthenticated && user?.uuid);
 
   const { data, isLoading, error } = useQuery({
     queryKey: QK.list(normKey),
@@ -169,7 +169,7 @@ export const useUnreadNotificationCount = () => {
   const { user, isAuthenticated, isAuthReady } = useAuth();
 
   // Solo ejecutar query cuando la autenticación esté lista Y el usuario esté autenticado
-  const shouldFetch = isAuthReady && isAuthenticated && user?.uuid;
+  const shouldFetch = Boolean(isAuthReady && isAuthenticated && user?.uuid);
 
   const { data, isLoading, error } = useQuery({
     queryKey: QK.unread,
