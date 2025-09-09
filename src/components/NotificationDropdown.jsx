@@ -4,7 +4,7 @@ import { Bell, X, CheckCircle, Trash2, ExternalLink, AlertCircle, Info, DollarSi
 import { useClientNotifications, useUnreadNotificationCount } from '../hooks/useClientNotifications';
 import { useAdminNotificationsHub } from '../hooks/useAdminNotifications';
 import { Skeleton } from './ui/skeleton';
-import AuthGuard from './AuthGuard';
+import { useAuth } from '../context/AuthContext';
 
 // Iconos por tipo de notificación
 const getNotificationIcon = (type) => {
@@ -128,29 +128,35 @@ const NotificationItem = ({ notification, onMarkAsRead, onDelete, isAdmin = fals
 const NotificationDropdown = ({ isAdmin = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+  
+  // Obtener estado de autenticación
+  const { isAuthenticated, isAuthReady, user } = useAuth();
 
-  // Hooks condicionales basados en el tipo de usuario
-  const clientHooks = useClientNotifications();
-  const clientUnreadHooks = useUnreadNotificationCount();
-  const adminHooks = useAdminNotificationsHub();
+  // Solo usar hooks de notificaciones si el usuario está autenticado y la auth está lista
+  const shouldUseNotifications = isAuthReady && isAuthenticated && user?.uuid;
 
-  // Seleccionar los hooks correctos
-  const {
-    notifications,
-    isLoading: loadingNotifications,
-    error: notificationsError,
-    markAsRead,
-    markAllAsRead,
-    deleteNotification,
-    isReady: notificationsReady
-  } = isAdmin ? adminHooks : clientHooks;
+  // Hooks condicionales - solo se ejecutan si shouldUseNotifications es true
+  const clientNotifications = shouldUseNotifications && !isAdmin ? useClientNotifications() : null;
+  const clientUnreadCount = shouldUseNotifications && !isAdmin ? useUnreadNotificationCount() : null;
+  const adminNotifications = shouldUseNotifications && isAdmin ? useAdminNotificationsHub() : null;
 
-  const {
-    unreadCount,
-    isLoading: loadingUnreadCount,
-    error: unreadCountError,
-    isReady: unreadReady
-  } = isAdmin ? adminHooks : clientUnreadHooks;
+  // Seleccionar los datos correctos basados en el tipo de usuario
+  const notificationData = isAdmin ? adminNotifications : clientNotifications;
+  const unreadData = isAdmin ? adminNotifications : clientUnreadCount;
+
+  // Extraer datos de forma segura
+  const notifications = notificationData?.notifications || [];
+  const isLoading = notificationData?.isLoading || false;
+  const error = notificationData?.error || null;
+  const markAsRead = notificationData?.markAsRead || (() => {});
+  const markAllAsRead = notificationData?.markAllAsRead || (() => {});
+  const deleteNotification = notificationData?.deleteNotification || (() => {});
+  const isReady = notificationData?.isReady || false;
+
+  const unreadCount = unreadData?.unreadCount || 0;
+  const isLoadingUnreadCount = unreadData?.isLoading || false;
+  const unreadCountError = unreadData?.error || null;
+  const unreadReady = unreadData?.isReady || false;
 
   // Cerrar dropdown al hacer clic fuera
   useEffect(() => {
@@ -178,6 +184,13 @@ const NotificationDropdown = ({ isAdmin = false }) => {
   const handleDeleteNotification = (id) => {
     deleteNotification(id);
   };
+
+  // Si no está autenticado o la auth no está lista, mostrar placeholder
+  if (!shouldUseNotifications) {
+    return (
+      <div className="w-6 h-6 animate-pulse bg-gray-200 rounded"></div>
+    );
+  }
 
   // Componente de carga
   const LoadingState = () => (
@@ -211,110 +224,103 @@ const NotificationDropdown = ({ isAdmin = false }) => {
   );
 
   return (
-    <AuthGuard 
-      requireAuth={true}
-      requireAdmin={isAdmin}
-      requireClient={!isAdmin}
-      fallback={<div className="w-6 h-6 animate-pulse bg-gray-200 rounded"></div>}
-    >
-      <div className="relative" ref={dropdownRef}>
-        {/* Botón de notificaciones */}
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <Bell className="w-6 h-6" />
-          {unreadReady && unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
-          )}
-        </button>
+    <div className="relative" ref={dropdownRef}>
+      {/* Botón de notificaciones */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+      >
+        <Bell className="w-6 h-6" />
+        {unreadReady && unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
+      </button>
 
-        {/* Dropdown */}
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-hidden"
-            >
-              {/* Header */}
-              <div className="p-4 border-b border-gray-200 bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Notificaciones
-                  </h3>
-                  <button
-                    onClick={() => setIsOpen(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                
-                {notificationsReady && notifications && notifications.length > 0 && (
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-sm text-gray-600">
-                      {unreadCount > 0 ? `${unreadCount} sin leer` : 'Todas leídas'}
-                    </span>
-                    {unreadCount > 0 && (
-                      <button
-                        onClick={handleMarkAllAsRead}
-                        className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                      >
-                        Marcar todas como leídas
-                      </button>
-                    )}
-                  </div>
-                )}
+      {/* Dropdown */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-hidden"
+          >
+            {/* Header */}
+            <div className="p-4 border-b border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Notificaciones
+                </h3>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-
-              {/* Content */}
-              <div className="max-h-80 overflow-y-auto">
-                {!notificationsReady || loadingNotifications ? (
-                  <LoadingState />
-                ) : notificationsError ? (
-                  <ErrorState />
-                ) : !notifications || notifications.length === 0 ? (
-                  <EmptyState />
-                ) : (
-                  <div>
-                    {notifications.map((notification) => (
-                      <NotificationItem
-                        key={notification.id}
-                        notification={notification}
-                        onMarkAsRead={handleMarkAsRead}
-                        onDelete={handleDeleteNotification}
-                        isAdmin={isAdmin}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Footer */}
-              {notificationsReady && notifications && notifications.length > 0 && (
-                <div className="p-3 border-t border-gray-200 bg-gray-50">
-                  <button
-                    onClick={() => {
-                      setIsOpen(false);
-                      // Navegar a la página de notificaciones si existe
-                      window.location.href = isAdmin ? '/admin/notifications' : '/client/notifications';
-                    }}
-                    className="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    Ver todas las notificaciones
-                  </button>
+              
+              {isReady && notifications && notifications.length > 0 && (
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-sm text-gray-600">
+                    {unreadCount > 0 ? `${unreadCount} sin leer` : 'Todas leídas'}
+                  </span>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={handleMarkAllAsRead}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Marcar todas como leídas
+                    </button>
+                  )}
                 </div>
               )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </AuthGuard>
+            </div>
+
+            {/* Content */}
+            <div className="max-h-80 overflow-y-auto">
+              {!isReady || isLoading ? (
+                <LoadingState />
+              ) : error ? (
+                <ErrorState />
+              ) : !notifications || notifications.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <div>
+                  {notifications.map((notification) => (
+                    <NotificationItem
+                      key={notification.id}
+                      notification={notification}
+                      onMarkAsRead={handleMarkAsRead}
+                      onDelete={handleDeleteNotification}
+                      isAdmin={isAdmin}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            {isReady && notifications && notifications.length > 0 && (
+              <div className="p-3 border-t border-gray-200 bg-gray-50">
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    // Navegar a la página de notificaciones si existe
+                    window.location.href = isAdmin ? '/admin/notifications' : '/client/notifications';
+                  }}
+                  className="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Ver todas las notificaciones
+                </button>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 

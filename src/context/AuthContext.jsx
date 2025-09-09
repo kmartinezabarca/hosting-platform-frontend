@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'react-router-dom';
 import authService from '../services/authService';
-import { useRouteContext } from '../components/AuthWrapper';
 import {
   useLogin,
   useLogout,
@@ -15,94 +15,142 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [isInitialized, setIsInitialized] = useState(false);
-  const { isPublicRoute } = useRouteContext() || { isPublicRoute: false };
+  const location = useLocation();
   
-  // UNA SOLA QUERY - NO ejecutar en rutas públicas
+  // Determinar si estamos en una ruta pública directamente aquí
+  const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/'];
+  const isPublicRoute = publicRoutes.includes(location.pathname);
+  
+  // Query para obtener el usuario actual - solo ejecutar si NO estamos en ruta pública
   const userQuery = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: ({ signal }) => authService.getCurrentUser(signal),
-    select: (u) => u?.data || null,
+    select: (response) => response?.data || null,
     enabled: !isPublicRoute, // NO ejecutar en rutas públicas
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: false, // No reintentar si falla (importante para login)
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
   
+  // Hooks de mutación para las acciones de autenticación
   const { mutateAsync: login, isPending: isLoggingIn } = useLogin();
   const { mutateAsync: logout, isPending: isLoggingOut } = useLogout();
   const { mutateAsync: register, isPending: isRegistering } = useRegister();
   const { mutateAsync: loginWithGoogle, isPending: isLoggingInWithGoogle } = useLoginWithGoogle();
   const { mutateAsync: verifyTwoFactor, isPending: isVerifying2FA } = useVerify2FA();
 
+  // Estados derivados del query
   const user = userQuery.data;
-  const isLoading = userQuery.isLoading;
+  const isLoading = userQuery.isLoading && !isPublicRoute; // No mostrar loading en rutas públicas
   const isError = userQuery.isError;
   
-  // Estados simples
+  // Estados de autenticación
   const isAuthenticated = !!user?.uuid;
   const isAdmin = isAuthenticated && user?.role === 'admin';
   const isClient = isAuthenticated && user?.role === 'client';
-  const isAuthReady = !isLoading; // SIMPLE: cuando no está cargando, está listo
+  
+  // El auth está listo cuando:
+  // - Estamos en ruta pública (no necesita verificación)
+  // - O cuando la query ha terminado de cargar (exitosa o con error)
+  const isAuthReady = isPublicRoute || !userQuery.isLoading;
 
-  // Marcar como inicializado cuando termine la primera carga
+  // Marcar como inicializado cuando el auth esté listo
   useEffect(() => {
-    if (!isLoading && !isInitialized) {
+    if (isAuthReady && !isInitialized) {
       setIsInitialized(true);
     }
-  }, [isLoading, isInitialized]);
+  }, [isAuthReady, isInitialized]);
 
-  // Funciones simples
+  // Funciones mejoradas que actualizan el cache después de las acciones
   const enhancedLogin = async (...args) => {
-    const result = await login(...args);
-    userQuery.refetch();
-    return result;
+    try {
+      const result = await login(...args);
+      // Refrescar los datos del usuario después del login exitoso
+      await userQuery.refetch();
+      return result;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const enhancedLogout = async (...args) => {
-    const result = await logout(...args);
-    userQuery.remove();
-    setIsInitialized(false);
-    return result;
+    try {
+      const result = await logout(...args);
+      // Limpiar el cache y resetear el estado
+      userQuery.remove();
+      setIsInitialized(false);
+      return result;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const enhancedRegister = async (...args) => {
-    const result = await register(...args);
-    userQuery.refetch();
-    return result;
+    try {
+      const result = await register(...args);
+      // Refrescar los datos del usuario después del registro exitoso
+      await userQuery.refetch();
+      return result;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const enhancedLoginWithGoogle = async (...args) => {
-    const result = await loginWithGoogle(...args);
-    userQuery.refetch();
-    return result;
+    try {
+      const result = await loginWithGoogle(...args);
+      // Refrescar los datos del usuario después del login con Google
+      await userQuery.refetch();
+      return result;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const enhancedVerifyTwoFactor = async (...args) => {
-    const result = await verifyTwoFactor(...args);
-    userQuery.refetch();
-    return result;
+    try {
+      const result = await verifyTwoFactor(...args);
+      // Refrescar los datos del usuario después de verificar 2FA
+      await userQuery.refetch();
+      return result;
+    } catch (error) {
+      throw error;
+    }
   };
 
+  // Valor del contexto memoizado para evitar re-renders innecesarios
   const value = useMemo(() => ({
+    // Datos del usuario
     user,
+    
+    // Estados de carga y error
     isLoading,
     isError,
+    
+    // Estados de autenticación
     isAuthenticated,
     isAdmin,
     isClient,
     isAuthReady,
     isInitialized,
+    
+    // Funciones de autenticación
     login: enhancedLogin,
     logout: enhancedLogout,
     register: enhancedRegister,
     loginWithGoogle: enhancedLoginWithGoogle,
     verifyTwoFactor: enhancedVerifyTwoFactor,
+    
+    // Estados de carga de las acciones
     isLoggingIn,
     isLoggingOut,
     isRegistering,
     isLoggingInWithGoogle,
     isVerifying2FA,
+    
+    // Información adicional
+    isPublicRoute,
   }), [
     user,
     isLoading,
@@ -117,6 +165,7 @@ export const AuthProvider = ({ children }) => {
     isRegistering,
     isLoggingInWithGoogle,
     isVerifying2FA,
+    isPublicRoute,
   ]);
 
   return (
