@@ -1,101 +1,106 @@
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useMemo } from 'react';
 import { useAuth } from './AuthContext';
-import echoInstance from '../services/echoService';
+import { getEcho } from '@/services/echoService';
 
 const NotificationContext = createContext(null);
+
+// lista de eventos custom que emites con broadcastAs('...'):
+const CUSTOM_EVENTS = [
+  'service.purchased',
+  'service.ready',
+  'service.status.changed',
+  'invoice.generated',
+  'invoice.status.changed',
+  'payment.processed',
+  'payment.failed',
+  'ticket.replied',
+];
 
 export const NotificationProvider = ({ children }) => {
   const { user, isAuthenticated, isAuthReady } = useAuth();
 
-  // Configurar listeners de notificaciones en tiempo real
+  // helpers para toasts / efectos laterales (ajusta a tu sistema de toasts)
+  const showInfo = (title, message) => console.log('ℹ️', title, message);
+  const showSuccess = (title, message) => console.log('✅', title, message);
+  const showError = (title, message) => console.log('❌', title, message);
+
   useEffect(() => {
-    if (!isAuthReady || !isAuthenticated || !user?.uuid) {
-      console.log('NotificationProvider: No configurando Reverb - auth no está listo', {
-        isAuthReady,
-        isAuthenticated,
-        hasUser: !!user?.uuid
-      });
+    const ready = Boolean(isAuthReady && isAuthenticated && user?.uuid);
+    if (!ready) {
+      console.log('NotificationProvider: auth no lista; no se configura Reverb.');
       return;
     }
 
-    try {
-      const channelName = `user.${user.uuid}`;
-      console.log(`NotificationProvider: Configurando canal ${channelName}`);
-      
-      const channel = echoInstance.private(channelName);
+    const echo = getEcho(); // <- crear/obtener dentro del efecto
+    const channelName = `user.${user.uuid}`;
+    const channel = echo
+      .private(channelName)
+      .subscribed(() => console.log('✅ Subscribed', `private-${channelName}`))
+      .error((e) => console.error('❌ Channel error', e));
 
-      // Eventos de notificaciones
-      const eventHandlers = {
-        'service.purchased': (data) => {
-          console.log('Reverb: Servicio adquirido:', data);
-          // Aquí puedes usar el sistema de toasts existente
-          // toast.success('¡Servicio Adquirido!', data.message);
-        },
-        
-        'service.ready': (data) => {
-          console.log('Reverb: Servicio listo:', data);
-        },
-        
-        'service.status.changed': (data) => {
-          console.log('Reverb: Estado del servicio cambiado:', data);
-        },
-        
-        'invoice.generated': (data) => {
-          console.log('Reverb: Factura generada:', data);
-        },
-        
-        'invoice.status.changed': (data) => {
-          console.log('Reverb: Estado de factura cambiado:', data);
-        },
-        
-        'payment.processed': (data) => {
-          console.log('Reverb: Pago procesado:', data);
-        },
-        
-        'payment.failed': (data) => {
-          console.log('Reverb: Pago fallido:', data);
-        },
-        
-        'ticket.replied': (data) => {
-          console.log('Reverb: Respuesta en ticket:', data);
-        },
-        
-        'notification.received': (data) => {
-          console.log('Reverb: Notificación recibida:', data);
-        }
-      };
+    // 1) Notificaciones de Laravel ($user->notify(..., via ['database','broadcast']))
+    channel.notification((n) => {
+      // n tiene { id, type, notifiable_id, data, created_at, ... }
+      console.log('🔔 notification', n);
+      const title = n?.data?.title ?? 'Notificación';
+      const msg = n?.data?.message ?? n?.data?.text ?? '';
+      showInfo(title, msg);
+      // aquí puedes invalidar queries si quieres
+      // qc.invalidateQueries({ queryKey: ... });
+    });
 
-      // Registrar todos los event listeners
-      Object.entries(eventHandlers).forEach(([eventName, handler]) => {
-        channel.listen(eventName, (data) => {
-          console.log(`Reverb: Evento recibido - ${eventName}:`, data);
-          handler(data);
-        });
-      });
+    // 2) Eventos custom (ServicePurchased, etc.) que usan broadcastAs('...'):
+    const handlers = Object.fromEntries(
+      CUSTOM_EVENTS.map((evt) => [
+        evt,
+        (payload) => {
+          console.log(`📩 ${evt}`, payload);
+          switch (evt) {
+            case 'service.purchased':
+              showSuccess('¡Servicio adquirido!', payload?.message ?? 'Tu compra fue procesada.');
+              break;
+            case 'payment.failed':
+              showError('Pago fallido', payload?.message ?? 'Intenta con otro método.');
+              break;
+            default:
+              showInfo('Evento', payload?.message ?? evt);
+          }
+          // invalida queries aquí si corresponde
+        },
+      ])
+    );
 
-      console.log(`NotificationProvider: Conectado al canal ${channelName} para notificaciones`);
+    // importante: cuando usas broadcastAs('foo.bar'), escucha con '.foo.bar'
+    CUSTOM_EVENTS.forEach((evt) => channel.listen(`.${evt}`, handlers[evt]));
 
-      return () => {
-        try {
-          Object.keys(eventHandlers).forEach(eventName => {
-            channel.stopListening(eventName);
-          });
-          echoInstance.leave(channelName);
-          console.log(`NotificationProvider: Desconectado del canal ${channelName}`);
-        } catch (error) {
-          console.warn('NotificationProvider: Error al desconectar listeners:', error);
-        }
-      };
-    } catch (error) {
-      console.error('NotificationProvider: Error al configurar notificaciones en tiempo real:', error);
-    }
+    // Re-suscripción tras reconexiones
+    const conn = echo.connector?.pusher?.connection;
+    const onReconnected = () => {
+      console.log('🔁 Reconnected (user channel), refrescando estado/mostrando toast si quieres');
+      // aquí podrías re-invocar fetchs si lo necesitas
+    };
+    conn?.bind?.('connected', onReconnected);
+
+    return () => {
+      try {
+        CUSTOM_EVENTS.forEach((evt) => channel.stopListening(`.${evt}`));
+        conn?.unbind?.('connected', onReconnected);
+        // OJO: si otros componentes usan el mismo canal, no hagas leave.
+        // echo.leave(channelName);
+      } catch (err) {
+        console.warn('cleanup warn (notifications):', err);
+      }
+    };
   }, [isAuthReady, isAuthenticated, user?.uuid]);
 
-  const value = {
-    // Métodos para mostrar notificaciones pueden ir aquí
-    // Por ahora solo logging
-    isReady: isAuthReady && isAuthenticated && !!user?.uuid,
-  };
+  const value = useMemo(
+    () => ({
+      isReady: Boolean(isAuthReady && isAuthenticated && user?.uuid),
+      // opcional: expón APIs para disparar toasts globales
+      // notify: ({title, message, variant}) => ...
+    }),
+    [isAuthReady, isAuthenticated, user?.uuid]
+  );
 
   return (
     <NotificationContext.Provider value={value}>
@@ -106,9 +111,8 @@ export const NotificationProvider = ({ children }) => {
 
 export const useNotifications = () => {
   const context = useContext(NotificationContext);
-  if (context === undefined) {
+  if (context === null) {
     throw new Error('useNotifications must be used within a NotificationProvider');
   }
   return context;
 };
-

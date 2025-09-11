@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import apiClient from "@/services/apiClient";
-import echoInstance from "@/services/echoService";
+import { getEcho } from "@/services/echoService";
 import { useAuth } from "@/context/AuthContext";
 
 const qk = {
   room: ["chat", "support-room"],
-  msgs: (roomId) => ["chat", "messages", roomId],
+  msgs: (roomId) => ["chat", "messages", String(roomId ?? "none")],
   unread: ["chat", "unread-count"],
 };
 
@@ -14,53 +14,49 @@ export function useSupportChat({ enabled = true } = {}) {
   const qc = useQueryClient();
   const { user, isAuthenticated, isAuthReady } = useAuth();
 
-  // Solo ejecutar queries cuando la autenticación esté lista Y el usuario esté autenticado
-  const shouldFetch = enabled && isAuthReady && isAuthenticated && user?.uuid;
+  // Solo ejecutar cuando la auth está lista y el user existe
+  const shouldFetch = Boolean(enabled && isAuthReady && isAuthenticated && user?.uuid);
 
-  // Tu backend (getSupportRoom) responde con { success, data: { room, channel } }
-  const { data: room, isLoading: isLoadingRoom } = useQuery({
+  // 1) Obtener/crear la sala del cliente
+  const {
+    data: room,
+    isLoading: isLoadingRoom,
+    error: roomError,
+  } = useQuery({
     queryKey: qk.room,
     queryFn: async () => {
-      try {
-        const response = await apiClient.get("/chat/support-room");
-        return response.data?.data?.room ?? null;
-      } catch (error) {
-        console.error('Error al obtener sala de soporte:', error);
-        throw error;
-      }
+      const { data } = await apiClient.get("/chat/support-room");
+      return data?.data?.room ?? null;
     },
     enabled: shouldFetch,
     refetchOnWindowFocus: false,
     retry: false,
   });
 
-  const { data: messages, isLoading: isLoadingMessages } = useQuery({
+  // 2) Traer mensajes de la sala
+  const {
+    data: messages,
+    isLoading: isLoadingMessages,
+    error: messagesError,
+  } = useQuery({
     queryKey: qk.msgs(room?.id),
     queryFn: async () => {
-      try {
-        const response = await apiClient.get(`/chat/${room.id}/messages`);
-        return response.data?.data ?? [];
-      } catch (error) {
-        console.error('Error al obtener mensajes:', error);
-        throw error;
-      }
+      const { data } = await apiClient.get(`/chat/${room.id}/messages`);
+      return data?.data ?? [];
     },
     enabled: shouldFetch && Boolean(room?.id),
     refetchOnWindowFocus: false,
     retry: false,
   });
 
+  // 3) Mutaciones
   const sendMessageMut = useMutation({
     mutationFn: async ({ chatRoomId, text }) => {
-      try {
-        const response = await apiClient.post(`/chat/${chatRoomId}/messages`, { message: text });
-        return response.data;
-      } catch (error) {
-        console.error('Error al enviar mensaje:', error);
-        throw error;
-      }
+      const { data } = await apiClient.post(`/chat/${chatRoomId}/messages`, { message: text });
+      return data;
     },
-    onSuccess: (_d, v) => {
+    onSuccess: (_res, v) => {
+      // invalidación suave
       qc.invalidateQueries({ queryKey: qk.msgs(v.chatRoomId) });
       qc.invalidateQueries({ queryKey: qk.unread });
     },
@@ -68,50 +64,68 @@ export function useSupportChat({ enabled = true } = {}) {
 
   const closeRoomMut = useMutation({
     mutationFn: async (chatRoomId) => {
-      try {
-        const response = await apiClient.put(`/chat/${chatRoomId}/close`);
-        return response.data;
-      } catch (error) {
-        console.error('Error al cerrar sala:', error);
-        throw error;
-      }
+      const { data } = await apiClient.put(`/chat/${chatRoomId}/close`);
+      return data;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.room });
     },
   });
 
-  // Suscripción por sala (usa UUID en tu evento/broadcast)
+  // 4) Realtime (solo cuando hay sala)
   useEffect(() => {
     if (!shouldFetch || !room?.uuid) return;
 
-    try {
-      const channelName = `ticket.${room.uuid}`;
-      const channel = echoInstance.private(channelName);
+    const echo = getEcho();
+    const channelName = `ticket.${room.uuid}`;
+    const ch = echo
+      .private(channelName)
+      .subscribed(() => console.log("✅ Subscribed:", `private-${channelName}`))
+      .error((e) => console.error("❌ Channel error:", e));
 
-      const handler = (e) => {
-        console.log("Reverb: Nueva respuesta en ticket de soporte:", e);
+    // Debounce de invalidaciones para evitar rafagas
+    let t;
+    const bump = () => {
+      clearTimeout(t);
+      t = setTimeout(() => {
         qc.invalidateQueries({ queryKey: qk.msgs(room.id) });
         qc.invalidateQueries({ queryKey: qk.unread });
-      };
+      }, 100);
+    };
 
-      channel.listen("ticket.replied", handler);
+    // Si el backend usa broadcastAs('ticket.replied'), escucha con '.ticket.replied'
+    ch.listen(".ticket.replied", (e) => {
+      console.log("📩 ticket.replied", e);
+      bump();
+    });
 
-      return () => {
-        try {
-          channel.stopListening("ticket.replied", handler);
-        } catch (error) {
-          console.warn('Error al detener listener de chat:', error);
-        }
-        try {
-          echoInstance.leave(channelName);
-        } catch (error) {
-          console.warn('Error al salir del canal de chat:', error);
-        }
-      };
-    } catch (error) {
-      console.error('Error al configurar canal de chat:', error);
-    }
+    // (opcional) otros eventos útiles del chat:
+    ch.listen(".ticket.closed", (e) => {
+      console.log("📩 ticket.closed", e);
+      qc.invalidateQueries({ queryKey: qk.room });
+    });
+
+    // Re-suscribir tras reconexión (por si el socket se cae)
+    const conn = echo.connector?.pusher?.connection;
+    const onReconnected = () => {
+      console.log("🔁 Reconnected, re-bumping data");
+      bump();
+    };
+    conn?.bind?.("connected", onReconnected);
+
+    return () => {
+      try {
+        ch.stopListening(".ticket.replied");
+        ch.stopListening(".ticket.closed");
+        conn?.unbind?.("connected", onReconnected);
+        // Nota: evitamos echo.leave(channelName) para no interferir si otro hook/comp
+        // usa el mismo canal. Si sabes que sólo tú lo usas, puedes dejarlo:
+        // echo.leave(channelName);
+      } catch (err) {
+        console.warn("cleanup warn (support chat):", err);
+      }
+      clearTimeout(t);
+    };
   }, [shouldFetch, room?.uuid, room?.id, qc]);
 
   return {
@@ -119,40 +133,52 @@ export function useSupportChat({ enabled = true } = {}) {
     messages: messages ?? [],
     isLoadingRoom: isLoadingRoom && shouldFetch,
     isLoadingMessages: isLoadingMessages && shouldFetch,
+    roomError,
+    messagesError,
+    sending: sendMessageMut.isPending,
+    closing: closeRoomMut.isPending,
     sendMessage: (p) => sendMessageMut.mutate(p),
     closeChatRoom: (id) => closeRoomMut.mutate(id),
-    isReady: shouldFetch, // Nuevo: indica si el hook está listo para usar
+    isReady: shouldFetch,
   };
 }
 
-// Opcional: contador de no leídos (sin polling)
+// Contador de no leídos (con polling + listo para realtime si quieres)
 export function useUnreadChatCount({ enabled = true } = {}) {
   const { user, isAuthenticated, isAuthReady } = useAuth();
+  const qc = useQueryClient();
+  const shouldFetch = Boolean(enabled && isAuthReady && isAuthenticated && user?.uuid);
 
-  // Solo ejecutar query cuando la autenticación esté lista Y el usuario esté autenticado
-  const shouldFetch = enabled && isAuthReady && isAuthenticated && user?.uuid;
-
-  const { data: unreadCount, isLoading } = useQuery({
+  const { data: unreadCount, isLoading, error } = useQuery({
     queryKey: qk.unread,
     queryFn: async () => {
-      try {
-        const response = await apiClient.get("/chat/unread-count");
-        return response.data?.unread_count ?? 0;
-      } catch (error) {
-        console.error('Error al obtener contador de chat:', error);
-        return 0;
-      }
+      const { data } = await apiClient.get("/chat/unread-count");
+      return data?.unread_count ?? 0;
     },
     enabled: shouldFetch,
     refetchOnWindowFocus: false,
     retry: false,
-    refetchInterval: shouldFetch ? 30000 : false, // Refetch cada 30 segundos si está habilitado
+    refetchInterval: shouldFetch ? 30_000 : false,
+    staleTime: 15_000,
   });
 
-  return { 
-    unreadCount: unreadCount ?? 0, 
+  // (Opcional) también puedes escuchar notifs globales del user para “bump”
+  // useEffect(() => {
+  //   if (!shouldFetch) return;
+  //   const echo = getEcho();
+  //   const ch = echo.private(`user.${user.uuid}`);
+  //   const bump = () => qc.invalidateQueries({ queryKey: qk.unread });
+  //   ch.notification(bump);
+  //   ch.listen(".ticket.replied", bump);
+  //   return () => {
+  //     try { ch.stopListening(".ticket.replied"); } catch {}
+  //   };
+  // }, [shouldFetch, user?.uuid, qc]);
+
+  return {
+    unreadCount: unreadCount ?? 0,
     isLoading: isLoading && shouldFetch,
-    isReady: shouldFetch // Nuevo: indica si el hook está listo para usar
+    error,
+    isReady: shouldFetch,
   };
 }
-

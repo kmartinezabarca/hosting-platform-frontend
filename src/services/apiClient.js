@@ -3,18 +3,22 @@
 import axios from "axios";
 
 // --- 1. Define tus URLs base ---
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const ROOT_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 let isAuthRedirecting = false;
 
-const createApiClient = (baseURL ) => {
+const createApiClient = (baseURL) => {
   const client = axios.create({
     baseURL: baseURL,
     headers: {
       "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest",
     },
     withCredentials: true,
+    xsrfCookieName: "XSRF-TOKEN",
+    xsrfHeaderName: "X-XSRF-TOKEN",
   });
 
   client.interceptors.response.use(
@@ -31,7 +35,7 @@ const createApiClient = (baseURL ) => {
       }
       if ((status === 401 || status === 403) && !isAuthRedirecting) {
         isAuthRedirecting = true;
-        if (window.location.pathname !== '/login') {
+        if (window.location.pathname !== "/login") {
           // window.location.replace('/login');
         }
       }
@@ -44,7 +48,6 @@ const createApiClient = (baseURL ) => {
 
   return client;
 };
-
 
 const apiClient = createApiClient(API_BASE_URL);
 const rootApiClient = createApiClient(ROOT_URL);

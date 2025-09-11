@@ -1,26 +1,32 @@
-import { useEffect } from 'react';
+// useAdminNotifications.js
+import { useEffect, useMemo, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import adminNotificationsService from '@/services/adminNotificationsService';
-import echoInstance from '@/services/echoService';
+import { getEcho } from '@/services/echoService';
 import { useAuth } from '@/context/AuthContext';
 
-// Query Keys
+// Query Keys (params como string estable)
 const QK = {
   base: ['admin', 'notifications'],
-  list: (params) => ['admin', 'notifications', 'list', params || {}],
+  list: (normKey) => ['admin', 'notifications', 'list', normKey],
   stats: ['admin', 'notifications', 'stats'],
 };
 
 // Normaliza respuesta (paginada o plana)
 const selectNotifications = (resp) => {
-  // Casos:
-  // - Paginada estilo Laravel: { success, data: { data: [...], current_page, last_page, ... }, meta? }
-  // - Plana: { success, data: [...] }  ó  [...]
-  const pagedArray = resp?.data?.data;
-  const flatArray = Array.isArray(resp?.data) ? resp.data : (Array.isArray(resp) ? resp : null);
+  const paged = resp?.data?.data;
+  const flatFromData = Array.isArray(resp?.data) ? resp.data : null;
+  const flatDirect = Array.isArray(resp) ? resp : null;
 
-  const list = Array.isArray(pagedArray) ? pagedArray : (Array.isArray(flatArray) ? flatArray : []);
-  const pagination = Array.isArray(pagedArray)
+  const list = Array.isArray(paged)
+    ? paged
+    : Array.isArray(flatFromData)
+    ? flatFromData
+    : Array.isArray(flatDirect)
+    ? flatDirect
+    : [];
+
+  const pagination = Array.isArray(paged)
     ? {
         current_page: resp?.data?.current_page ?? resp?.meta?.current_page ?? 1,
         last_page:    resp?.data?.last_page    ?? resp?.meta?.last_page    ?? 1,
@@ -38,15 +44,18 @@ const selectNotifications = (resp) => {
 
 export const useAdminNotifications = (params = {}, options = {}) => {
   const { isAuthReady, isAuthenticated, isAdmin } = useAuth();
-  const shouldFetch = isAuthReady && isAuthenticated && isAdmin;
+  const shouldFetch = Boolean(isAuthReady && isAuthenticated && isAdmin);
+
+  // clave estable para el cache
+  const normKey = useMemo(() => JSON.stringify(params || {}), [params]);
 
   return useQuery({
-    queryKey: QK.list(params),
+    queryKey: QK.list(normKey),
     queryFn: () => adminNotificationsService.getNotifications(params),
     select: selectNotifications,
     enabled: shouldFetch,
     keepPreviousData: true,
-    staleTime: 60 * 1000,
+    staleTime: 60_000,
     retry: false,
     ...options,
   });
@@ -54,13 +63,13 @@ export const useAdminNotifications = (params = {}, options = {}) => {
 
 export const useAdminNotificationStats = (options = {}) => {
   const { isAuthReady, isAuthenticated, isAdmin } = useAuth();
-  const shouldFetch = isAuthReady && isAuthenticated && isAdmin;
+  const shouldFetch = Boolean(isAuthReady && isAuthenticated && isAdmin);
 
   return useQuery({
     queryKey: QK.stats,
     queryFn: adminNotificationsService.getStats,
     enabled: shouldFetch,
-    staleTime: 60 * 1000,
+    staleTime: 60_000,
     retry: false,
     ...options,
   });
@@ -139,25 +148,16 @@ export const useAdminDeleteNotification = (options = {}) => {
 };
 
 /* =========================
-   HOOK COMBINADO + PUSHER
+   HUB + REALTIME
 ========================= */
 
 export const useAdminNotificationsHub = (params = {}) => {
   const { user, isAuthReady, isAuthenticated, isAdmin } = useAuth();
   const qc = useQueryClient();
-  const shouldFetch = isAuthReady && isAuthenticated && isAdmin && user?.uuid;
+  const shouldFetch = Boolean(isAuthReady && isAuthenticated && isAdmin && user?.uuid);
 
-  const {
-    data: notificationsResp,
-    isLoading,
-    error,
-  } = useAdminNotifications(params);
-
-  const {
-    data: stats,
-    isLoading: isLoadingStats,
-    error: statsError,
-  } = useAdminNotificationStats();
+  const { data: notificationsResp, isLoading, error } = useAdminNotifications(params);
+  const { data: stats, isLoading: isLoadingStats, error: statsError } = useAdminNotificationStats();
 
   const broadcast = useAdminBroadcastNotification();
   const sendToUser = useAdminSendNotificationToUser();
@@ -165,45 +165,72 @@ export const useAdminNotificationsHub = (params = {}) => {
   const markAllAsRead = useAdminMarkAllNotificationsAsRead();
   const remove = useAdminDeleteNotification();
 
-  // Suscripciones en tiempo real - solo cuando está autenticado como admin
+  // Pequeño debounce para evitar invalidar en ráfaga
+  const debounceRef = useRef();
+  const bump = () => {
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      qc.invalidateQueries({ queryKey: QK.base });
+      qc.invalidateQueries({ queryKey: QK.stats });
+    }, 120);
+  };
+
   useEffect(() => {
     if (!shouldFetch) return;
 
-    try {
-      const channel = echoInstance.private('admin.notifications');
-      
-      const handler = (e) => {
-        console.log('Reverb: Nueva notificación de admin recibida:', e);
-        qc.invalidateQueries({ queryKey: QK.base });
-        qc.invalidateQueries({ queryKey: QK.stats });
-      };
+    const echo = getEcho();
 
-      // Escuchar múltiples eventos de admin
-      const events = [
-        'notification.received',
-        'admin.service.purchased',
-        'admin.invoice.generated',
-        'admin.payment.processed',
-        'admin.service.status'
-      ];
+    // 1) Canal global de admin para “notificaciones de admin”
+    // Recomendado para tus eventos administrativos agrupados
+    const chAdminNotifications = echo
+      .private('admin.notifications')
+      .subscribed(() => console.log('✅ admin.notifications subscribed'))
+      .error((e) => console.error('❌ admin.notifications error', e));
 
-      events.forEach(eventName => {
-        channel.listen(eventName, handler);
-      });
+    // a) Si usas Laravel Notifications dirigidas a “admins” como notifiable (poco común):
+    chAdminNotifications.notification((n) => {
+      console.log('🔔 admin.notification', n);
+      bump();
+    });
 
-      return () => {
-        try {
-          events.forEach(eventName => {
-            channel.stopListening(eventName, handler);
-          });
-          echoInstance.leave('admin.notifications');
-        } catch (error) {
-          console.warn('Error al desconectar listeners de admin:', error);
-        }
-      };
-    } catch (error) {
-      console.error('Error al configurar canal de admin:', error);
-    }
+    // b) Eventos custom con broadcastAs('...'):
+    const adminNotifEvents = [
+      // si emites como 'admin.service.purchased' etc:
+      'admin.service.purchased',
+      'admin.invoice.generated',
+      'admin.payment.processed',
+      'admin.service.status',
+      // o bien si usas nombres genéricos:
+      'notification.received',
+    ];
+    adminNotifEvents.forEach((name) => chAdminNotifications.listen(`.${name}`, bump));
+
+    // 2) Canal de “servicios” de admin (tú ya lo usaste con ServicePurchased)
+    // Recuerda: si tu evento tiene broadcastAs('service.purchased'), se escucha con '.service.purchased'
+    const chAdminServices = echo
+      .private('admin.services')
+      .subscribed(() => console.log('✅ admin.services subscribed'))
+      .error((e) => console.error('❌ admin.services error', e));
+
+    const adminServiceEvents = [
+      'service.purchased',
+      'invoice.generated',
+      'payment.processed',
+      'service.status',
+      'service.maintenance.scheduled',
+      'service.maintenance.completed',
+    ];
+    adminServiceEvents.forEach((name) => chAdminServices.listen(`.${name}`, bump));
+
+    return () => {
+      try {
+        adminNotifEvents.forEach((name) => chAdminNotifications.stopListening(`.${name}`));
+        adminServiceEvents.forEach((name) => chAdminServices.stopListening(`.${name}`));
+        // Nota: no hacemos leave() para no interferir si otros componentes usan los mismos canales.
+      } catch (err) {
+        console.warn('cleanup warn (admin hub):', err);
+      }
+    };
   }, [shouldFetch, qc]);
 
   return {
@@ -228,4 +255,3 @@ export const useAdminNotificationsHub = (params = {}) => {
     deleteNotification: remove.mutate,
   };
 };
-
