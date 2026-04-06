@@ -5,7 +5,6 @@ import App from './App.jsx'
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from '@/lib/react-query';
-import { NotificationProvider } from './context/NotificationContext.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import { TicketChatProvider } from "./context/TicketChatContext.jsx";
 import TicketChatDockPortal from "./components/tickets/TicketChatDockPortal.jsx";
