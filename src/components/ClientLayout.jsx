@@ -40,6 +40,7 @@ const ClientLayout = () => {
   center: { rotate: 0, opacity: 1, scale: 1 },
   exit:  (d) => ({ rotate: -d * 90, opacity: 0, scale: 0.9 }),
   };
+  
 
   useEffect(() => {
     setIsSidebarOpen(false);
