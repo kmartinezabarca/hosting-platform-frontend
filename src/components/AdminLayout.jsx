@@ -11,6 +11,9 @@ import { useAuth } from '../context/AuthContext';
 import UserAvatar from '../components/UserAvatar';
 import { Skeleton } from '../components/ui/skeleton';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
+import AdminBlogPage from '../pages/admin/AdminBlogPage';
+import AdminBlogEditorPage from '../pages/admin/AdminBlogEditorPage';
+import { Routes, Route } from 'react-router-dom';
 
 const AdminLayout = () => {
   const { theme, toggleTheme } = useTheme();
@@ -31,6 +34,7 @@ const AdminLayout = () => {
     { icon: CreditCard, label: 'Facturación', path: '/admin/billing' },
     { icon: FileText, label: 'Facturas', path: '/admin/invoices' },
     { icon: MessageSquare, label: 'Soporte', path: '/admin/support' },
+    { icon: FileText, label: 'Blog', path: '/admin/blog' },
     { icon: Settings, label: 'Configuración', path: '/admin/settings' },
   ];
 
@@ -240,7 +244,16 @@ const AdminLayout = () => {
 
           {/* Contenido de la página */}
           <main className="flex-1">
-            {isAdminDashboard ? <AdminDashboardPage /> : <Outlet />}
+            {isAdminDashboard ? (
+              <AdminDashboardPage />
+            ) : (
+              <Routes>
+                <Route path="blog" element={<AdminBlogPage />} />
+                <Route path="blog/new" element={<AdminBlogEditorPage />} />
+                <Route path="blog/edit/:uuid" element={<AdminBlogEditorPage />} />
+                <Route path="*" element={<Outlet />} />
+              </Routes>
+            )}
           </main>
         </div>
       </div>
