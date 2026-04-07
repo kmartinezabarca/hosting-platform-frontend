@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowLeft, Save, Eye, Image as ImageIcon, 
   Loader2, AlertCircle, CheckCircle, Trash2, 
-  Clock, User, Tag, Layout, FileText, Calendar, Upload
+  Clock, User, Tag, Layout, FileText, Calendar, Upload, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,7 @@ const AdminBlogEditorPage = () => {
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState([]);
   const [showImageUpload, setShowImageUpload] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   
@@ -53,8 +54,10 @@ const AdminBlogEditorPage = () => {
   const fetchCategories = async () => {
     try {
       const res = await BlogService.adminGetCategories();
-      setCategories(res.data.data || []);
+      const categoryList = res.data.data || [];
+      setCategories(categoryList);
     } catch (err) {
+      console.error('Error fetching categories:', err);
       toast.error('Error al cargar categorías');
     }
   };
@@ -63,6 +66,7 @@ const AdminBlogEditorPage = () => {
     try {
       const res = await BlogService.adminGetPost(uuid);
       const post = res.data.data;
+      
       setFormData({
         title: post.title || '',
         slug: post.slug || '',
@@ -75,10 +79,12 @@ const AdminBlogEditorPage = () => {
         read_time: post.readTime || 5,
         published_at: post.publishedAt ? post.publishedAt.split(' ')[0] : new Date().toISOString().split('T')[0]
       });
+      
       if (post.image) {
         setImagePreview(post.image);
       }
     } catch (err) {
+      console.error('Error fetching post:', err);
       toast.error('Error al cargar el artículo');
       navigate('/admin/blog');
     } finally {
@@ -91,6 +97,13 @@ const AdminBlogEditorPage = () => {
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleCategoryChange = (value) => {
+    setFormData(prev => ({
+      ...prev,
+      blog_category_id: value
     }));
   };
 
@@ -111,6 +124,16 @@ const AdminBlogEditorPage = () => {
   const handleImageSelect = (e) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast.error('Por favor selecciona una imagen válida');
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('La imagen no debe superar 5MB');
+        return;
+      }
+
       setImageFile(file);
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -145,6 +168,7 @@ const AdminBlogEditorPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     if (!formData.title || !formData.content || !formData.blog_category_id) {
       toast.error('Por favor completa los campos obligatorios');
       return;
@@ -195,7 +219,10 @@ const AdminBlogEditorPage = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => window.open(`/blog/${formData.slug}`, '_blank')} disabled={!formData.slug}>
+          <Button 
+            variant="outline" 
+            onClick={() => setShowPreview(true)}
+          >
             <Eye className="h-4 w-4 mr-2" /> Previsualizar
           </Button>
           <Button onClick={handleSubmit} disabled={saving}>
@@ -276,14 +303,25 @@ const AdminBlogEditorPage = () => {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="blog_category_id">Categoría <span className="text-destructive">*</span></Label>
-                <Select value={formData.blog_category_id} onValueChange={(value) => setFormData({...formData, blog_category_id: value})}>
-                  <SelectTrigger>
+                <Select 
+                  value={formData.blog_category_id} 
+                  onValueChange={handleCategoryChange}
+                >
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Seleccionar categoría" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map(cat => (
-                      <SelectItem key={cat.id} value={cat.uuid}>{cat.name}</SelectItem>
-                    ))}
+                    {categories && categories.length > 0 ? (
+                      categories.map(cat => (
+                        <SelectItem key={cat.uuid} value={cat.uuid}>
+                          {cat.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="" disabled>
+                        No hay categorías disponibles
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -388,7 +426,7 @@ const AdminBlogEditorPage = () => {
               <label htmlFor="image-input" className="cursor-pointer">
                 <ImageIcon className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                 <p className="text-sm font-medium">Haz clic o arrastra una imagen aquí</p>
-                <p className="text-xs text-muted-foreground">PNG, JPG, GIF (máx. 2MB)</p>
+                <p className="text-xs text-muted-foreground">PNG, JPG, GIF (máx. 5MB)</p>
               </label>
             </div>
             {imagePreview && (
@@ -399,6 +437,55 @@ const AdminBlogEditorPage = () => {
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setShowImageUpload(false)}>Cancelar</Button>
               <Button onClick={handleImageUpload} disabled={!imageFile}>Subir Imagen</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Modal */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between w-full">
+              <DialogTitle>Previsualización del Artículo</DialogTitle>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setShowPreview(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+          <div className="space-y-6 mt-6">
+            {formData.image && (
+              <div className="rounded-lg overflow-hidden aspect-video bg-muted">
+                <img src={formData.image} alt={formData.title} className="w-full h-full object-cover" />
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                <span>{new Date(formData.published_at).toLocaleDateString('es-MX')}</span>
+                <Clock className="h-4 w-4 ml-4" />
+                <span>{formData.read_time} min de lectura</span>
+              </div>
+              
+              <h1 className="text-4xl font-bold">{formData.title}</h1>
+              
+              <div className="flex items-center gap-2">
+                <span className="inline-block px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                  {categories.find(c => c.uuid === formData.blog_category_id)?.name || 'Sin categoría'}
+                </span>
+                {formData.author_name && (
+                  <span className="text-sm text-muted-foreground">Por {formData.author_name}</span>
+                )}
+              </div>
+            </div>
+
+            <div className="prose prose-lg max-w-none">
+              <div dangerouslySetInnerHTML={{ __html: formData.content }} />
             </div>
           </div>
         </DialogContent>

@@ -110,9 +110,15 @@ importers:
       '@tanstack/react-query-devtools':
         specifier: ^5.85.6
         version: 5.87.3(@tanstack/react-query@5.87.1(react@19.1.1))(react@19.1.1)
+      '@tiptap/extension-bubble-menu':
+        specifier: ^3.22.2
+        version: 3.22.2(@tiptap/core@3.22.2(@tiptap/pm@3.22.2))(@tiptap/pm@3.22.2)
       '@tiptap/extension-code-block-lowlight':
         specifier: ^3.22.2
         version: 3.22.2(@tiptap/core@3.22.2(@tiptap/pm@3.22.2))(@tiptap/extension-code-block@3.22.2(@tiptap/core@3.22.2(@tiptap/pm@3.22.2))(@tiptap/pm@3.22.2))(@tiptap/pm@3.22.2)(highlight.js@11.11.1)(lowlight@3.3.0)
+      '@tiptap/extension-floating-menu':
+        specifier: ^3.22.2
+        version: 3.22.2(@floating-ui/dom@1.7.4)(@tiptap/core@3.22.2(@tiptap/pm@3.22.2))(@tiptap/pm@3.22.2)
       '@tiptap/extension-highlight':
         specifier: ^3.22.2
         version: 3.22.2(@tiptap/core@3.22.2(@tiptap/pm@3.22.2))
@@ -4015,7 +4021,6 @@ snapshots:
       '@floating-ui/dom': 1.7.4
       '@tiptap/core': 3.22.2(@tiptap/pm@3.22.2)
       '@tiptap/pm': 3.22.2
-    optional: true
 
   '@tiptap/extension-bullet-list@3.22.2(@tiptap/extension-list@3.22.2(@tiptap/core@3.22.2(@tiptap/pm@3.22.2))(@tiptap/pm@3.22.2))':
     dependencies:
@@ -4051,7 +4056,6 @@ snapshots:
       '@floating-ui/dom': 1.7.4
       '@tiptap/core': 3.22.2(@tiptap/pm@3.22.2)
       '@tiptap/pm': 3.22.2
-    optional: true
 
   '@tiptap/extension-gapcursor@3.22.2(@tiptap/extensions@3.22.2(@tiptap/core@3.22.2(@tiptap/pm@3.22.2))(@tiptap/pm@3.22.2))':
     dependencies:
