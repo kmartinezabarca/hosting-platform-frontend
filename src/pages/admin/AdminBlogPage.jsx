@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Search, Filter, MoreVertical, Edit, Trash2, 
   Eye, Calendar, User, Tag, CheckCircle, XCircle,
-  Loader2, AlertCircle
+  Loader2, AlertCircle, Image as ImageIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

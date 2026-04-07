@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowLeft, Save, Eye, Image as ImageIcon, 
   Loader2, AlertCircle, CheckCircle, Trash2, 
-  Clock, User, Tag, Layout, FileText
+  Clock, User, Tag, Layout, FileText, Calendar
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
