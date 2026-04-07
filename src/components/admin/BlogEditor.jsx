@@ -10,70 +10,12 @@ import {
   Bold, Italic, List, ListOrdered, Quote, Undo, Redo, 
   Image as ImageIcon, Link as LinkIcon, Heading1, Heading2, Heading3,
   Code, Eye, EyeOff, AlignLeft, AlignCenter, AlignRight, Underline as UnderlineIcon,
-  ZoomIn, ZoomOut, Trash2, Copy
+  ZoomIn, ZoomOut, Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-
-// Custom Image Extension with enhanced resize capabilities
-const ResizableImage = Image.extend({
-  addAttributes() {
-    return {
-      ...this.parent?.(),
-      width: {
-        default: null,
-        parseHTML: element => element.getAttribute('width'),
-        renderHTML: attributes => ({
-          width: attributes.width,
-        }),
-      },
-      height: {
-        default: null,
-        parseHTML: element => element.getAttribute('height'),
-        renderHTML: attributes => ({
-          height: attributes.height,
-        }),
-      },
-      align: {
-        default: 'left',
-        parseHTML: element => element.getAttribute('data-align') || 'left',
-        renderHTML: attributes => ({
-          'data-align': attributes.align,
-        }),
-      },
-    };
-  },
-
-  addNodeView() {
-    return {
-      dom: () => {
-        const container = document.createElement('div');
-        container.style.position = 'relative';
-        container.style.display = 'inline-block';
-        container.style.margin = '10px 0';
-        return { dom: container };
-      },
-    };
-  },
-
-  renderHTML({ HTMLAttributes }) {
-    const width = HTMLAttributes.width || '100%';
-    const height = HTMLAttributes.height || 'auto';
-    const align = HTMLAttributes['data-align'] || 'left';
-    
-    return ['img', { 
-      ...HTMLAttributes, 
-      width: width,
-      height: height,
-      'data-align': align,
-      style: `width: ${width}; height: ${height}; cursor: pointer; display: block; margin: ${align === 'center' ? '0 auto' : '0'};`,
-      class: 'rounded-lg max-w-full h-auto',
-      draggable: true,
-    }];
-  },
-});
 
 const MenuBar = ({ editor, onShowPreview, showPreview, fileInputRef, linkInputRef, linkUrl, setLinkUrl }) => {
   if (!editor) {
@@ -99,9 +41,6 @@ const MenuBar = ({ editor, onShowPreview, showPreview, fileInputRef, linkInputRe
     reader.onload = (event) => {
       editor.chain().focus().setImage({ 
         src: event.target.result,
-        width: '100%',
-        height: 'auto',
-        align: 'left'
       }).run();
     };
     reader.readAsDataURL(file);
@@ -346,15 +285,14 @@ const BlogEditor = ({ content, onChange }) => {
   const [imageControls, setImageControls] = useState(null);
   const fileInputRef = useRef(null);
   const linkInputRef = useRef(null);
-  const editorRef = useRef(null);
 
   const editor = useEditor({
     extensions: [
       StarterKit,
-      ResizableImage.configure({
+      Image.configure({
         allowBase64: true,
         HTMLAttributes: {
-          class: 'rounded-lg max-w-full h-auto',
+          class: 'rounded-lg max-w-full h-auto cursor-pointer',
         },
       }),
       Link.configure({
@@ -381,9 +319,11 @@ const BlogEditor = ({ content, onChange }) => {
       if (e.target.tagName === 'IMG') {
         setSelectedImage(e.target);
         const rect = e.target.getBoundingClientRect();
+        const editorRect = editor.view.dom.getBoundingClientRect();
+        
         setImageControls({
-          top: rect.top - 60,
-          left: rect.left,
+          top: rect.top - editorRect.top - 60,
+          left: rect.left - editorRect.left,
         });
       } else {
         setSelectedImage(null);
@@ -403,11 +343,12 @@ const BlogEditor = ({ content, onChange }) => {
     if (!selectedImage) return;
 
     const currentWidth = selectedImage.getAttribute('width') || '100%';
-    const currentValue = parseInt(currentWidth);
+    const currentValue = parseInt(currentWidth) || 100;
     const newValue = Math.max(30, Math.min(100, currentValue + percentage));
     
     selectedImage.setAttribute('width', `${newValue}%`);
     selectedImage.style.width = `${newValue}%`;
+    selectedImage.style.height = 'auto';
     
     if (editor) {
       onChange(editor.getHTML());
@@ -417,9 +358,18 @@ const BlogEditor = ({ content, onChange }) => {
   const handleImageAlign = (align) => {
     if (!selectedImage) return;
 
-    selectedImage.setAttribute('data-align', align);
-    selectedImage.style.margin = align === 'center' ? '0 auto' : '0';
-    selectedImage.style.display = 'block';
+    const container = selectedImage.parentElement;
+    
+    if (align === 'center') {
+      selectedImage.style.margin = '10px auto';
+      selectedImage.style.display = 'block';
+    } else if (align === 'right') {
+      selectedImage.style.margin = '10px 0 10px 10px';
+      selectedImage.style.float = 'right';
+    } else {
+      selectedImage.style.margin = '10px 10px 10px 0';
+      selectedImage.style.float = 'left';
+    }
 
     if (editor) {
       onChange(editor.getHTML());
@@ -450,7 +400,7 @@ const BlogEditor = ({ content, onChange }) => {
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-2">
-        <div className="min-h-[400px] border-r relative">
+        <div className="min-h-[400px] border-r relative overflow-auto">
           {selectedImage && imageControls && (
             <div 
               className="absolute z-50 flex gap-1 p-2 bg-white border border-gray-300 rounded-lg shadow-lg"
@@ -513,7 +463,6 @@ const BlogEditor = ({ content, onChange }) => {
             </div>
           )}
           <EditorContent 
-            ref={editorRef}
             editor={editor} 
             className="prose prose-sm max-w-none p-4 focus:outline-none [&_img]:cursor-pointer"
           />
