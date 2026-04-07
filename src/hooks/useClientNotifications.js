@@ -1,23 +1,27 @@
 import { useEffect, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clientNotificationsService from '@/services/clientNotificationsService';
-import { getEcho } from '@/services/echoService';
+import echoInstance from '@/services/echoService';
 import { useAuth } from '@/context/AuthContext';
 
 const QK = {
-  list: (normKey) => ['notifications', 'client', 'list', normKey],
+  list: (normKey) => ['notifications', 'client', 'list', normKey], // normKey estable (string)
   unread: ['notifications', 'client', 'unreadCount'],
 };
 
+// Normaliza params a un objeto con claves ordenadas y sin undefined/null/''.
 const normalizeParams = (params = {}) => {
   const cleaned = {};
-  Object.keys(params).sort().forEach((k) => {
-    const v = params[k];
-    if (v !== undefined && v !== null && v !== '') cleaned[k] = v;
-  });
+  Object.keys(params)
+    .sort()
+    .forEach((k) => {
+      const v = params[k];
+      if (v !== undefined && v !== null && v !== '') cleaned[k] = v;
+    });
   return cleaned;
 };
 
+// Normaliza respuesta: { data: [...] } | { data: { data:[...], ... } } | arreglo plano
 const selectNotifications = (resp) => {
   const paged = resp?.data?.data;
   const flatFromData = Array.isArray(resp?.data) ? resp.data : null;
@@ -47,19 +51,18 @@ const selectNotifications = (resp) => {
    LISTA Y ACCIONES (CLIENTE)
 ========================= */
 export const useClientNotifications = (params = {}) => {
-  const { user, isAuthenticated, isAuthReady } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const qc = useQueryClient();
 
+  // Parametros estables
   const normParams = useMemo(() => normalizeParams(params), [params]);
   const normKey = useMemo(() => JSON.stringify(normParams), [normParams]);
-
-  const shouldFetch = Boolean(isAuthReady && isAuthenticated && user?.uuid);
 
   const { data, isLoading, error } = useQuery({
     queryKey: QK.list(normKey),
     queryFn: () => clientNotificationsService.list(normParams),
     select: selectNotifications,
-    enabled: shouldFetch,
+    enabled: isAuthenticated, // <- NO consultes si no hay sesión
     keepPreviousData: true,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -90,64 +93,40 @@ export const useClientNotifications = (params = {}) => {
     },
   });
 
+  // Suscripción realtime SOLO cuando hay usuario autenticado
   useEffect(() => {
-    if (!shouldFetch) return;
+    if (!isAuthenticated || !user?.uuid) return;
 
-    const echo = getEcho(); // <-- crear/obtener dentro del efecto
     const channelName = `user.${user.uuid}`;
-    const channel = echo
-      .private(channelName)
-      .subscribed(() => console.log('✅ Subscribed', `private-${channelName}`))
-      .error((e) => console.error('❌ Channel error', e));
+    const channel = echoInstance.private(channelName);
 
-    // 1) Notificaciones de Laravel (via $user->notify([...,'broadcast']))
-    const handleNotification = (n) => {
-      console.log('🔔 notification', n);
-      qc.invalidateQueries({ queryKey: QK.list(normKey) });
-      qc.invalidateQueries({ queryKey: QK.unread });
-    };
-    channel.notification(handleNotification);
-
-    // 2) Eventos custom que emites con broadcastAs('...')
-    const customEvents = [
-      'invoice.generated',
-      'invoice.status.changed',
-      'payment.processed',
-      'payment.failed',
-      'service.purchased',
-      'service.ready',
-      'service.status.changed',
-      'service.maintenance.scheduled',
-      'service.maintenance.completed',
-      'ticket.replied',
-    ];
-
-    const handleCustom = (e) => {
-      console.log('📩 custom event', e);
+    const handler = (e) => {
+      // console.log('Reverb: notif cliente recibida:', e);
       qc.invalidateQueries({ queryKey: QK.list(normKey) });
       qc.invalidateQueries({ queryKey: QK.unread });
     };
 
-    customEvents.forEach((name) => channel.listen(`.${name}`, handleCustom));
+    // IMPORTANTE: usa exactamente el nombre que emite tu backend
+    channel.listen('notification.received', handler);
 
     return () => {
       try {
-        customEvents.forEach((name) => channel.stopListening(`.${name}`));
-      } catch (err) {
-        console.warn('cleanup warn:', err);
-      }
+        channel.stopListening('notification.received', handler);
+      } catch {}
+      try {
+        echoInstance.leave(channelName);
+      } catch {}
     };
-  }, [shouldFetch, user?.uuid, qc, normKey]);
+  }, [isAuthenticated, user?.uuid, qc, normKey]);
 
   return {
     notifications: data?.list ?? [],
     pagination: data?.pagination ?? null,
-    isLoading: isLoading && shouldFetch,
+    isLoading,
     error,
     markAsRead: markAsRead.mutate,
     markAllAsRead: markAllAsRead.mutate,
     deleteNotification: deleteNotification.mutate,
-    isReady: shouldFetch,
   };
 };
 
@@ -156,72 +135,43 @@ export const useClientNotifications = (params = {}) => {
 ========================= */
 export const useUnreadNotificationCount = () => {
   const qc = useQueryClient();
-  const { user, isAuthenticated, isAuthReady } = useAuth();
-
-  const shouldFetch = Boolean(isAuthReady && isAuthenticated && user?.uuid);
+  const { user, isAuthenticated } = useAuth();
 
   const { data, isLoading, error } = useQuery({
     queryKey: QK.unread,
     queryFn: () => clientNotificationsService.unreadCount(),
     select: (resp) => {
       if (typeof resp === 'number') return resp;
-      if (typeof resp?.unread_count === 'number') return resp.unread_count;
+      if (typeof resp?.count === 'number') return resp.count;
       if (typeof resp?.data?.count === 'number') return resp.data.count;
-      if (typeof resp?.data?.unread_count === 'number') return resp.data.unread_count;
       return 0;
     },
-    enabled: shouldFetch,
-    refetchInterval: shouldFetch ? 30000 : false,
+    enabled: isAuthenticated, // <- NO consultes si no hay sesión
+    refetchInterval: isAuthenticated ? 10000 : false,
     refetchOnWindowFocus: false,
     retry: false,
     staleTime: 15_000,
   });
 
   useEffect(() => {
-    if (!shouldFetch) return;
+    if (!isAuthenticated || !user?.uuid) return;
 
-    const echo = getEcho();
     const channelName = `user.${user.uuid}`;
-    const channel = echo
-      .private(channelName)
-      .subscribed(() => console.log('✅ Subscribed (counter)', `private-${channelName}`))
-      .error((e) => console.error('❌ Channel error (counter)', e));
+    const channel = echoInstance.private(channelName);
 
-    const bump = () => {
-      console.log('🔄 bump unread count');
-      qc.invalidateQueries({ queryKey: QK.unread });
-    };
+    const handler = () => qc.invalidateQueries({ queryKey: QK.unread });
 
-    // Notificaciones + eventos custom impactan el contador
-    channel.notification(bump);
-
-    const customEvents = [
-      'invoice.generated',
-      'invoice.status.changed',
-      'payment.processed',
-      'payment.failed',
-      'service.purchased',
-      'service.ready',
-      'service.status.changed',
-      'service.maintenance.scheduled',
-      'service.maintenance.completed',
-      'ticket.replied',
-    ];
-    customEvents.forEach((name) => channel.listen(`.${name}`, bump));
+    channel.listen('notification.received', handler);
 
     return () => {
       try {
-        customEvents.forEach((name) => channel.stopListening(`.${name}`));
-      } catch (err) {
-        console.warn('cleanup warn (counter):', err);
-      }
+        channel.stopListening('notification.received', handler);
+      } catch {}
+      try {
+        echoInstance.leave(channelName);
+      } catch {}
     };
-  }, [shouldFetch, user?.uuid, qc]);
+  }, [isAuthenticated, user?.uuid, qc]);
 
-  return {
-    unreadCount: data ?? 0,
-    isLoading: isLoading && shouldFetch,
-    error,
-    isReady: shouldFetch,
-  };
+  return { unreadCount: data ?? 0, isLoading, error };
 };
