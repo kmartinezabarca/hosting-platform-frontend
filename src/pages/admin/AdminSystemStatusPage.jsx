@@ -19,7 +19,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
-import apiClient from "@/lib/apiClient";
+import systemStatusAdminService from "@/services/systemStatusAdminService";
 
 export default function AdminSystemStatusPage() {
   const [statuses, setStatuses] = useState([]);
@@ -42,8 +42,8 @@ export default function AdminSystemStatusPage() {
   const fetchStatuses = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get("/admin/system-status");
-      setStatuses(response.data.data || []);
+      const data = await systemStatusAdminService.getAll();
+      setStatuses(data);
     } catch (error) {
       toast.error("Error al cargar el estado del sistema");
       console.error(error);
@@ -60,10 +60,10 @@ export default function AdminSystemStatusPage() {
 
     try {
       if (editingId) {
-        await apiClient.put(`/admin/system-status/${editingId}`, formData);
+        await systemStatusAdminService.update(editingId, formData);
         toast.success("Estado del sistema actualizado exitosamente");
       } else {
-        await apiClient.post("/admin/system-status", formData);
+        await systemStatusAdminService.create(formData);
         toast.success("Estado del sistema creado exitosamente");
       }
       setIsOpen(false);
@@ -89,7 +89,7 @@ export default function AdminSystemStatusPage() {
 
   const handleDelete = async (uuid) => {
     try {
-      await apiClient.delete(`/admin/system-status/${uuid}`);
+      await systemStatusAdminService.delete(uuid);
       toast.success("Estado del sistema eliminado exitosamente");
       setDeleteConfirm(null);
       fetchStatuses();

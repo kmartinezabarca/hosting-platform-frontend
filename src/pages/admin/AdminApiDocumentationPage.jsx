@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Edit, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
-import apiClient from "@/lib/apiClient";
+import apiDocumentationAdminService from "@/services/apiDocumentationAdminService";
 
 export default function AdminApiDocumentationPage() {
   const [documentation, setDocumentation] = useState([]);
@@ -37,8 +37,8 @@ export default function AdminApiDocumentationPage() {
   const fetchDocumentation = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get("/admin/api-documentation");
-      setDocumentation(response.data.data || []);
+      const data = await apiDocumentationAdminService.getAll();
+      setDocumentation(data);
     } catch (error) {
       toast.error("Error al cargar la documentación de API");
       console.error(error);
@@ -55,10 +55,10 @@ export default function AdminApiDocumentationPage() {
 
     try {
       if (editingId) {
-        await apiClient.put(`/admin/api-documentation/${editingId}`, formData);
+        await apiDocumentationAdminService.update(editingId, formData);
         toast.success("Documentación de API actualizada exitosamente");
       } else {
-        await apiClient.post("/admin/api-documentation", formData);
+        await apiDocumentationAdminService.create(formData);
         toast.success("Documentación de API creada exitosamente");
       }
       setIsOpen(false);
@@ -85,7 +85,7 @@ export default function AdminApiDocumentationPage() {
 
   const handleDelete = async (uuid) => {
     try {
-      await apiClient.delete(`/admin/api-documentation/${uuid}`);
+      await apiDocumentationAdminService.delete(uuid);
       toast.success("Documentación de API eliminada exitosamente");
       setDeleteConfirm(null);
       fetchDocumentation();
