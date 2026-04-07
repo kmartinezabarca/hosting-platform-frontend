@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import BlogService from '@/services/blogService';
@@ -377,27 +378,24 @@ const AdminBlogEditorPage = () => {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="blog_category_id">Categoría <span className="text-destructive">*</span></Label>
-                <select
-                  id="blog_category_id"
-                  name="blog_category_id"
-                  value={formData.blog_category_id}
-                  onChange={handleCategoryChange}
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  required
-                >
-                  <option value="">-- Seleccionar categoría --</option>
-                  {categories && categories.length > 0 ? (
-                    categories.map(cat => (
-                      <option key={cat.uuid} value={cat.uuid}>
-                        {cat.name}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="" disabled>
-                      No hay categorías disponibles
-                    </option>
-                  )}
-                </select>
+                <Select value={formData.blog_category_id || ''} onValueChange={handleCategoryChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seleccionar categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories && categories.length > 0 ? (
+                      categories.map(cat => (
+                        <SelectItem key={cat.uuid} value={cat.uuid}>
+                          {cat.name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="" disabled>
+                        No hay categorías disponibles
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
