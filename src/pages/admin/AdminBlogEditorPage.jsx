@@ -44,6 +44,8 @@ const AdminBlogEditorPage = () => {
     published_at: new Date().toISOString().split('T')[0]
   });
 
+  const [categoryLoaded, setCategoryLoaded] = useState(false);
+
   useEffect(() => {
     fetchCategories();
     if (isEdit) {
@@ -56,9 +58,11 @@ const AdminBlogEditorPage = () => {
       const res = await BlogService.adminGetCategories();
       const categoryList = res.data.data || [];
       setCategories(categoryList);
+      setCategoryLoaded(true);
     } catch (err) {
       console.error('Error fetching categories:', err);
       toast.error('Error al cargar categorías');
+      setCategoryLoaded(true);
     }
   };
 
@@ -303,27 +307,29 @@ const AdminBlogEditorPage = () => {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="blog_category_id">Categoría <span className="text-destructive">*</span></Label>
-                <Select 
-                  value={formData.blog_category_id} 
-                  onValueChange={handleCategoryChange}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleccionar categoría" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories && categories.length > 0 ? (
-                      categories.map(cat => (
-                        <SelectItem key={cat.uuid} value={cat.uuid}>
-                          {cat.name}
+                {categoryLoaded && (
+                  <Select 
+                    value={formData.blog_category_id || ''} 
+                    onValueChange={handleCategoryChange}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Seleccionar categoría" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories && categories.length > 0 ? (
+                        categories.map(cat => (
+                          <SelectItem key={cat.uuid} value={cat.uuid}>
+                            {cat.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="" disabled>
+                          No hay categorías disponibles
                         </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="" disabled>
-                        No hay categorías disponibles
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div className="space-y-2">

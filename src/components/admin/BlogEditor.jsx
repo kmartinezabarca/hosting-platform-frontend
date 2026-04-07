@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -10,27 +10,27 @@ import {
   Bold, Italic, List, ListOrdered, Quote, Undo, Redo, 
   Image as ImageIcon, Link as LinkIcon, Heading1, Heading2, Heading3,
   Code, Eye, EyeOff, AlignLeft, AlignCenter, AlignRight, Underline as UnderlineIcon,
-  ZoomIn, ZoomOut, Trash2
+  ZoomIn, ZoomOut, Trash2, Copy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-// Custom Image Extension with resize capabilities
+// Custom Image Extension with enhanced resize capabilities
 const ResizableImage = Image.extend({
   addAttributes() {
     return {
       ...this.parent?.(),
       width: {
-        default: '100%',
+        default: null,
         parseHTML: element => element.getAttribute('width'),
         renderHTML: attributes => ({
           width: attributes.width,
         }),
       },
       height: {
-        default: 'auto',
+        default: null,
         parseHTML: element => element.getAttribute('height'),
         renderHTML: attributes => ({
           height: attributes.height,
@@ -46,11 +46,31 @@ const ResizableImage = Image.extend({
     };
   },
 
+  addNodeView() {
+    return {
+      dom: () => {
+        const container = document.createElement('div');
+        container.style.position = 'relative';
+        container.style.display = 'inline-block';
+        container.style.margin = '10px 0';
+        return { dom: container };
+      },
+    };
+  },
+
   renderHTML({ HTMLAttributes }) {
+    const width = HTMLAttributes.width || '100%';
+    const height = HTMLAttributes.height || 'auto';
+    const align = HTMLAttributes['data-align'] || 'left';
+    
     return ['img', { 
       ...HTMLAttributes, 
-      style: `width: ${HTMLAttributes.width}; height: ${HTMLAttributes.height}; display: block; margin: ${HTMLAttributes['data-align'] === 'center' ? '0 auto' : '0'}; cursor: pointer;`,
-      class: 'rounded-lg max-w-full h-auto'
+      width: width,
+      height: height,
+      'data-align': align,
+      style: `width: ${width}; height: ${height}; cursor: pointer; display: block; margin: ${align === 'center' ? '0 auto' : '0'};`,
+      class: 'rounded-lg max-w-full h-auto',
+      draggable: true,
     }];
   },
 });
@@ -103,7 +123,7 @@ const MenuBar = ({ editor, onShowPreview, showPreview, fileInputRef, linkInputRe
   }, [editor, linkUrl, setLinkUrl]);
 
   return (
-    <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/50 sticky top-0 z-10">
+    <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/50 sticky top-0 z-10 overflow-x-auto">
       {/* Undo/Redo */}
       <Button
         variant="ghost"
@@ -132,7 +152,7 @@ const MenuBar = ({ editor, onShowPreview, showPreview, fileInputRef, linkInputRe
         size="sm"
         onClick={() => editor.chain().focus().toggleBold().run()}
         className={cn(editor.isActive('bold') && 'bg-accent')}
-        title="Negrita"
+        title="Negrita (Ctrl+B)"
       >
         <Bold className="h-4 w-4" />
       </Button>
@@ -141,7 +161,7 @@ const MenuBar = ({ editor, onShowPreview, showPreview, fileInputRef, linkInputRe
         size="sm"
         onClick={() => editor.chain().focus().toggleItalic().run()}
         className={cn(editor.isActive('italic') && 'bg-accent')}
-        title="Itálica"
+        title="Itálica (Ctrl+I)"
       >
         <Italic className="h-4 w-4" />
       </Button>
@@ -283,10 +303,10 @@ const MenuBar = ({ editor, onShowPreview, showPreview, fileInputRef, linkInputRe
         <input
           ref={linkInputRef}
           type="text"
-          placeholder="URL del enlace..."
+          placeholder="URL..."
           value={linkUrl}
           onChange={(e) => setLinkUrl(e.target.value)}
-          className="px-2 py-1 text-sm border rounded"
+          className="px-2 py-1 text-sm border rounded w-32"
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
               handleAddLink();
@@ -322,9 +342,11 @@ const MenuBar = ({ editor, onShowPreview, showPreview, fileInputRef, linkInputRe
 const BlogEditor = ({ content, onChange }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
-  const [selectedImageNode, setSelectedImageNode] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imageControls, setImageControls] = useState(null);
   const fileInputRef = useRef(null);
   const linkInputRef = useRef(null);
+  const editorRef = useRef(null);
 
   const editor = useEditor({
     extensions: [
@@ -350,35 +372,68 @@ const BlogEditor = ({ content, onChange }) => {
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
-    onSelectionUpdate: ({ editor }) => {
-      const { $anchor } = editor.state.selection;
-      const node = $anchor.parent;
-      if (node.type.name === 'image') {
-        setSelectedImageNode(node);
-      } else {
-        setSelectedImageNode(null);
-      }
-    },
   });
 
-  const handleImageResize = (scale) => {
-    if (selectedImageNode && editor) {
-      const currentWidth = parseInt(selectedImageNode.attrs.width) || 100;
-      const newWidth = Math.max(50, Math.min(100, currentWidth + scale));
-      editor.commands.updateAttributes('image', { width: `${newWidth}%` });
+  useEffect(() => {
+    if (!editor) return;
+
+    const handleClick = (e) => {
+      if (e.target.tagName === 'IMG') {
+        setSelectedImage(e.target);
+        const rect = e.target.getBoundingClientRect();
+        setImageControls({
+          top: rect.top - 60,
+          left: rect.left,
+        });
+      } else {
+        setSelectedImage(null);
+        setImageControls(null);
+      }
+    };
+
+    const editorElement = editor.view.dom;
+    editorElement.addEventListener('click', handleClick);
+
+    return () => {
+      editorElement.removeEventListener('click', handleClick);
+    };
+  }, [editor]);
+
+  const handleImageResize = (percentage) => {
+    if (!selectedImage) return;
+
+    const currentWidth = selectedImage.getAttribute('width') || '100%';
+    const currentValue = parseInt(currentWidth);
+    const newValue = Math.max(30, Math.min(100, currentValue + percentage));
+    
+    selectedImage.setAttribute('width', `${newValue}%`);
+    selectedImage.style.width = `${newValue}%`;
+    
+    if (editor) {
+      onChange(editor.getHTML());
     }
   };
 
   const handleImageAlign = (align) => {
-    if (selectedImageNode && editor) {
-      editor.commands.updateAttributes('image', { align });
+    if (!selectedImage) return;
+
+    selectedImage.setAttribute('data-align', align);
+    selectedImage.style.margin = align === 'center' ? '0 auto' : '0';
+    selectedImage.style.display = 'block';
+
+    if (editor) {
+      onChange(editor.getHTML());
     }
   };
 
   const handleImageDelete = () => {
+    if (!selectedImage) return;
+    selectedImage.remove();
+    setSelectedImage(null);
+    setImageControls(null);
+
     if (editor) {
-      editor.commands.deleteSelection();
-      setSelectedImageNode(null);
+      onChange(editor.getHTML());
     }
   };
 
@@ -396,8 +451,14 @@ const BlogEditor = ({ content, onChange }) => {
       
       <div className="grid grid-cols-1 lg:grid-cols-2">
         <div className="min-h-[400px] border-r relative">
-          {selectedImageNode && (
-            <div className="absolute top-2 right-2 z-20 flex gap-1 p-2 bg-white border border-gray-300 rounded-lg shadow-lg">
+          {selectedImage && imageControls && (
+            <div 
+              className="absolute z-50 flex gap-1 p-2 bg-white border border-gray-300 rounded-lg shadow-lg"
+              style={{
+                top: `${imageControls.top}px`,
+                left: `${imageControls.left}px`,
+              }}
+            >
               <Button
                 variant="ghost"
                 size="sm"
@@ -452,8 +513,9 @@ const BlogEditor = ({ content, onChange }) => {
             </div>
           )}
           <EditorContent 
+            ref={editorRef}
             editor={editor} 
-            className="prose prose-sm max-w-none p-4 focus:outline-none"
+            className="prose prose-sm max-w-none p-4 focus:outline-none [&_img]:cursor-pointer"
           />
         </div>
 
