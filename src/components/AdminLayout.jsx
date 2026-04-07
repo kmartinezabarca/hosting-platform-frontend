@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, Users, Server, FileText, HelpCircle, 
   Settings, Package, LogOut, Menu, X, Search, 
-  ChevronDown, Sun, Moon, Shield, Zap
+  ChevronDown, Sun, Moon, Shield, Zap, Tag
 } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';
 import { useTheme } from '../context/ThemeContext';
@@ -21,7 +21,8 @@ import AdminServicePlansPage from '../pages/admin/AdminServicePlansPage';
 import AdminAddOnsPage from '../pages/admin/AdminAddOnsPage';
 import AdminBlogPage from '../pages/admin/AdminBlogPage';
 import AdminBlogEditorPage from '../pages/admin/AdminBlogEditorPage';
-import logoROKE from "../assets/logo_v4.png"; // Asegúrate que la ruta al logo es correcta
+import AdminBlogCategoriesPage from '../pages/admin/AdminBlogCategoriesPage';
+import logoROKE from "../assets/logo_v4.png";
 
 const AdminLayout = () => {
   const { theme, toggleTheme } = useTheme();
@@ -31,6 +32,7 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isBlogOpen, setIsBlogOpen] = useState(false);
   const isDark = theme === "dark";
   const dir = isDark ? -1 : 1; 
   const profileRef = useRef(null);
@@ -66,7 +68,12 @@ const AdminLayout = () => {
     { name: 'Add-ons', href: '/admin/add-ons', icon: Settings, description: 'Gestionar complementos' },
     { name: 'Facturas', href: '/admin/invoices', icon: FileText, description: 'Control de facturación' },
     { name: 'Tickets', href: '/admin/tickets', icon: HelpCircle, description: 'Soporte y asistencia' },
-    { name: 'Blog', href: '/admin/blog', icon: FileText, description: 'Gestionar contenido del blog' }
+    {
+      name: 'Blog', icon: FileText, description: 'Gestionar contenido del blog', children: [
+        { name: 'Artículos', href: '/admin/blog', icon: FileText, description: 'Listar y editar artículos' },
+        { name: 'Categorías', href: '/admin/blog/categories', icon: Tag, description: 'Administrar categorías de blog' },
+      ]
+    }
   ];
 
   const handleLogout = async () => {
@@ -79,16 +86,14 @@ const AdminLayout = () => {
   };
 
   const isActiveRoute = (href) => {
-    return location.pathname.startsWith(href);
+    return location.pathname === href || (href !== '/admin/dashboard' && location.pathname.startsWith(href));
   };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header Premium */}
       <header className="sticky top-0 z-40 nav-premium border-b border-border/50 bg-background">
         <div className="container-premium">
           <div className="flex items-center justify-between h-16">
-            {/* Logo y Brand */}
             <div className="flex items-center space-x-4 px-4">
               <button
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -117,7 +122,6 @@ const AdminLayout = () => {
               </Link>
             </div>
 
-            {/* Barra de búsqueda central */}
             <div className="hidden md:flex flex-1 max-w-md mx-20">
               <div className="relative w-full">
                 <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -129,12 +133,9 @@ const AdminLayout = () => {
               </div>
             </div>
 
-            {/* Acciones del header */}
             <div className="flex items-center space-x-3">
-              {/* Notificaciones */}
               <NotificationDropdown isAdmin={true} />
 
-              {/* Toggle tema */}
               <button
                 onClick={toggleTheme}
                 aria-label={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
@@ -160,7 +161,6 @@ const AdminLayout = () => {
                 </span>
               </button>
 
-              {/* Menú de perfil */}
               <div className="relative" ref={profileRef}>
                 {(isLoading || meLoading || meFetching) ? (
                   <div className="flex items-center space-x-3 p-2">
@@ -207,7 +207,7 @@ const AdminLayout = () => {
                           </div>
                           <div className="py-2">
                             <Link
-                              to="/client/profile" // Podrías crear una página de perfil de admin
+                              to="/client/profile"
                               onClick={() => setIsProfileMenuOpen(false)}
                               className="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                             >
@@ -236,87 +236,91 @@ const AdminLayout = () => {
       </header>
 
       <div className="flex">
-        {/* Sidebar Premium */}
-        <aside
-          className={`fixed inset-y-0 left-0 z-[60] w-72 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} bg-card border-r border-border lg:sticky lg:translate-x-0 lg:top-16 lg:h-[calc(100dvh-4rem)] lg:overflow-hidden lg:flex lg:flex-col`}
-        >
-          <div className="p-3 border-b border-border">
-            <div className="flex items-center justify-between lg:hidden">
-              <h2 className="text-lg font-semibold text-foreground">Navegación</h2>
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className="p-2 rounded-xl hover:bg-accent transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="hidden lg:block">
-              <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Panel de Admin</h2>
-            </div>
-          </div>
-
-          <nav className="p-4 space-y-2 lg:flex-none">
+        <aside className={`fixed top-0 left-0 h-full z-30 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] w-72 bg-card border-r border-border/50 transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
+          <div className="p-4 space-y-4">
             {navigation.map((item) => {
-              const Icon = item.icon;
-              const isActive = isActiveRoute(item.href);
+              const isActive = item.href ? isActiveRoute(item.href) : item.children?.some(child => isActiveRoute(child.href));
+              const isCurrentlyBlogOpen = item.name === 'Blog' && (isActive || location.pathname.startsWith('/admin/blog'));
+
+              if (item.children) {
+                return (
+                  <div key={item.name} className="space-y-1">
+                    <button
+                      onClick={() => setIsBlogOpen(!isBlogOpen)}
+                      className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150 ${
+                        isActive
+                          ? 'bg-accent text-accent-foreground'
+                          : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                      }`}
+                    >
+                      <item.icon className="mr-3 h-5 w-5" />
+                      {item.name}
+                      <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${isBlogOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    <AnimatePresence>
+                      {(isBlogOpen || isCurrentlyBlogOpen) && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="pl-6 border-l border-border/50 ml-4 space-y-1"
+                        >
+                          {item.children.map((child) => (
+                            <Link
+                              key={child.href}
+                              to={child.href}
+                              onClick={() => setIsSidebarOpen(false)}
+                              className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150 ${
+                                isActiveRoute(child.href)
+                                  ? 'bg-accent text-accent-foreground'
+                                  : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                              }`}
+                            >
+                              <child.icon className="mr-3 h-5 w-5" />
+                              {child.name}
+                            </Link>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              }
+
               return (
                 <Link
-                  key={item.name}
+                  key={item.href}
                   to={item.href}
                   onClick={() => setIsSidebarOpen(false)}
-                  className={`group flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${isActive ? "bg-primary text-primary-foreground shadow-premium-sm" : "hover:bg-accent text-foreground hover-lift"}`}
+                  className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150 ${
+                    isActive
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                  }`}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-primary"}`} />
-                  <div className="flex-1">
-                    <p className={`font-medium ${isActive ? "text-primary-foreground" : "text-foreground"}`}>{item.name}</p>
-                    <p className={`text-xs ${isActive ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{item.description}</p>
-                  </div>
-                  {isActive && <motion.div layoutId="activeIndicator" className="w-2 h-2 bg-primary-foreground rounded-full" />}
+                  <item.icon className="mr-3 h-5 w-5" />
+                  {item.name}
                 </Link>
               );
             })}
-          </nav>
-
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border bg-card">
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3 p-3 bg-accent/50 rounded-xl">
-                <div className="p-2 bg-primary/10 rounded-lg"><Shield className="w-4 h-4 text-primary" /></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">Acceso Seguro</p>
-                  <p className="text-xs text-muted-foreground">Rol: Administrador</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 p-3 bg-accent/50 rounded-xl">
-                <div className="p-2 bg-success/10 rounded-lg"><Zap className="w-4 h-4 text-success" /></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">Estado del Sistema</p>
-                  <p className="text-xs text-success">Todos los servicios operativos</p>
-                </div>
-              </div>
-            </div>
           </div>
         </aside>
 
-        {/* Overlay para móvil */}
-        {isSidebarOpen && <div className="fixed inset-0 z-50 bg-black/50 lg:hidden" onClick={() => setIsSidebarOpen(false)} />}
-
-        {/* Contenido principal */}
-        <main className="flex-1 min-h-[calc(100dvh-4rem)] overflow-y-auto">
-          <div className="container-premium section-padding">
-            <Routes>
-              <Route path="dashboard" element={<AdminDashboardPage />} />
-              <Route path="users" element={<AdminUsersPage />} />
-              <Route path="services" element={<AdminServicesPage />} />
-              <Route path="service-plans" element={<AdminServicePlansPage />} />
-              <Route path="add-ons" element={<AdminAddOnsPage />} />
-              <Route path="invoices" element={<AdminInvoicesPage />} />
-              <Route path="tickets" element={<AdminTicketsPage />} />
-              <Route path="blog" element={<AdminBlogPage />} />
-              <Route path="blog/new" element={<AdminBlogEditorPage />} />
-              <Route path="blog/edit/:uuid" element={<AdminBlogEditorPage />} />
-              <Route path="*" element={<AdminDashboardPage />} />
-            </Routes>
-          </div>
+        <main className="flex-1 p-6 lg:p-8">
+          <Routes>
+            <Route path="dashboard" element={<AdminDashboardPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="services" element={<AdminServicesPage />} />
+            <Route path="service-plans" element={<AdminServicePlansPage />} />
+            <Route path="add-ons" element={<AdminAddOnsPage />} />
+            <Route path="invoices" element={<AdminInvoicesPage />} />
+            <Route path="tickets" element={<AdminTicketsPage />} />
+            <Route path="blog" element={<AdminBlogPage />} />
+            <Route path="blog/new" element={<AdminBlogEditorPage />} />
+            <Route path="blog/edit/:uuid" element={<AdminBlogEditorPage />} />
+            <Route path="blog/categories" element={<AdminBlogCategoriesPage />} />
+          </Routes>
         </main>
       </div>
     </div>

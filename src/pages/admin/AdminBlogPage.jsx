@@ -50,7 +50,7 @@ const AdminBlogPage = () => {
   };
 
   const handleDelete = async (uuid) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este post?')) return;
+    if (!confirm('¿Estás seguro de que deseas eliminar este post?')) return;
     
     try {
       await BlogService.adminDeletePost(uuid);
