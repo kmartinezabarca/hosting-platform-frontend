@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowLeft, Save, Eye, Image as ImageIcon, 
   Loader2, AlertCircle, CheckCircle, Trash2, 
-  Clock, User, Tag, Layout, FileText, Calendar
+  Clock, User, Tag, Layout, FileText, Calendar, Upload
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import BlogService from '@/services/blogService';
 import BlogEditor from '@/components/admin/BlogEditor';
@@ -24,6 +26,9 @@ const AdminBlogEditorPage = () => {
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [showImageUpload, setShowImageUpload] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -32,6 +37,7 @@ const AdminBlogEditorPage = () => {
     content: '',
     image: '',
     blog_category_id: '',
+    author_name: 'ROKE Industries',
     is_featured: false,
     read_time: 5,
     published_at: new Date().toISOString().split('T')[0]
@@ -63,11 +69,15 @@ const AdminBlogEditorPage = () => {
         excerpt: post.excerpt || '',
         content: post.content || '',
         image: post.image || '',
-        blog_category_id: post.category?.id || '',
+        blog_category_id: post.category?.uuid || '',
+        author_name: post.authorName || 'ROKE Industries',
         is_featured: post.isFeatured || false,
         read_time: post.readTime || 5,
         published_at: post.publishedAt ? post.publishedAt.split(' ')[0] : new Date().toISOString().split('T')[0]
       });
+      if (post.image) {
+        setImagePreview(post.image);
+      }
     } catch (err) {
       toast.error('Error al cargar el artículo');
       navigate('/admin/blog');
@@ -98,6 +108,41 @@ const AdminBlogEditorPage = () => {
     setFormData(prev => ({ ...prev, slug }));
   };
 
+  const handleImageSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setImagePreview(event.target?.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleImageUpload = async () => {
+    if (!imageFile) {
+      toast.error('Por favor selecciona una imagen');
+      return;
+    }
+
+    try {
+      const formDataObj = new FormData();
+      formDataObj.append('image', imageFile);
+      
+      const res = await BlogService.uploadImage(formDataObj);
+      if (res.data.success) {
+        setFormData(prev => ({ ...prev, image: res.data.url }));
+        setImageFile(null);
+        setShowImageUpload(false);
+        toast.success('Imagen cargada correctamente');
+      }
+    } catch (err) {
+      console.error('Error uploading image:', err);
+      toast.error('Error al cargar la imagen');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.content || !formData.blog_category_id) {
@@ -107,17 +152,19 @@ const AdminBlogEditorPage = () => {
 
     try {
       setSaving(true);
+      const submitData = { ...formData };
+      
       if (isEdit) {
-        await BlogService.adminUpdatePost(uuid, formData);
+        await BlogService.adminUpdatePost(uuid, submitData);
         toast.success('Artículo actualizado correctamente');
       } else {
-        await BlogService.adminCreatePost(formData);
+        await BlogService.adminCreatePost(submitData);
         toast.success('Artículo creado correctamente');
       }
       navigate('/admin/blog');
     } catch (err) {
       console.error('Error saving post:', err);
-      toast.error('Error al guardar el artículo');
+      toast.error(err.response?.data?.message || 'Error al guardar el artículo');
     } finally {
       setSaving(false);
     }
@@ -229,46 +276,60 @@ const AdminBlogEditorPage = () => {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="blog_category_id">Categoría <span className="text-destructive">*</span></Label>
-                <select 
-                  id="blog_category_id"
-                  name="blog_category_id"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  value={formData.blog_category_id}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">Seleccionar categoría</option>
-                  {categories.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
+                <Select value={formData.blog_category_id} onValueChange={(value) => setFormData({...formData, blog_category_id: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar categoría" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(cat => (
+                      <SelectItem key={cat.id} value={cat.uuid}>{cat.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="image">URL de Imagen Destacada</Label>
-                <div className="flex gap-2">
-                  <Input 
-                    id="image" 
-                    name="image"
-                    placeholder="https://ejemplo.com/imagen.jpg" 
-                    value={formData.image}
-                    onChange={handleChange}
-                  />
-                  <Button type="button" variant="outline" size="icon">
-                    <ImageIcon className="h-4 w-4" />
-                  </Button>
-                </div>
-                {formData.image && (
-                  <div className="mt-2 rounded-lg overflow-hidden border aspect-video bg-muted">
-                    <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+                <Label htmlFor="author_name">Autor</Label>
+                <Input 
+                  id="author_name" 
+                  name="author_name"
+                  placeholder="Ej: ROKE Industries" 
+                  value={formData.author_name}
+                  onChange={handleChange}
+                />
+                <p className="text-xs text-muted-foreground">Por defecto: ROKE Industries</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Imagen Destacada</Label>
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <Input 
+                      placeholder="https://ejemplo.com/imagen.jpg" 
+                      value={formData.image}
+                      onChange={(e) => setFormData({...formData, image: e.target.value})}
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => setShowImageUpload(true)}
+                    >
+                      <Upload className="h-4 w-4" />
+                    </Button>
                   </div>
-                )}
+                  {formData.image && (
+                    <div className="rounded-lg overflow-hidden border aspect-video bg-muted">
+                      <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border">
                 <div className="space-y-0.5">
                   <Label className="text-base">Artículo Destacado</Label>
-                  <p className="text-xs text-muted-foreground">Aparecerá en la sección principal del blog.</p>
+                  <p className="text-xs text-muted-foreground">Aparecerá en la sección principal.</p>
                 </div>
                 <Switch 
                   checked={formData.is_featured}
@@ -306,20 +367,42 @@ const AdminBlogEditorPage = () => {
               </div>
             </CardContent>
           </Card>
-
-          <Card className="border-0 shadow-lg bg-primary/5 border-primary/10">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3 text-primary">
-                <CheckCircle className="h-5 w-5" />
-                <p className="text-sm font-medium">Listo para publicar</p>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Asegúrate de revisar el contenido y el slug antes de guardar los cambios.
-              </p>
-            </CardContent>
-          </Card>
         </div>
       </form>
+
+      {/* Image Upload Modal */}
+      <Dialog open={showImageUpload} onOpenChange={setShowImageUpload}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cargar Imagen Destacada</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors">
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={handleImageSelect}
+                className="hidden"
+                id="image-input"
+              />
+              <label htmlFor="image-input" className="cursor-pointer">
+                <ImageIcon className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm font-medium">Haz clic o arrastra una imagen aquí</p>
+                <p className="text-xs text-muted-foreground">PNG, JPG, GIF (máx. 2MB)</p>
+              </label>
+            </div>
+            {imagePreview && (
+              <div className="rounded-lg overflow-hidden border aspect-video bg-muted">
+                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowImageUpload(false)}>Cancelar</Button>
+              <Button onClick={handleImageUpload} disabled={!imageFile}>Subir Imagen</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
