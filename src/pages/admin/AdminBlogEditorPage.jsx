@@ -105,8 +105,7 @@ const AdminBlogEditorPage = () => {
     }));
   };
 
-  const handleCategoryChange = (e) => {
-    const value = e.target.value;
+  const handleCategoryChange = (value) => {
     setFormData(prev => ({
       ...prev,
       blog_category_id: value
