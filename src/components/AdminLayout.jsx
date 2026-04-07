@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, Users, Server, FileText, HelpCircle, 
   Settings, Package, LogOut, Menu, X, Search, 
-  ChevronDown, Sun, Moon, Shield, Zap, Tag
+  ChevronDown, Sun, Moon, Shield, Zap, Tag, Book, Code, AlertCircle
 } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';
 import { useTheme } from '../context/ThemeContext';
@@ -22,6 +22,9 @@ import AdminAddOnsPage from '../pages/admin/AdminAddOnsPage';
 import AdminBlogPage from '../pages/admin/AdminBlogPage';
 import AdminBlogEditorPage from '../pages/admin/AdminBlogEditorPage';
 import AdminBlogCategoriesPage from '../pages/admin/AdminBlogCategoriesPage';
+import AdminDocumentationPage from '../pages/admin/AdminDocumentationPage';
+import AdminApiDocumentationPage from '../pages/admin/AdminApiDocumentationPage';
+import AdminSystemStatusPage from '../pages/admin/AdminSystemStatusPage';
 import logoROKE from "../assets/logo_v4.png";
 
 const AdminLayout = () => {
@@ -33,6 +36,7 @@ const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isBlogMenuOpen, setIsBlogMenuOpen] = useState(location.pathname.startsWith('/admin/blog'));
+  const [isDocsMenuOpen, setIsDocsMenuOpen] = useState(location.pathname.startsWith('/admin/documentation') || location.pathname.startsWith('/admin/api-docs') || location.pathname.startsWith('/admin/system-status'));
   const isDark = theme === "dark";
   const dir = isDark ? -1 : 1; 
   const profileRef = useRef(null);
@@ -76,6 +80,17 @@ const AdminLayout = () => {
       children: [
         { name: 'Artículos', href: '/admin/blog', icon: FileText, description: 'Listar y editar artículos' },
         { name: 'Categorías', href: '/admin/blog/categories', icon: Tag, description: 'Administrar categorías' },
+      ]
+    },
+    { 
+      name: 'Documentación', 
+      icon: Book, 
+      description: 'Gestionar documentación',
+      isExpandable: true,
+      children: [
+        { name: 'Documentación', href: '/admin/documentation', icon: Book, description: 'Gestionar documentación' },
+        { name: 'API Docs', href: '/admin/api-docs', icon: Code, description: 'Documentación de API' },
+        { name: 'Estado del Sistema', href: '/admin/system-status', icon: AlertCircle, description: 'Estado de servicios' },
       ]
     }
   ];
@@ -377,6 +392,9 @@ const AdminLayout = () => {
               <Route path="blog/new" element={<AdminBlogEditorPage />} />
               <Route path="blog/edit/:uuid" element={<AdminBlogEditorPage />} />
               <Route path="blog/categories" element={<AdminBlogCategoriesPage />} />
+              <Route path="documentation" element={<AdminDocumentationPage />} />
+              <Route path="api-docs" element={<AdminApiDocumentationPage />} />
+              <Route path="system-status" element={<AdminSystemStatusPage />} />
               <Route path="*" element={<AdminDashboardPage />} />
             </Routes>
           </div>
