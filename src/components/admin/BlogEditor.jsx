@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react';
+import React, { useState, useCallback, useRef } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
@@ -47,88 +47,13 @@ const ResizableImage = Image.extend({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['img', { ...HTMLAttributes, style: `width: ${HTMLAttributes.width}; height: ${HTMLAttributes.height}; display: block; margin: ${HTMLAttributes['data-align'] === 'center' ? '0 auto' : '0'};` }];
+    return ['img', { 
+      ...HTMLAttributes, 
+      style: `width: ${HTMLAttributes.width}; height: ${HTMLAttributes.height}; display: block; margin: ${HTMLAttributes['data-align'] === 'center' ? '0 auto' : '0'}; cursor: pointer;`,
+      class: 'rounded-lg max-w-full h-auto'
+    }];
   },
 });
-
-const ImageMenu = ({ editor }) => {
-  if (!editor) return null;
-
-  const handleResize = (scale) => {
-    const { node } = editor.state.selection.$anchor.parent;
-    if (node?.type.name === 'image') {
-      const currentWidth = parseInt(node.attrs.width) || 100;
-      const newWidth = Math.max(50, Math.min(100, currentWidth + scale));
-      editor.commands.updateAttributes('image', { width: `${newWidth}%` });
-    }
-  };
-
-  const handleAlign = (align) => {
-    editor.commands.updateAttributes('image', { align });
-  };
-
-  const handleDelete = () => {
-    editor.commands.deleteSelection();
-  };
-
-  return (
-    <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} shouldShow={({ editor }) => editor.isActive('image')}>
-      <div className="flex gap-1 p-2 bg-white border border-gray-300 rounded-lg shadow-lg">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleResize(10)}
-          title="Aumentar tamaño"
-        >
-          <ZoomIn className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleResize(-10)}
-          title="Reducir tamaño"
-        >
-          <ZoomOut className="h-4 w-4" />
-        </Button>
-        <div className="border-l border-gray-300 mx-1"></div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleAlign('left')}
-          title="Alinear a la izquierda"
-        >
-          <AlignLeft className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleAlign('center')}
-          title="Centrar"
-        >
-          <AlignCenter className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleAlign('right')}
-          title="Alinear a la derecha"
-        >
-          <AlignRight className="h-4 w-4" />
-        </Button>
-        <div className="border-l border-gray-300 mx-1"></div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleDelete}
-          className="text-destructive hover:text-destructive"
-          title="Eliminar imagen"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
-    </BubbleMenu>
-  );
-};
 
 const MenuBar = ({ editor, onShowPreview, showPreview, fileInputRef, linkInputRef, linkUrl, setLinkUrl }) => {
   if (!editor) {
@@ -397,6 +322,7 @@ const MenuBar = ({ editor, onShowPreview, showPreview, fileInputRef, linkInputRe
 const BlogEditor = ({ content, onChange }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
+  const [selectedImageNode, setSelectedImageNode] = useState(null);
   const fileInputRef = useRef(null);
   const linkInputRef = useRef(null);
 
@@ -424,7 +350,37 @@ const BlogEditor = ({ content, onChange }) => {
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
+    onSelectionUpdate: ({ editor }) => {
+      const { $anchor } = editor.state.selection;
+      const node = $anchor.parent;
+      if (node.type.name === 'image') {
+        setSelectedImageNode(node);
+      } else {
+        setSelectedImageNode(null);
+      }
+    },
   });
+
+  const handleImageResize = (scale) => {
+    if (selectedImageNode && editor) {
+      const currentWidth = parseInt(selectedImageNode.attrs.width) || 100;
+      const newWidth = Math.max(50, Math.min(100, currentWidth + scale));
+      editor.commands.updateAttributes('image', { width: `${newWidth}%` });
+    }
+  };
+
+  const handleImageAlign = (align) => {
+    if (selectedImageNode && editor) {
+      editor.commands.updateAttributes('image', { align });
+    }
+  };
+
+  const handleImageDelete = () => {
+    if (editor) {
+      editor.commands.deleteSelection();
+      setSelectedImageNode(null);
+    }
+  };
 
   return (
     <div className="border rounded-lg overflow-hidden bg-white">
@@ -439,8 +395,62 @@ const BlogEditor = ({ content, onChange }) => {
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-2">
-        <div className="min-h-[400px] border-r">
-          {editor && <ImageMenu editor={editor} />}
+        <div className="min-h-[400px] border-r relative">
+          {selectedImageNode && (
+            <div className="absolute top-2 right-2 z-20 flex gap-1 p-2 bg-white border border-gray-300 rounded-lg shadow-lg">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleImageResize(10)}
+                title="Aumentar tamaño"
+              >
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleImageResize(-10)}
+                title="Reducir tamaño"
+              >
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <div className="border-l border-gray-300 mx-1"></div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleImageAlign('left')}
+                title="Alinear a la izquierda"
+              >
+                <AlignLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleImageAlign('center')}
+                title="Centrar"
+              >
+                <AlignCenter className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleImageAlign('right')}
+                title="Alinear a la derecha"
+              >
+                <AlignRight className="h-4 w-4" />
+              </Button>
+              <div className="border-l border-gray-300 mx-1"></div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleImageDelete}
+                className="text-destructive hover:text-destructive"
+                title="Eliminar imagen"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
           <EditorContent 
             editor={editor} 
             className="prose prose-sm max-w-none p-4 focus:outline-none"
