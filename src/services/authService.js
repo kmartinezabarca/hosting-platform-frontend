@@ -61,7 +61,7 @@ const authService = {
    * por el interceptor de apiClient y/o React Query.
    */
   getCurrentUser: async (signal) => {
-    const res = await apiClient.get('/auth/me', { signal, _handle401: false });
+    const res = await apiClient.get('/auth/me', { signal, _skipAuthRedirect: true });
     return res?.data ?? null;
   },
 };
