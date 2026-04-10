@@ -36,7 +36,11 @@ const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isBlogMenuOpen, setIsBlogMenuOpen] = useState(location.pathname.startsWith('/admin/blog'));
-  const [isDocsMenuOpen, setIsDocsMenuOpen] = useState(location.pathname.startsWith('/admin/documentation') || location.pathname.startsWith('/admin/api-docs') || location.pathname.startsWith('/admin/system-status'));
+  const [isDocsMenuOpen, setIsDocsMenuOpen] = useState(
+    location.pathname.startsWith('/admin/documentation') ||
+    location.pathname.startsWith('/admin/api-docs') ||
+    location.pathname.startsWith('/admin/system-status')
+  );
   const isDark = theme === "dark";
   const dir = isDark ? -1 : 1; 
   const profileRef = useRef(null);
@@ -72,21 +76,26 @@ const AdminLayout = () => {
     { name: 'Add-ons', href: '/admin/add-ons', icon: Settings, description: 'Gestionar complementos' },
     { name: 'Facturas', href: '/admin/invoices', icon: FileText, description: 'Control de facturación' },
     { name: 'Tickets', href: '/admin/tickets', icon: HelpCircle, description: 'Soporte y asistencia' },
-    { 
-      name: 'Blog', 
-      icon: FileText, 
+    {
+      name: 'Blog',
+      icon: FileText,
       description: 'Gestionar contenido del blog',
       isExpandable: true,
+      menuKey: 'blog',
+      activePrefix: '/admin/blog',
       children: [
         { name: 'Artículos', href: '/admin/blog', icon: FileText, description: 'Listar y editar artículos' },
         { name: 'Categorías', href: '/admin/blog/categories', icon: Tag, description: 'Administrar categorías' },
       ]
     },
-    { 
-      name: 'Documentación', 
-      icon: Book, 
+    {
+      name: 'Documentación',
+      icon: Book,
       description: 'Gestionar documentación',
       isExpandable: true,
+      menuKey: 'docs',
+      activePrefix: '/admin/documentation',
+      activePrefixes: ['/admin/documentation', '/admin/api-docs', '/admin/system-status'],
       children: [
         { name: 'Documentación', href: '/admin/documentation', icon: Book, description: 'Gestionar documentación' },
         { name: 'API Docs', href: '/admin/api-docs', icon: Code, description: 'Documentación de API' },
@@ -287,15 +296,22 @@ const AdminLayout = () => {
           <nav className="p-4 space-y-2 lg:flex-1">
             {navigation.map((item) => {
               const Icon = item.icon;
-              const isActive = item.isExpandable 
-                ? location.pathname.startsWith('/admin/blog')
+              const isActive = item.isExpandable
+                ? (item.activePrefixes
+                    ? item.activePrefixes.some(p => location.pathname.startsWith(p))
+                    : location.pathname.startsWith(item.activePrefix))
                 : isActiveRoute(item.href);
 
               if (item.isExpandable) {
+                const isMenuOpen = item.menuKey === 'docs' ? isDocsMenuOpen : isBlogMenuOpen;
+                const toggleMenu = item.menuKey === 'docs'
+                  ? () => setIsDocsMenuOpen(!isDocsMenuOpen)
+                  : () => setIsBlogMenuOpen(!isBlogMenuOpen);
+
                 return (
                   <div key={item.name} className="space-y-1">
                     <button
-                      onClick={() => setIsBlogMenuOpen(!isBlogMenuOpen)}
+                      onClick={toggleMenu}
                       className={`w-full group flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${isActive ? "bg-primary/10 text-primary" : "hover:bg-accent text-foreground hover-lift"}`}
                     >
                       <Icon className={`w-5 h-5 ${isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`} />
@@ -303,11 +319,11 @@ const AdminLayout = () => {
                         <p className={`font-medium ${isActive ? "text-primary" : "text-foreground"}`}>{item.name}</p>
                         <p className={`text-xs ${isActive ? "text-primary/80" : "text-muted-foreground"}`}>{item.description}</p>
                       </div>
-                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isBlogMenuOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isMenuOpen ? 'rotate-180' : ''}`} />
                     </button>
-                    
+
                     <AnimatePresence>
-                      {isBlogMenuOpen && (
+                      {isMenuOpen && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}

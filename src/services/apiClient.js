@@ -1,13 +1,20 @@
-// Renombrado a ApiService.js (o como prefieras)
-
 import axios from "axios";
 
-// --- 1. Define tus URLs base ---
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 const ROOT_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+// Rutas que no deben disparar redirect al recibir 401/403
+const AUTH_ENDPOINTS = ["/login", "/user", "/sanctum/csrf-cookie"];
+
 let isAuthRedirecting = false;
+
+const redirectToLogin = () => {
+  if (!isAuthRedirecting && window.location.pathname !== "/login") {
+    isAuthRedirecting = true;
+    window.location.replace("/login");
+  }
+};
 
 const createApiClient = (baseURL) => {
   const client = axios.create({
@@ -22,26 +29,36 @@ const createApiClient = (baseURL) => {
   });
 
   client.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      // Reset flag cuando una petición autenticada tiene éxito
+      isAuthRedirecting = false;
+      return response;
+    },
     (error) => {
       const { response, config } = error || {};
       const status = response?.status;
 
-      if (config && config._handle401 === false) {
+      // Permitir que el caller maneje el error manualmente
+      if (config?._skipAuthRedirect === true) {
         return Promise.reject(error);
       }
+
       if (!response) {
         return Promise.reject(error);
       }
-      if ((status === 401 || status === 403) && !isAuthRedirecting) {
-        isAuthRedirecting = true;
-        if (window.location.pathname !== "/login") {
-          // window.location.replace('/login');
-        }
+
+      const requestUrl = config?.url || "";
+      const isAuthRoute = AUTH_ENDPOINTS.some((ep) => requestUrl.includes(ep));
+
+      if (status === 401 && !isAuthRoute) {
+        redirectToLogin();
       }
-      if (status === 419 && !isAuthRedirecting) {
-        // window.location.replace('/login');
+
+      if (status === 419) {
+        // CSRF token mismatch — refrescar la página para obtener uno nuevo
+        window.location.reload();
       }
+
       return Promise.reject(error);
     }
   );
