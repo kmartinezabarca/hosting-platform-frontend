@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, Users, Server, FileText, HelpCircle, 
   Settings, Package, LogOut, Menu, X, Search, 
-  ChevronDown, Sun, Moon, Shield, Zap
+  ChevronDown, Sun, Moon, Shield, Zap, Tag, Book, Code, AlertCircle
 } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';
 import { useTheme } from '../context/ThemeContext';
@@ -19,7 +19,13 @@ import AdminInvoicesPage from '../pages/admin/AdminInvoicesPage';
 import AdminTicketsPage from '../pages/admin/AdminTicketsPage';
 import AdminServicePlansPage from '../pages/admin/AdminServicePlansPage';
 import AdminAddOnsPage from '../pages/admin/AdminAddOnsPage';
-import logoROKE from "../assets/logo_v4.png"; // Asegúrate que la ruta al logo es correcta
+import AdminBlogPage from '../pages/admin/AdminBlogPage';
+import AdminBlogEditorPage from '../pages/admin/AdminBlogEditorPage';
+import AdminBlogCategoriesPage from '../pages/admin/AdminBlogCategoriesPage';
+import AdminDocumentationPage from '../pages/admin/AdminDocumentationPage';
+import AdminApiDocumentationPage from '../pages/admin/AdminApiDocumentationPage';
+import AdminSystemStatusPage from '../pages/admin/AdminSystemStatusPage';
+import logoROKE from "../assets/logo_v4.png";
 
 const AdminLayout = () => {
   const { theme, toggleTheme } = useTheme();
@@ -29,6 +35,12 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isBlogMenuOpen, setIsBlogMenuOpen] = useState(location.pathname.startsWith('/admin/blog'));
+  const [isDocsMenuOpen, setIsDocsMenuOpen] = useState(
+    location.pathname.startsWith('/admin/documentation') ||
+    location.pathname.startsWith('/admin/api-docs') ||
+    location.pathname.startsWith('/admin/system-status')
+  );
   const isDark = theme === "dark";
   const dir = isDark ? -1 : 1; 
   const profileRef = useRef(null);
@@ -64,6 +76,32 @@ const AdminLayout = () => {
     { name: 'Add-ons', href: '/admin/add-ons', icon: Settings, description: 'Gestionar complementos' },
     { name: 'Facturas', href: '/admin/invoices', icon: FileText, description: 'Control de facturación' },
     { name: 'Tickets', href: '/admin/tickets', icon: HelpCircle, description: 'Soporte y asistencia' },
+    {
+      name: 'Blog',
+      icon: FileText,
+      description: 'Gestionar contenido del blog',
+      isExpandable: true,
+      menuKey: 'blog',
+      activePrefix: '/admin/blog',
+      children: [
+        { name: 'Artículos', href: '/admin/blog', icon: FileText, description: 'Listar y editar artículos' },
+        { name: 'Categorías', href: '/admin/blog/categories', icon: Tag, description: 'Administrar categorías' },
+      ]
+    },
+    {
+      name: 'Documentación',
+      icon: Book,
+      description: 'Gestionar documentación',
+      isExpandable: true,
+      menuKey: 'docs',
+      activePrefix: '/admin/documentation',
+      activePrefixes: ['/admin/documentation', '/admin/api-docs', '/admin/system-status'],
+      children: [
+        { name: 'Documentación', href: '/admin/documentation', icon: Book, description: 'Gestionar documentación' },
+        { name: 'API Docs', href: '/admin/api-docs', icon: Code, description: 'Documentación de API' },
+        { name: 'Estado del Sistema', href: '/admin/system-status', icon: AlertCircle, description: 'Estado de servicios' },
+      ]
+    }
   ];
 
   const handleLogout = async () => {
@@ -76,6 +114,9 @@ const AdminLayout = () => {
   };
 
   const isActiveRoute = (href) => {
+    if (href === '/admin/blog') {
+      return location.pathname === '/admin/blog' || location.pathname.startsWith('/admin/blog/new') || location.pathname.startsWith('/admin/blog/edit');
+    }
     return location.pathname.startsWith(href);
   };
 
@@ -204,7 +245,7 @@ const AdminLayout = () => {
                           </div>
                           <div className="py-2">
                             <Link
-                              to="/client/profile" // Podrías crear una página de perfil de admin
+                              to="/client/profile"
                               onClick={() => setIsProfileMenuOpen(false)}
                               className="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                             >
@@ -235,7 +276,7 @@ const AdminLayout = () => {
       <div className="flex">
         {/* Sidebar Premium */}
         <aside
-          className={`fixed inset-y-0 left-0 z-[60] w-72 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} bg-card border-r border-border lg:sticky lg:translate-x-0 lg:top-16 lg:h-[calc(100dvh-4rem)] lg:overflow-hidden lg:flex lg:flex-col`}
+          className={`fixed inset-y-0 left-0 z-[60] w-72 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} bg-card border-r border-border lg:sticky lg:translate-x-0 lg:top-16 lg:h-[calc(100dvh-4rem)] lg:overflow-y-auto lg:flex lg:flex-col`}
         >
           <div className="p-3 border-b border-border">
             <div className="flex items-center justify-between lg:hidden">
@@ -252,10 +293,65 @@ const AdminLayout = () => {
             </div>
           </div>
 
-          <nav className="p-4 space-y-2 lg:flex-none">
+          <nav className="p-4 space-y-2 lg:flex-1">
             {navigation.map((item) => {
               const Icon = item.icon;
-              const isActive = isActiveRoute(item.href);
+              const isActive = item.isExpandable
+                ? (item.activePrefixes
+                    ? item.activePrefixes.some(p => location.pathname.startsWith(p))
+                    : location.pathname.startsWith(item.activePrefix))
+                : isActiveRoute(item.href);
+
+              if (item.isExpandable) {
+                const isMenuOpen = item.menuKey === 'docs' ? isDocsMenuOpen : isBlogMenuOpen;
+                const toggleMenu = item.menuKey === 'docs'
+                  ? () => setIsDocsMenuOpen(!isDocsMenuOpen)
+                  : () => setIsBlogMenuOpen(!isBlogMenuOpen);
+
+                return (
+                  <div key={item.name} className="space-y-1">
+                    <button
+                      onClick={toggleMenu}
+                      className={`w-full group flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 ${isActive ? "bg-primary/10 text-primary" : "hover:bg-accent text-foreground hover-lift"}`}
+                    >
+                      <Icon className={`w-5 h-5 ${isActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`} />
+                      <div className="flex-1 text-left">
+                        <p className={`font-medium ${isActive ? "text-primary" : "text-foreground"}`}>{item.name}</p>
+                        <p className={`text-xs ${isActive ? "text-primary/80" : "text-muted-foreground"}`}>{item.description}</p>
+                      </div>
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isMenuOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    <AnimatePresence>
+                      {isMenuOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="pl-10 space-y-1 overflow-hidden"
+                        >
+                          {item.children.map((child) => {
+                            const ChildIcon = child.icon;
+                            const isChildActive = location.pathname === child.href || (child.href === '/admin/blog' && (location.pathname.startsWith('/admin/blog/new') || location.pathname.startsWith('/admin/blog/edit')));
+                            return (
+                              <Link
+                                key={child.name}
+                                to={child.href}
+                                onClick={() => setIsSidebarOpen(false)}
+                                className={`group flex items-center space-x-3 px-4 py-2 rounded-lg transition-all duration-200 ${isChildActive ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"}`}
+                              >
+                                <ChildIcon className={`w-4 h-4 ${isChildActive ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`} />
+                                <span className="text-sm">{child.name}</span>
+                              </Link>
+                            );
+                          })}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              }
+
               return (
                 <Link
                   key={item.name}
@@ -274,7 +370,7 @@ const AdminLayout = () => {
             })}
           </nav>
 
-          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border bg-card">
+          <div className="p-4 border-t border-border bg-card">
             <div className="space-y-3">
               <div className="flex items-center space-x-3 p-3 bg-accent/50 rounded-xl">
                 <div className="p-2 bg-primary/10 rounded-lg"><Shield className="w-4 h-4 text-primary" /></div>
@@ -308,6 +404,13 @@ const AdminLayout = () => {
               <Route path="add-ons" element={<AdminAddOnsPage />} />
               <Route path="invoices" element={<AdminInvoicesPage />} />
               <Route path="tickets" element={<AdminTicketsPage />} />
+              <Route path="blog" element={<AdminBlogPage />} />
+              <Route path="blog/new" element={<AdminBlogEditorPage />} />
+              <Route path="blog/edit/:uuid" element={<AdminBlogEditorPage />} />
+              <Route path="blog/categories" element={<AdminBlogCategoriesPage />} />
+              <Route path="documentation" element={<AdminDocumentationPage />} />
+              <Route path="api-docs" element={<AdminApiDocumentationPage />} />
+              <Route path="system-status" element={<AdminSystemStatusPage />} />
               <Route path="*" element={<AdminDashboardPage />} />
             </Routes>
           </div>
