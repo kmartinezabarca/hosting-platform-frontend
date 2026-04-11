@@ -26,7 +26,7 @@ import PersonalInfoSection from "../../components/profile/PersonalInfoSection";
 import SecuritySection from "../../components/profile/SecuritySection";
 import DevicesSection from "../../components/profile/DevicesSection";
 
-const ClientProfilePageNew = () => {
+const ClientProfilePage = () => {
   const [activeTab, setActiveTab] = useState("profile");
 
   // React Query hooks
@@ -180,6 +180,7 @@ const ClientProfilePageNew = () => {
               twoFactorSecret={twoFactorSecret}
               saving2FA={generate2FAMutation.isPending || enable2FAMutation.isPending || disable2FAMutation.isPending}
               savingPassword={updatePasswordMutation.isPending}
+              isGoogleUser={!!profile?.is_google_account || !!security?.is_google_account}
             />
           )}
 
@@ -192,4 +193,4 @@ const ClientProfilePageNew = () => {
   );
 };
 
-export default ClientProfilePageNew;
+export default ClientProfilePage;
