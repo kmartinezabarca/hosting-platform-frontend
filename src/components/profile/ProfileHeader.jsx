@@ -3,7 +3,7 @@ import { Camera, CheckCircle, AlertTriangle } from 'lucide-react';
 import ReactCountryFlag from "react-country-flag";
 import { countryName } from "../../lib/geo";
 import { cn } from '../../lib/utils';
-import AvatarUploader from './AvatarUploader'; // ¡Importamos nuestro nuevo componente!
+import AvatarUploader from './AvatarUploader';
 
 // --- Componentes de UI Internos y Rediseñados ---
 
@@ -35,24 +35,24 @@ const ProfileHeader = ({ profile, onAvatarChange }) => {
   const [isUploading, setIsUploading] = useState(false);
 
   const handleAvatarUpload = async (file) => {
-    if (!file) return;
+    if (!file || !onAvatarChange) return;
     setIsUploading(true);
     try {
-      // Aquí iría la lógica de upload real a tu backend
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulación
-      if (onAvatarChange) {
-        onAvatarChange(file); // Pasamos el archivo recortado al padre
-      }
-      setShowUploader(false); // Cerramos el modal al éxito
+      await onAvatarChange(file);
+      setShowUploader(false);
     } catch (error) {
       console.error('Error uploading avatar:', error);
-      // Aquí podrías usar un toast de error
     } finally {
       setIsUploading(false);
     }
   };
 
-  const avatarUrl = profile.avatar_url || `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(profile.first_name || 'user' )}`;
+  // Prioridad: avatar subido por el usuario → avatar de Google → DiceBear fallback
+  const avatarUrl =
+    profile.avatar_url ||
+    profile.google_avatar ||
+    profile.picture ||
+    `https://api.dicebear.com/8.x/avataaars/svg?seed=${encodeURIComponent(profile.first_name || 'user')}`;
 
   return (
     <>

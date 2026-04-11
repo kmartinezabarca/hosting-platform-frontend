@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
-import { Shield, Lock, KeyRound, AlertTriangle, CheckCircle2, QrCode, Smartphone } from 'lucide-react';
+import { Shield, Lock, KeyRound, AlertTriangle, CheckCircle2, QrCode, Smartphone, Chrome } from 'lucide-react';
 import FormField from './FormField';
 import PasswordStrengthIndicator from './PasswordStrengthIndicator';
 import { cn } from '../../lib/utils';
 
-const SecuritySection = ({ 
-  security, 
-  onPasswordUpdate, 
-  on2FAGenerate, 
-  on2FAEnable, 
+const SecuritySection = ({
+  security,
+  onPasswordUpdate,
+  on2FAGenerate,
+  on2FAEnable,
   on2FADisable,
   qrCode,
   twoFactorSecret,
   saving2FA,
-  savingPassword 
+  savingPassword,
+  isGoogleUser = false,
 }) => {
   const [passwordData, setPasswordData] = useState({
     current: '',
@@ -172,7 +173,7 @@ const SecuritySection = ({
             <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
               <div className="w-2 h-2 rounded-full bg-green-500" />
               <span className="text-sm text-slate-700 dark:text-slate-300">
-                Contraseña fuerte
+                {isGoogleUser ? 'Vinculado con Google' : 'Contraseña fuerte'}
               </span>
               <span className="text-xs px-2 py-1 rounded-full ml-auto bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
                 Activo
@@ -373,115 +374,150 @@ const SecuritySection = ({
         )}
       </div>
 
-      {/* Cambio de contraseña */}
-      <form onSubmit={handlePasswordSubmit} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-            <Lock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+      {/* Cambio de contraseña — oculto para usuarios de Google */}
+      {isGoogleUser ? (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+              <Lock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                Contraseña
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Configuración de acceso
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-              Cambiar Contraseña
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Última actualización: {security.password_last_changed 
-                ? new Date(security.password_last_changed).toLocaleDateString('es-ES')
-                : 'Nunca'
-              }
-            </p>
+          <div className="flex items-start gap-3 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+            <Chrome className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="font-medium text-blue-900 dark:text-blue-100">
+                Cuenta vinculada con Google
+              </h4>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                Tu acceso está gestionado por Google. No necesitas contraseña para iniciar sesión.
+                Si deseas desvincularte, contacta al soporte.
+              </p>
+            </div>
           </div>
         </div>
-
-        <div className="space-y-6">
-          <FormField
-            label="Contraseña actual"
-            type="password"
-            value={passwordData.current}
-            onChange={(e) => handlePasswordChange('current', e.target.value)}
-            placeholder="Tu contraseña actual"
-            icon={Lock}
-            error={passwordErrors.current}
-            showPasswordToggle
-            required
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <FormField
-                label="Nueva contraseña"
-                type="password"
-                value={passwordData.new}
-                onChange={(e) => handlePasswordChange('new', e.target.value)}
-                placeholder="Tu nueva contraseña"
-                icon={Lock}
-                error={passwordErrors.new}
-                showPasswordToggle
-                required
-              />
-              
-              {passwordData.new && (
-                <PasswordStrengthIndicator password={passwordData.new} />
-              )}
+      ) : (
+        <form onSubmit={handlePasswordSubmit} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+              <Lock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
             </div>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                Cambiar Contraseña
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Última actualización:{' '}
+                {security.password_last_changed
+                  ? new Date(security.password_last_changed).toLocaleDateString('es-ES')
+                  : 'Nunca'}
+              </p>
+            </div>
+          </div>
 
+          <div className="space-y-6">
             <FormField
-              label="Confirmar nueva contraseña"
+              label="Contraseña actual"
               type="password"
-              value={passwordData.confirm}
-              onChange={(e) => handlePasswordChange('confirm', e.target.value)}
-              placeholder="Confirma tu nueva contraseña"
+              value={passwordData.current}
+              onChange={(e) => handlePasswordChange('current', e.target.value)}
+              placeholder="Tu contraseña actual"
               icon={Lock}
-              error={passwordErrors.confirm}
+              error={passwordErrors.current}
               showPasswordToggle
               required
             />
-          </div>
 
-          <div className="flex items-center justify-end gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <button
-              type="button"
-              onClick={() => {
-                setPasswordData({ current: '', new: '', confirm: '' });
-                setPasswordErrors({});
-              }}
-              className={cn(
-                'px-4 py-2 rounded-lg',
-                'border border-slate-300 dark:border-slate-600',
-                'text-slate-700 dark:text-slate-300',
-                'hover:bg-slate-100 dark:hover:bg-slate-700',
-                'focus:outline-none focus:ring-2 focus:ring-slate-500/20',
-                'transition-all duration-200'
-              )}
-            >
-              Cancelar
-            </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <FormField
+                  label="Nueva contraseña"
+                  type="password"
+                  value={passwordData.new}
+                  onChange={(e) => handlePasswordChange('new', e.target.value)}
+                  placeholder="Tu nueva contraseña"
+                  icon={Lock}
+                  error={passwordErrors.new}
+                  showPasswordToggle
+                  required
+                />
+                {passwordData.new && (
+                  <PasswordStrengthIndicator password={passwordData.new} />
+                )}
+              </div>
 
-            <button
-              type="submit"
-              disabled={savingPassword || Object.keys(passwordErrors).length > 0 || !passwordData.current || !passwordData.new || !passwordData.confirm}
-              className={cn(
-                'inline-flex items-center gap-2 px-6 py-2 rounded-lg',
-                'bg-blue-600 hover:bg-blue-700 text-white',
-                'focus:outline-none focus:ring-2 focus:ring-blue-500/20',
-                'transition-all duration-200',
-                'disabled:opacity-50 disabled:cursor-not-allowed'
-              )}
-            >
-              {savingPassword ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Actualizando...
-                </>
-              ) : (
-                <>
-                  <Lock className="w-4 h-4" />
-                  Actualizar contraseña
-                </>
-              )}
-            </button>
+              <FormField
+                label="Confirmar nueva contraseña"
+                type="password"
+                value={passwordData.confirm}
+                onChange={(e) => handlePasswordChange('confirm', e.target.value)}
+                placeholder="Confirma tu nueva contraseña"
+                icon={Lock}
+                error={passwordErrors.confirm}
+                showPasswordToggle
+                required
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <button
+                type="button"
+                onClick={() => {
+                  setPasswordData({ current: '', new: '', confirm: '' });
+                  setPasswordErrors({});
+                }}
+                className={cn(
+                  'px-4 py-2 rounded-lg',
+                  'border border-slate-300 dark:border-slate-600',
+                  'text-slate-700 dark:text-slate-300',
+                  'hover:bg-slate-100 dark:hover:bg-slate-700',
+                  'focus:outline-none focus:ring-2 focus:ring-slate-500/20',
+                  'transition-all duration-200'
+                )}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="submit"
+                disabled={
+                  savingPassword ||
+                  Object.keys(passwordErrors).length > 0 ||
+                  !passwordData.current ||
+                  !passwordData.new ||
+                  !passwordData.confirm
+                }
+                className={cn(
+                  'inline-flex items-center gap-2 px-6 py-2 rounded-lg',
+                  'bg-blue-600 hover:bg-blue-700 text-white',
+                  'focus:outline-none focus:ring-2 focus:ring-blue-500/20',
+                  'transition-all duration-200',
+                  'disabled:opacity-50 disabled:cursor-not-allowed'
+                )}
+              >
+                {savingPassword ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Actualizando...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    Actualizar contraseña
+                  </>
+                )}
+              </button>
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
+      )}
     </div>
   );
 };

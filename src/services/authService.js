@@ -41,7 +41,9 @@ const authService = {
       first_name: googleUserData.given_name,
       last_name: googleUserData.family_name || '',
       email: googleUserData.email,
-      google_id: googleUserData.sub
+      google_id: googleUserData.sub,
+      // Enviar el avatar de Google para que el backend lo guarde como avatar_url
+      picture: googleUserData.picture || null,
     });
     return response.data;
   },
