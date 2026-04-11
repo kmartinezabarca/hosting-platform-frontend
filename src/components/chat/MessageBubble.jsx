@@ -4,7 +4,8 @@ import { Paperclip, Download } from "lucide-react";
 import { fmtDate, fmtBytes, isImageMime } from "../../lib/chatUtils";
 
 export const MessageBubble = ({ message, onImageClick }) => {
-  const isClient = message.user?.role === "client" || message.user?.role === "admin";
+  // Mensajes del cliente → derecha (fondo oscuro). Soporte/admin → izquierda (fondo claro).
+  const isClient = message.user?.role === "client";
   const attachments = Array.isArray(message.attachments) ? message.attachments : [];
   const imageAttachments = attachments.filter((a) => isImageMime(a.mime));
   const fileAttachments = attachments.filter((a) => !isImageMime(a.mime));

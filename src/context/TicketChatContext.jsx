@@ -2,8 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import { useAuth } from "./AuthContext";
-import TicketChatDock from "../components/tickets/TicketChatDock";
-import ticketsService from "../services/ticketService"; // Este servicio lo vamos a revisar en el Paso 2
+import ticketsService from "../services/ticketService";
 
 const TicketChatContext = createContext(null);
 
@@ -108,16 +107,7 @@ export const TicketChatProvider = ({ children }) => {
   return (
     <TicketChatContext.Provider value={value}>
       {children}
-      <TicketChatDock
-        open={open}
-        onClose={closeChat}
-        minimized={minimized}
-        onMinimizeChange={setMinimized}
-        ticket={ticket}
-        messages={messages}
-        onSend={send}
-        sending={sending}
-      />
+      {/* El dock se renderiza en TicketChatDockPortal para evitar duplicados */}
     </TicketChatContext.Provider>
   );
 };

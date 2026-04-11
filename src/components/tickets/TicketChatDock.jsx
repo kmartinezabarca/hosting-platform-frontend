@@ -2,7 +2,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, AlertCircle } from "lucide-react";
 
 import { TicketChatHeader } from "../chat/TicketChatHeader";
 import { MessageList } from "../chat/MessageList";
@@ -17,6 +17,7 @@ import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_MB, MAX_FILES_PER_MESSAGE, isImageMim
  * - open, onClose
  * - ticket: { ticket_number, subject, status, priority }
  * - messages: [{ id, message, created_at, user:{name, role}, attachments?: [{url,name,mime,size}] }]
+ * - messagesError: Error | null
  * - onSend: async ({ text, files: File[] }) => void
  * - sending: boolean
  * - minimized, onMinimizeChange
@@ -26,6 +27,7 @@ const TicketChatDock = ({
   onClose,
   ticket,
   messages = [],
+  messagesError = null,
   onSend,
   sending = false,
   minimized = false,
@@ -107,10 +109,22 @@ const TicketChatDock = ({
               onMinimize={() => onMinimizeChange(true)}
               onClose={onClose}
             />
-            <MessageList
-              messages={messages}
-              onImageClick={handleImageClick}
-            />
+            {messagesError ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-2 p-6 text-center">
+                <AlertCircle className="w-8 h-8 text-destructive opacity-70" />
+                <p className="text-sm font-medium text-foreground">No se pudieron cargar los mensajes</p>
+                <p className="text-xs text-muted-foreground">
+                  {messagesError?.response?.status === 403
+                    ? "Sin permisos para acceder a este chat. Contacta al soporte."
+                    : "Error de conexión. Intenta recargar la página."}
+                </p>
+              </div>
+            ) : (
+              <MessageList
+                messages={messages}
+                onImageClick={handleImageClick}
+              />
+            )}
             <ChatComposer
               onSubmit={handleSubmit}
               sending={sending}
