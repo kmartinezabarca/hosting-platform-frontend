@@ -12,30 +12,36 @@ import { ToastProvider } from "@/components/ToastProvider";
 import { initializeCsrf } from './lib/bootstrap';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { AuthProvider } from '@/context/AuthContext'
+import { AuthProvider } from '@/context/AuthContext';
+import { NotificationProvider } from '@/context/NotificationContext';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 const renderApp = () => {
   createRoot(document.getElementById("root")).render(
-     <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-            <ToastProvider>
-              <Router>
-                <AuthProvider>
-                  <TicketChatProvider>
-                    <App />
-                    <TicketChatDockPortal />
-                  </TicketChatProvider>
-                </AuthProvider>
-              </Router>
-              <ReactQueryDevtools initialIsOpen={false} />
-            </ToastProvider>
-          </GoogleOAuthProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
+    <StrictMode>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+              <ToastProvider>
+                <Router>
+                  <AuthProvider>
+                    <NotificationProvider>
+                      <TicketChatProvider>
+                        <App />
+                        <TicketChatDockPortal />
+                      </TicketChatProvider>
+                    </NotificationProvider>
+                  </AuthProvider>
+                </Router>
+                <ReactQueryDevtools initialIsOpen={false} />
+              </ToastProvider>
+            </GoogleOAuthProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
     </StrictMode>
   );
 };

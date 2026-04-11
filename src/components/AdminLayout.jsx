@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -12,19 +12,19 @@ import { useAuth } from '../context/AuthContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import UserAvatar from '../components/UserAvatar';
 import { Skeleton } from '../components/ui/skeleton';
-import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
-import AdminUsersPage from '../pages/admin/AdminUsersPage';
-import AdminServicesPage from '../pages/admin/AdminServicesPage';
-import AdminInvoicesPage from '../pages/admin/AdminInvoicesPage';
-import AdminTicketsPage from '../pages/admin/AdminTicketsPage';
-import AdminServicePlansPage from '../pages/admin/AdminServicePlansPage';
-import AdminAddOnsPage from '../pages/admin/AdminAddOnsPage';
-import AdminBlogPage from '../pages/admin/AdminBlogPage';
-import AdminBlogEditorPage from '../pages/admin/AdminBlogEditorPage';
-import AdminBlogCategoriesPage from '../pages/admin/AdminBlogCategoriesPage';
-import AdminDocumentationPage from '../pages/admin/AdminDocumentationPage';
-import AdminApiDocumentationPage from '../pages/admin/AdminApiDocumentationPage';
-import AdminSystemStatusPage from '../pages/admin/AdminSystemStatusPage';
+const AdminDashboardPage       = lazy(() => import('../pages/admin/AdminDashboardPage'));
+const AdminUsersPage           = lazy(() => import('../pages/admin/AdminUsersPage'));
+const AdminServicesPage        = lazy(() => import('../pages/admin/AdminServicesPage'));
+const AdminInvoicesPage        = lazy(() => import('../pages/admin/AdminInvoicesPage'));
+const AdminTicketsPage         = lazy(() => import('../pages/admin/AdminTicketsPage'));
+const AdminServicePlansPage    = lazy(() => import('../pages/admin/AdminServicePlansPage'));
+const AdminAddOnsPage          = lazy(() => import('../pages/admin/AdminAddOnsPage'));
+const AdminBlogPage            = lazy(() => import('../pages/admin/AdminBlogPage'));
+const AdminBlogEditorPage      = lazy(() => import('../pages/admin/AdminBlogEditorPage'));
+const AdminBlogCategoriesPage  = lazy(() => import('../pages/admin/AdminBlogCategoriesPage'));
+const AdminDocumentationPage   = lazy(() => import('../pages/admin/AdminDocumentationPage'));
+const AdminApiDocumentationPage = lazy(() => import('../pages/admin/AdminApiDocumentationPage'));
+const AdminSystemStatusPage    = lazy(() => import('../pages/admin/AdminSystemStatusPage'));
 import logoROKE from "../assets/logo_v4.png";
 
 const AdminLayout = () => {
@@ -396,6 +396,7 @@ const AdminLayout = () => {
         {/* Contenido principal */}
         <main className="flex-1 min-h-[calc(100dvh-4rem)] overflow-y-auto">
           <div className="container-premium section-padding">
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>}>
             <Routes>
               <Route path="dashboard" element={<AdminDashboardPage />} />
               <Route path="users" element={<AdminUsersPage />} />
@@ -413,6 +414,7 @@ const AdminLayout = () => {
               <Route path="system-status" element={<AdminSystemStatusPage />} />
               <Route path="*" element={<AdminDashboardPage />} />
             </Routes>
+            </Suspense>
           </div>
         </main>
       </div>

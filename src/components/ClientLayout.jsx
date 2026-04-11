@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -12,16 +12,16 @@ import { useAuth } from '../context/AuthContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import UserAvatar from '../components/UserAvatar';
 import { Skeleton } from '../components/ui/skeleton';
-import NewDashboard from '../pages/client/NewDashboard';
-import ClientServicesPage from '../pages/client/ClientServicesPage';
-import ClientInvoicesPage from '../pages/client/ClientInvoicesPage';
-import ClientTicketsPage from '../pages/client/ClientTicketsPage';
-import ClientProfilePage from '../pages/client/ClientProfilePage';
-import ContractServicePage from '../pages/client/ContractServicePage';
-import CheckoutPage from '../pages/client/CheckoutPage';
-import CheckoutSuccessPage from '../pages/client/CheckoutSuccessPage';
-import ServiceManagementPage from '../pages/client/ServiceManagementPage';
-import ServiceDetailPage from '../pages/client/ServiceDetailPage';
+const NewDashboard         = lazy(() => import('../pages/client/NewDashboard'));
+const ClientServicesPage   = lazy(() => import('../pages/client/ClientServicesPage'));
+const ClientInvoicesPage   = lazy(() => import('../pages/client/ClientInvoicesPage'));
+const ClientTicketsPage    = lazy(() => import('../pages/client/ClientTicketsPage'));
+const ClientProfilePage    = lazy(() => import('../pages/client/ClientProfilePage'));
+const ContractServicePage  = lazy(() => import('../pages/client/ContractServicePage'));
+const CheckoutPage         = lazy(() => import('../pages/client/CheckoutPage'));
+const CheckoutSuccessPage  = lazy(() => import('../pages/client/CheckoutSuccessPage'));
+const ServiceManagementPage = lazy(() => import('../pages/client/ServiceManagementPage'));
+const ServiceDetailPage    = lazy(() => import('../pages/client/ServiceDetailPage'));
 import logoROKE from "../assets/logo_v4.png";
 
 const ClientLayout = () => {
@@ -463,6 +463,7 @@ const ClientLayout = () => {
         {/* Contenido principal */}
         <main className="flex-1 min-h-[calc(100dvh-4rem)] overflow-y-auto">
           <div className="container-premium section-padding">
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>}>
             <Routes>
               <Route path="/dashboard" element={<NewDashboard />} />
               <Route path="/services" element={<ClientServicesPage />} />
@@ -476,6 +477,7 @@ const ClientLayout = () => {
               <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
               <Route path="/" element={<NewDashboard />} />
             </Routes>
+            </Suspense>
           </div>
         </main>
       </div>
