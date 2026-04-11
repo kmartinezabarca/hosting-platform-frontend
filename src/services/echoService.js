@@ -9,15 +9,17 @@ let echo;
 export function getEcho() {
   if (echo) return echo;
 
+  const isTLS = import.meta.env.VITE_REVERB_SCHEME === "https";
+
   echo = new Echo({
     broadcaster: "reverb",
     key: import.meta.env.VITE_REVERB_APP_KEY,
     wsHost: import.meta.env.VITE_REVERB_HOST,
-    wsPort: import.meta.env.VITE_REVERB_PORT,
-    wssPort: import.meta.env.VITE_REVERB_PORT,
-    forceTLS: import.meta.env.VITE_REVERB_SCHEME === "https",
-    enabledTransports: ["ws", "wss"],
-    cluster: import.meta.env.VITE_REVERB_CLUSTER || "mt1",
+    wsPort: isTLS ? undefined : Number(import.meta.env.VITE_REVERB_PORT ?? 8080),
+    wssPort: isTLS ? Number(import.meta.env.VITE_REVERB_PORT ?? 443) : undefined,
+    forceTLS: isTLS,
+    enabledTransports: isTLS ? ["wss"] : ["ws"],
+    disableStats: true,
 
     authorizer: (channel, options) => {
       return {

@@ -1,4 +1,4 @@
-import apiClient from "@/lib/apiClient";
+import apiClient from "./apiClient";
 
 /**
  * Servicio centralizado para gestionar el Estado del Sistema en el panel administrativo

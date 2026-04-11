@@ -1,4 +1,4 @@
-import apiClient from "@/lib/apiClient";
+import apiClient from "./apiClient";
 
 /**
  * Servicio centralizado para gestionar la Documentación de API en el panel administrativo
