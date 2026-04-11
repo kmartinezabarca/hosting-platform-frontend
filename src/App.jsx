@@ -1,44 +1,52 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import './App.css';
-import { AuthProvider } from './context/AuthContext';
 
-import AdminLayout from './components/AdminLayout';
-import ClientLayout from './components/ClientLayout';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import Verify2FAPage from './pages/Verify2FAPage';
-import ProfileDemo from './pages/ProfileDemo';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
+
+const AdminLayout   = lazy(() => import('./components/AdminLayout'));
+const ClientLayout  = lazy(() => import('./components/ClientLayout'));
+const LoginPage     = lazy(() => import('./pages/LoginPage'));
+const RegisterPage  = lazy(() => import('./pages/RegisterPage'));
+const Verify2FAPage = lazy(() => import('./pages/Verify2FAPage'));
+const ProfileDemo   = lazy(() => import('./pages/ProfileDemo'));
+
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+  </div>
+);
 
 function App() {
   return (
-      <AuthProvider>
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Routes */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/verify-2fa" element={<Verify2FAPage />} />
+          <Route path="/login"        element={<LoginPage />} />
+          <Route path="/register"     element={<RegisterPage />} />
+          <Route path="/verify-2fa"   element={<Verify2FAPage />} />
           <Route path="/profile-demo" element={<ProfileDemo />} />
 
           {/* Client Routes - Protected */}
-          <Route 
-            path="/client/*" 
+          <Route
+            path="/client/*"
             element={
               <ProtectedRoute>
                 <ClientLayout />
               </ProtectedRoute>
-            } 
+            }
           />
 
           {/* Admin Routes - Protected with Admin Role */}
-          <Route 
-            path="/admin/*" 
+          <Route
+            path="/admin/*"
             element={
               <ProtectedRoute requireAdmin={true}>
                 <AdminLayout />
               </ProtectedRoute>
-            } 
+            }
           />
 
           {/* Default Route */}
@@ -53,14 +61,14 @@ function App() {
                   Tu plataforma de hosting tecnológica y moderna
                 </p>
                 <div className="space-x-4">
-                  <a 
-                    href="/login" 
+                  <a
+                    href="/login"
                     className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
                   >
                     Iniciar Sesión
                   </a>
-                  <a 
-                    href="/register" 
+                  <a
+                    href="/register"
                     className="inline-block bg-white hover:bg-gray-50 text-blue-600 font-medium py-3 px-6 rounded-lg border border-blue-600 transition-colors"
                   >
                     Registrarse
@@ -70,9 +78,9 @@ function App() {
             </div>
           } />
         </Routes>
-      </AuthProvider>
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 
 export default App;
-

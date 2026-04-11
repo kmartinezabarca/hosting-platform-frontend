@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
 import { useAuth } from './AuthContext';
 import { getEcho } from '@/services/echoService';
 
@@ -19,34 +20,25 @@ const CUSTOM_EVENTS = [
 export const NotificationProvider = ({ children }) => {
   const { user, isAuthenticated, isAuthReady } = useAuth();
 
-  // helpers para toasts / efectos laterales (ajusta a tu sistema de toasts)
-  const showInfo = (title, message) => console.log('ℹ️', title, message);
-  const showSuccess = (title, message) => console.log('✅', title, message);
-  const showError = (title, message) => console.log('❌', title, message);
+  const showInfo    = (title, message) => toast.info(title,    { description: message || undefined });
+  const showSuccess = (title, message) => toast.success(title, { description: message || undefined });
+  const showError   = (title, message) => toast.error(title,   { description: message || undefined });
 
   useEffect(() => {
     const ready = Boolean(isAuthReady && isAuthenticated && user?.uuid);
-    if (!ready) {
-      console.log('NotificationProvider: auth no lista; no se configura Reverb.');
-      return;
-    }
+    if (!ready) return;
 
-    const echo = getEcho(); // <- crear/obtener dentro del efecto
+    const echo = getEcho();
     const channelName = `user.${user.uuid}`;
     const channel = echo
       .private(channelName)
-      .subscribed(() => console.log('✅ Subscribed', `private-${channelName}`))
-      .error((e) => console.error('❌ Channel error', e));
+      .error((e) => console.error('[NotificationProvider] channel error', e));
 
     // 1) Notificaciones de Laravel ($user->notify(..., via ['database','broadcast']))
     channel.notification((n) => {
-      // n tiene { id, type, notifiable_id, data, created_at, ... }
-      console.log('🔔 notification', n);
       const title = n?.data?.title ?? 'Notificación';
-      const msg = n?.data?.message ?? n?.data?.text ?? '';
+      const msg   = n?.data?.message ?? n?.data?.text ?? '';
       showInfo(title, msg);
-      // aquí puedes invalidar queries si quieres
-      // qc.invalidateQueries({ queryKey: ... });
     });
 
     // 2) Eventos custom (ServicePurchased, etc.) que usan broadcastAs('...'):
@@ -54,18 +46,34 @@ export const NotificationProvider = ({ children }) => {
       CUSTOM_EVENTS.map((evt) => [
         evt,
         (payload) => {
-          console.log(`📩 ${evt}`, payload);
           switch (evt) {
             case 'service.purchased':
               showSuccess('¡Servicio adquirido!', payload?.message ?? 'Tu compra fue procesada.');
               break;
+            case 'service.ready':
+              showSuccess('Servicio listo', payload?.message ?? 'Tu servicio está activo.');
+              break;
+            case 'service.status.changed':
+              showInfo('Estado del servicio', payload?.message ?? 'El estado de tu servicio cambió.');
+              break;
+            case 'invoice.generated':
+              showInfo('Nueva factura', payload?.message ?? 'Se generó una nueva factura.');
+              break;
+            case 'invoice.status.changed':
+              showInfo('Factura actualizada', payload?.message ?? 'El estado de tu factura cambió.');
+              break;
+            case 'payment.processed':
+              showSuccess('Pago procesado', payload?.message ?? 'Tu pago fue registrado exitosamente.');
+              break;
             case 'payment.failed':
-              showError('Pago fallido', payload?.message ?? 'Intenta con otro método.');
+              showError('Pago fallido', payload?.message ?? 'Intenta con otro método de pago.');
+              break;
+            case 'ticket.replied':
+              showInfo('Respuesta en ticket', payload?.message ?? 'Tienes una nueva respuesta en tu ticket.');
               break;
             default:
-              showInfo('Evento', payload?.message ?? evt);
+              showInfo('Notificación', payload?.message ?? evt);
           }
-          // invalida queries aquí si corresponde
         },
       ])
     );
@@ -73,11 +81,9 @@ export const NotificationProvider = ({ children }) => {
     // importante: cuando usas broadcastAs('foo.bar'), escucha con '.foo.bar'
     CUSTOM_EVENTS.forEach((evt) => channel.listen(`.${evt}`, handlers[evt]));
 
-    // Re-suscripción tras reconexiones
     const conn = echo.connector?.pusher?.connection;
     const onReconnected = () => {
-      console.log('🔁 Reconnected (user channel), refrescando estado/mostrando toast si quieres');
-      // aquí podrías re-invocar fetchs si lo necesitas
+      showInfo('Reconectado', 'La conexión en tiempo real fue restaurada.');
     };
     conn?.bind?.('connected', onReconnected);
 
