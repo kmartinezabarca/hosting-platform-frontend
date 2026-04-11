@@ -180,6 +180,7 @@ const ClientProfilePageNew = () => {
               twoFactorSecret={twoFactorSecret}
               saving2FA={generate2FAMutation.isPending || enable2FAMutation.isPending || disable2FAMutation.isPending}
               savingPassword={updatePasswordMutation.isPending}
+              isGoogleUser={!!profile?.is_google_account || !!security?.is_google_account}
             />
           )}
 
