@@ -1,52 +1,63 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(),tailwindcss()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+
+  return {
+    plugins: [react(), tailwindcss()],
+
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
     },
-  },
-  server: {
-    host: true,
-    port: 5173,
-    strictPort: true,
-    allowedHosts: ['.manus.computer']
+
+    server: {
+      host: true,
+      port: Number(env.VITE_DEV_PORT) || 5173,
+      strictPort: true,
+      // allowedHosts: env.VITE_ALLOWED_HOSTS?.split(',') ?? [],
+    },
+
+    preview: {
+      port: Number(env.VITE_PREVIEW_PORT) || 4173,
+    },
+
+    build: {
+      sourcemap: mode !== 'production',
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor:  ['react', 'react-dom', 'react-router-dom'],
+            query:   ['@tanstack/react-query'],
+            ui:      ['framer-motion', 'lucide-react', 'sonner'],
+            radix: [
+              '@radix-ui/react-dialog',
+              '@radix-ui/react-select',
+              '@radix-ui/react-tabs',
+              '@radix-ui/react-dropdown-menu',
+            ],
+          },
+        },
+      },
+    },
+
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      environmentOptions: {
+        jsdom: { url: 'http://localhost' },
+      },
+      setupFiles: ['./src/test/setup.js'],
+      css: false,
+      coverage: {
+        reporter: ['text', 'html'],
+        exclude: ['src/test/**', 'src/components/ui/**'],
+      },
+    },
   }
 })
-
-
-
-// Add Echo configuration to global window object
-// This is needed for Laravel Echo to work correctly
-// with Vite and the browser environment.
-// Make sure these match your .env variables
-// VITE_REVERB_APP_KEY, VITE_REVERB_HOST, VITE_REVERB_PORT, VITE_REVERB_SCHEME
-
-// This is a workaround for the fact that Vite doesn't expose process.env
-// directly in the browser. We need to manually expose these variables
-// to the window object so Laravel Echo can pick them up.
-
-// This should be done in a more robust way for production, e.g.,
-// by passing these variables from the backend to the frontend.
-
-// For now, this will work for development and testing.
-
-// IMPORTANT: Ensure these match your .env variables
-// VITE_REVERB_APP_KEY, VITE_REVERB_HOST, VITE_REVERB_PORT, VITE_REVERB_SCHEME
-
-// window.LaravelEcho = new Echo({
-//     broadcaster: 'reverb',
-//     key: import.meta.env.VITE_REVERB_APP_KEY,
-//     wsHost: import.meta.env.VITE_REVERB_HOST,
-//     wsPort: import.meta.env.VITE_REVERB_PORT,
-//     wssPort: import.meta.env.VITE_REVERB_PORT,
-//     forceTLS: import.meta.env.VITE_REVERB_SCHEME === 'https',
-//     enabledTransports: ['ws', 'wss'],
-// });
-
-
