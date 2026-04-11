@@ -26,7 +26,7 @@ import PersonalInfoSection from "../../components/profile/PersonalInfoSection";
 import SecuritySection from "../../components/profile/SecuritySection";
 import DevicesSection from "../../components/profile/DevicesSection";
 
-const ClientProfilePageNew = () => {
+const ClientProfilePage = () => {
   const [activeTab, setActiveTab] = useState("profile");
 
   // React Query hooks
@@ -193,4 +193,4 @@ const ClientProfilePageNew = () => {
   );
 };
 
-export default ClientProfilePageNew;
+export default ClientProfilePage;
