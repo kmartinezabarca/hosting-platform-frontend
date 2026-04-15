@@ -54,3 +54,18 @@ coverage/
 # ESLint cache
 .eslintcache
 
+# Playwright
+/e2e-report/
+/playwright/.cache/
+/e2e/.auth/
+/test-results/
+
+# Storybook build
+/storybook-static/
+
+# Bundle analysis
+/dist/stats.html
+
+# i18n (no trackear traducciones generadas)
+# /public/locales/ — SÍ se trackea (fuente de verdad)
+

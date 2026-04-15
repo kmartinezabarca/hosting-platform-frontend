@@ -79,6 +79,9 @@ export default defineConfig(({ mode }) => {
       environmentOptions: {
         jsdom: { url: 'http://localhost' },
       },
+      // Incluir solo tests unitarios — excluir E2E de Playwright
+      include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+      exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
       setupFiles: ['./src/test/setup.js'],
       css: false,
       coverage: {
