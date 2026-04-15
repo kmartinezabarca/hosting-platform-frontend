@@ -1,0 +1,144 @@
+{
+  "app": {
+    "name": "ROKE Industries",
+    "tagline": "Your modern, technological hosting platform"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "services": "Services",
+    "invoices": "Invoices",
+    "tickets": "Support",
+    "profile": "Profile",
+    "logout": "Sign out"
+  },
+  "auth": {
+    "login": "Sign in",
+    "register": "Sign up",
+    "logout": "Sign out",
+    "email": "Email address",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot your password?",
+    "loginWithGoogle": "Continue with Google",
+    "noAccount": "Don't have an account?",
+    "alreadyAccount": "Already have an account?",
+    "createAccount": "Create account",
+    "verifyCode": "Verify code",
+    "twoFactorTitle": "Two-step verification",
+    "twoFactorDesc": "Enter the code from your authenticator app",
+    "errors": {
+      "emailRequired": "Email address is required.",
+      "emailInvalid": "Invalid email format.",
+      "passwordRequired": "Password is required.",
+      "invalidCredentials": "Login failed. Please check your credentials.",
+      "firstNameRequired": "First name is required.",
+      "lastNameRequired": "Last name is required.",
+      "passwordMismatch": "Passwords do not match.",
+      "termsRequired": "You must accept the terms and conditions."
+    }
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Finish",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "search": "Search",
+    "filter": "Filter",
+    "all": "All",
+    "noResults": "No results found",
+    "retry": "Retry",
+    "close": "Close",
+    "open": "Open",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "status": {
+    "active": "Active",
+    "suspended": "Suspended",
+    "cancelled": "Cancelled",
+    "pending": "Pending",
+    "paid": "Paid",
+    "overdue": "Overdue",
+    "open": "Open",
+    "closed": "Closed",
+    "in_progress": "In progress"
+  },
+  "billing": {
+    "monthly": "Monthly",
+    "quarterly": "Quarterly",
+    "annually": "Annually",
+    "cycle": "Billing cycle",
+    "discount": "{{percent}}% discount",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "dueDate": "Due date",
+    "paymentMethod": "Payment method",
+    "addPaymentMethod": "Add payment method",
+    "noPaymentMethods": "No payment methods on file"
+  },
+  "services": {
+    "title": "My services",
+    "empty": "No active services",
+    "manage": "Manage",
+    "details": "View details",
+    "nextBilling": "Next billing"
+  },
+  "tickets": {
+    "title": "Support",
+    "newTicket": "New ticket",
+    "subject": "Subject",
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "reply": "Reply",
+    "close": "Close ticket",
+    "closed": "Ticket closed"
+  },
+  "profile": {
+    "title": "My profile",
+    "tabs": {
+      "profile": "Personal info",
+      "security": "Security",
+      "devices": "Devices"
+    },
+    "security": {
+      "password": "Password",
+      "changePassword": "Change password",
+      "googleLinked": "Linked with Google",
+      "twoFactor": "Two-factor authentication",
+      "enable2FA": "Enable 2FA",
+      "disable2FA": "Disable 2FA"
+    }
+  },
+  "checkout": {
+    "title": "Subscribe to service",
+    "steps": {
+      "information": "Information",
+      "review": "Review & pay"
+    },
+    "serviceName": "Service name",
+    "domain": "Domain",
+    "autoRenew": "Auto-renewal",
+    "orderSummary": "Order summary",
+    "placeOrder": "Place order",
+    "processing": "Processing...",
+    "success": "Payment successful!",
+    "successDesc": "Your service has been activated"
+  }
+}

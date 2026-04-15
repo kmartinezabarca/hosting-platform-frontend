@@ -1,0 +1,144 @@
+{
+  "app": {
+    "name": "ROKE Industries",
+    "tagline": "Tu plataforma de hosting tecnológica y moderna"
+  },
+  "nav": {
+    "dashboard": "Panel de control",
+    "services": "Servicios",
+    "invoices": "Facturas",
+    "tickets": "Soporte",
+    "profile": "Perfil",
+    "logout": "Cerrar sesión"
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "register": "Registrarse",
+    "logout": "Cerrar sesión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar contraseña",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "rememberMe": "Recuérdame",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "loginWithGoogle": "Continuar con Google",
+    "noAccount": "¿No tienes cuenta?",
+    "alreadyAccount": "¿Ya tienes cuenta?",
+    "createAccount": "Crear cuenta",
+    "verifyCode": "Verificar código",
+    "twoFactorTitle": "Verificación en dos pasos",
+    "twoFactorDesc": "Ingresa el código de tu aplicación autenticadora",
+    "errors": {
+      "emailRequired": "El correo electrónico es obligatorio.",
+      "emailInvalid": "El formato del correo no es válido.",
+      "passwordRequired": "La contraseña es obligatoria.",
+      "invalidCredentials": "Error al iniciar sesión. Verifica tus credenciales.",
+      "firstNameRequired": "El nombre es obligatorio.",
+      "lastNameRequired": "El apellido es obligatorio.",
+      "passwordMismatch": "Las contraseñas no coinciden.",
+      "termsRequired": "Debes aceptar los términos y condiciones."
+    }
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "view": "Ver",
+    "back": "Volver",
+    "next": "Siguiente",
+    "finish": "Finalizar",
+    "loading": "Cargando...",
+    "saving": "Guardando...",
+    "error": "Error",
+    "success": "Éxito",
+    "confirm": "Confirmar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "all": "Todos",
+    "noResults": "Sin resultados",
+    "retry": "Reintentar",
+    "close": "Cerrar",
+    "open": "Abrir",
+    "yes": "Sí",
+    "no": "No"
+  },
+  "status": {
+    "active": "Activo",
+    "suspended": "Suspendido",
+    "cancelled": "Cancelado",
+    "pending": "Pendiente",
+    "paid": "Pagado",
+    "overdue": "Vencido",
+    "open": "Abierto",
+    "closed": "Cerrado",
+    "in_progress": "En proceso"
+  },
+  "billing": {
+    "monthly": "Mensual",
+    "quarterly": "Trimestral",
+    "annually": "Anual",
+    "cycle": "Ciclo de facturación",
+    "discount": "{{percent}}% de descuento",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "tax": "Impuestos",
+    "dueDate": "Fecha de vencimiento",
+    "paymentMethod": "Método de pago",
+    "addPaymentMethod": "Agregar método de pago",
+    "noPaymentMethods": "No tienes métodos de pago registrados"
+  },
+  "services": {
+    "title": "Mis servicios",
+    "empty": "No tienes servicios activos",
+    "manage": "Administrar",
+    "details": "Ver detalles",
+    "nextBilling": "Próximo pago"
+  },
+  "tickets": {
+    "title": "Soporte",
+    "newTicket": "Nuevo ticket",
+    "subject": "Asunto",
+    "priority": {
+      "low": "Baja",
+      "medium": "Media",
+      "high": "Alta",
+      "urgent": "Urgente"
+    },
+    "reply": "Responder",
+    "close": "Cerrar ticket",
+    "closed": "Ticket cerrado"
+  },
+  "profile": {
+    "title": "Mi perfil",
+    "tabs": {
+      "profile": "Información personal",
+      "security": "Seguridad",
+      "devices": "Dispositivos"
+    },
+    "security": {
+      "password": "Contraseña",
+      "changePassword": "Cambiar contraseña",
+      "googleLinked": "Vinculado con Google",
+      "twoFactor": "Autenticación de dos factores",
+      "enable2FA": "Activar 2FA",
+      "disable2FA": "Desactivar 2FA"
+    }
+  },
+  "checkout": {
+    "title": "Contratar servicio",
+    "steps": {
+      "information": "Información",
+      "review": "Revisar pedido y pagar"
+    },
+    "serviceName": "Nombre del servicio",
+    "domain": "Dominio",
+    "autoRenew": "Renovación automática",
+    "orderSummary": "Resumen del pedido",
+    "placeOrder": "Realizar pedido",
+    "processing": "Procesando...",
+    "success": "¡Pago exitoso!",
+    "successDesc": "Tu servicio ha sido activado"
+  }
+}
