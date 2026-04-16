@@ -4,6 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -937,339 +939,431 @@ const AdminInvoicesPage = () => {
 
       {/* Create/Edit Sheet */}
       <Sheet open={isSheetOpen} onOpenChange={(open) => { if (!open) closeSheet(); }}>
-        <SheetContent side="right" className="w-full sm:max-w-2xl p-0 flex flex-col">
-          <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
-            <SheetTitle className="text-xl font-semibold flex items-center gap-2">
-              <Receipt className="h-5 w-5 text-primary" />
-              {isEditMode ? 'Editar Factura' : 'Nueva Factura'}
-            </SheetTitle>
-            <SheetDescription>
-              {isEditMode
-                ? 'Modifica los datos de la factura. El número de factura se conserva.'
-                : 'Completa la información. El número de factura se genera automáticamente.'}
-            </SheetDescription>
-          </SheetHeader>
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-[780px] p-0 flex flex-col gap-0 [&>button]:top-5 [&>button]:right-5"
+        >
+          {/* ── Header ─────────────────────────────────────────── */}
+          <div className="px-7 pt-6 pb-5 border-b shrink-0 bg-gradient-to-br from-background to-muted/20">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Receipt className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold leading-none">
+                    {isEditMode ? 'Editar Factura' : 'Nueva Factura'}
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {isEditMode
+                      ? `Editando ${editingInvoice?.invoice_number ?? '—'}`
+                      : 'El folio se genera automáticamente'}
+                  </p>
+                </div>
+              </div>
+              {isEditMode && editingInvoice && (
+                <div className="shrink-0 mt-0.5">
+                  {getStatusBadge(editingInvoice.status)}
+                </div>
+              )}
+            </div>
+          </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+          <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+            <div className="flex-1 overflow-y-auto">
+              <div className="px-7 py-6 space-y-7">
 
-              {/* ── Usuario ─────────────────────────────────── */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-1.5">
-                  <User className="h-3.5 w-3.5" /> Usuario a facturar *
-                </Label>
+                {/* ══ SECCIÓN 1: Destinatario ══════════════════════ */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">1</div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Destinatario</h3>
+                  </div>
 
-                {/* Combobox de usuarios */}
-                <div className="relative" ref={userDropdownRef}>
-                  {selectedUser ? (
-                    <div className={`flex items-center justify-between h-11 px-3 rounded-md border bg-muted/30 ${formErrors.user_id ? 'border-red-500' : 'border-input'}`}>
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <span className="text-xs font-semibold text-primary">
-                            {(selectedUser.first_name?.[0] ?? selectedUser.name?.[0] ?? '?').toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {selectedUser.first_name} {selectedUser.last_name}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">{selectedUser.email}</p>
-                        </div>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 shrink-0"
-                        onClick={() => {
-                          setSelectedUser(null);
-                          setFormData(prev => ({ ...prev, user_id: '' }));
-                          setUserSearch('');
-                          setUserDropdownOpen(true);
-                          setTimeout(() => userSearchRef.current?.focus(), 50);
-                        }}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className={`relative flex items-center h-11 rounded-md border bg-background ${formErrors.user_id ? 'border-red-500' : 'border-input'} focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-0`}>
-                      <Search className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
-                      <input
-                        ref={userSearchRef}
-                        type="text"
-                        value={userSearch}
-                        placeholder="Buscar por nombre o correo..."
-                        className="h-full w-full bg-transparent pl-9 pr-3 text-sm outline-none placeholder:text-muted-foreground"
-                        onChange={(e) => {
-                          setUserSearch(e.target.value);
-                          setUserDropdownOpen(true);
-                          fetchUsers(e.target.value);
-                        }}
-                        onFocus={() => {
-                          setUserDropdownOpen(true);
-                          if (!users.length) fetchUsers('');
-                        }}
-                        onBlur={() => setTimeout(() => setUserDropdownOpen(false), 150)}
-                      />
-                      {usersLoading && (
-                        <Loader2 className="absolute right-3 h-4 w-4 animate-spin text-muted-foreground" />
-                      )}
-                    </div>
-                  )}
-
-                  {/* Dropdown de resultados */}
-                  {userDropdownOpen && !selectedUser && (
-                    <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md max-h-52 overflow-y-auto">
-                      {usersLoading ? (
-                        <div className="flex items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground">
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Buscando...
-                        </div>
-                      ) : users.length === 0 ? (
-                        <p className="px-3 py-2.5 text-sm text-muted-foreground">Sin resultados</p>
-                      ) : (
-                        users.map(user => (
-                          <button
-                            key={user.id}
-                            type="button"
-                            className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-accent text-left transition-colors"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              setSelectedUser(user);
-                              setFormData(prev => ({ ...prev, user_id: user.id }));
-                              setUserSearch(`${user.first_name ?? ''} ${user.last_name ?? ''}`.trim());
-                              setUserDropdownOpen(false);
-                              if (formErrors.user_id) setFormErrors(prev => ({ ...prev, user_id: null }));
-                            }}
-                          >
-                            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                              <span className="text-xs font-semibold text-primary">
-                                {(user.first_name?.[0] ?? user.name?.[0] ?? '?').toUpperCase()}
+                  <div className="pl-7 space-y-2">
+                    <Label className="text-sm font-medium">Usuario a facturar *</Label>
+                    <div className="relative" ref={userDropdownRef}>
+                      {selectedUser ? (
+                        <div className={`flex items-center justify-between px-4 py-3 rounded-xl border-2 bg-primary/5 transition-colors ${formErrors.user_id ? 'border-red-400' : 'border-primary/20'}`}>
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="h-9 w-9 rounded-full bg-primary/15 flex items-center justify-center shrink-0 border border-primary/20">
+                              <span className="text-sm font-bold text-primary">
+                                {(selectedUser.first_name?.[0] ?? selectedUser.name?.[0] ?? '?').toUpperCase()}
                               </span>
                             </div>
                             <div className="min-w-0">
-                              <p className="text-sm font-medium truncate">{user.first_name} {user.last_name}</p>
-                              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                              <p className="text-sm font-semibold leading-tight truncate">
+                                {selectedUser.first_name} {selectedUser.last_name}
+                              </p>
+                              <p className="text-xs text-muted-foreground truncate mt-0.5">{selectedUser.email}</p>
                             </div>
-                          </button>
-                        ))
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 shrink-0 text-muted-foreground hover:text-foreground"
+                            onClick={() => {
+                              setSelectedUser(null);
+                              setFormData(prev => ({ ...prev, user_id: '' }));
+                              setUserSearch('');
+                              setUserDropdownOpen(true);
+                              setTimeout(() => userSearchRef.current?.focus(), 50);
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className={`relative flex items-center h-11 rounded-xl border-2 bg-background transition-colors ${formErrors.user_id ? 'border-red-400' : 'border-input'} focus-within:border-primary`}>
+                          <Search className="absolute left-3.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                          <input
+                            ref={userSearchRef}
+                            type="text"
+                            value={userSearch}
+                            placeholder="Buscar usuario por nombre o correo…"
+                            className="h-full w-full bg-transparent pl-10 pr-4 text-sm outline-none placeholder:text-muted-foreground"
+                            onChange={(e) => {
+                              setUserSearch(e.target.value);
+                              setUserDropdownOpen(true);
+                              fetchUsers(e.target.value);
+                            }}
+                            onFocus={() => {
+                              setUserDropdownOpen(true);
+                              if (!users.length) fetchUsers('');
+                            }}
+                            onBlur={() => setTimeout(() => setUserDropdownOpen(false), 150)}
+                          />
+                          {usersLoading && (
+                            <Loader2 className="absolute right-3.5 h-4 w-4 animate-spin text-muted-foreground" />
+                          )}
+                        </div>
+                      )}
+
+                      {userDropdownOpen && !selectedUser && (
+                        <div className="absolute z-50 mt-1.5 w-full rounded-xl border bg-popover shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+                          {usersLoading ? (
+                            <div className="flex items-center gap-2.5 px-4 py-3 text-sm text-muted-foreground">
+                              <Loader2 className="h-4 w-4 animate-spin" /> Buscando usuarios…
+                            </div>
+                          ) : users.length === 0 ? (
+                            <div className="px-4 py-3 text-sm text-muted-foreground">Sin resultados</div>
+                          ) : (
+                            users.map(user => (
+                              <button
+                                key={user.id}
+                                type="button"
+                                className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-accent text-left transition-colors"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  setSelectedUser(user);
+                                  setFormData(prev => ({ ...prev, user_id: user.id }));
+                                  setUserSearch(`${user.first_name ?? ''} ${user.last_name ?? ''}`.trim());
+                                  setUserDropdownOpen(false);
+                                  if (formErrors.user_id) setFormErrors(prev => ({ ...prev, user_id: null }));
+                                }}
+                              >
+                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                  <span className="text-xs font-bold text-primary">
+                                    {(user.first_name?.[0] ?? user.name?.[0] ?? '?').toUpperCase()}
+                                  </span>
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium truncate">{user.first_name} {user.last_name}</p>
+                                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                                </div>
+                              </button>
+                            ))
+                          )}
+                        </div>
                       )}
                     </div>
+                    {formErrors.user_id && (
+                      <p className="text-xs text-red-500 flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" /> {formErrors.user_id}
+                      </p>
+                    )}
+                  </div>
+                </section>
+
+                <Separator />
+
+                {/* ══ SECCIÓN 2: Condiciones ════════════════════════ */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">2</div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Condiciones</h3>
+                  </div>
+
+                  <div className="pl-7 grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="due_date" className="text-sm font-medium">Fecha de vencimiento *</Label>
+                      <Input
+                        id="due_date"
+                        type="date"
+                        value={formData.due_date}
+                        onChange={(e) => {
+                          setFormData(prev => ({ ...prev, due_date: e.target.value }));
+                          if (formErrors.due_date) setFormErrors(prev => ({ ...prev, due_date: null }));
+                        }}
+                        className={`h-11 rounded-xl ${formErrors.due_date ? 'border-red-400 focus-visible:ring-red-400' : ''}`}
+                      />
+                      {formErrors.due_date && (
+                        <p className="text-xs text-red-500 flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" /> {formErrors.due_date}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="status" className="text-sm font-medium">Estado inicial</Label>
+                      <Select value={formData.status} onValueChange={(v) => setFormData(prev => ({ ...prev, status: v }))}>
+                        <SelectTrigger className="h-11 rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">📝 Borrador</SelectItem>
+                          <SelectItem value="pending">⏳ Pendiente</SelectItem>
+                          <SelectItem value="sent">📤 Enviada</SelectItem>
+                          <SelectItem value="paid">✅ Pagada</SelectItem>
+                          <SelectItem value="overdue">⚠️ Vencida</SelectItem>
+                          <SelectItem value="cancelled">❌ Cancelada</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="currency" className="text-sm font-medium">Moneda</Label>
+                      <Select value={formData.currency} onValueChange={(v) => setFormData(prev => ({ ...prev, currency: v }))}>
+                        <SelectTrigger className="h-11 rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="MXN">🇲🇽 MXN — Peso Mexicano</SelectItem>
+                          <SelectItem value="USD">🇺🇸 USD — Dólar</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="tax_rate" className="text-sm font-medium">
+                        Tasa IVA
+                        <span className="ml-1.5 text-xs text-muted-foreground font-normal">(México 16% por defecto)</span>
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="tax_rate"
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          value={formData.tax_rate}
+                          onChange={(e) => setFormData(prev => ({ ...prev, tax_rate: e.target.value }))}
+                          className="h-11 rounded-xl pr-9"
+                          placeholder="16"
+                        />
+                        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">%</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <Separator />
+
+                {/* ══ SECCIÓN 3: Conceptos ═════════════════════════ */}
+                <section className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">3</div>
+                      <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Conceptos / Partidas</h3>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addItem}
+                      className="h-8 text-xs gap-1.5 rounded-lg"
+                    >
+                      <PlusCircle className="h-3.5 w-3.5" /> Agregar concepto
+                    </Button>
+                  </div>
+
+                  {formErrors.items && (
+                    <p className="text-xs text-red-500 pl-7 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" /> {formErrors.items}
+                    </p>
                   )}
-                </div>
-                {formErrors.user_id && (
-                  <p className="text-xs text-red-500">{formErrors.user_id}</p>
-                )}
-              </div>
 
-              {/* ── Detalles generales ──────────────────────── */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="due_date" className="text-sm font-medium">Fecha de Vencimiento *</Label>
-                  <Input
-                    id="due_date"
-                    type="date"
-                    value={formData.due_date}
-                    onChange={(e) => {
-                      setFormData(prev => ({ ...prev, due_date: e.target.value }));
-                      if (formErrors.due_date) setFormErrors(prev => ({ ...prev, due_date: null }));
-                    }}
-                    className={`h-11 ${formErrors.due_date ? 'border-red-500' : ''}`}
-                  />
-                  {formErrors.due_date && <p className="text-xs text-red-500">{formErrors.due_date}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="status" className="text-sm font-medium">Estado</Label>
-                  <Select value={formData.status} onValueChange={(v) => setFormData(prev => ({ ...prev, status: v }))}>
-                    <SelectTrigger className="h-11">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Borrador</SelectItem>
-                      <SelectItem value="pending">Pendiente</SelectItem>
-                      <SelectItem value="sent">Enviada</SelectItem>
-                      <SelectItem value="paid">Pagada</SelectItem>
-                      <SelectItem value="overdue">Vencida</SelectItem>
-                      <SelectItem value="cancelled">Cancelada</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="currency" className="text-sm font-medium">Moneda</Label>
-                  <Select value={formData.currency} onValueChange={(v) => setFormData(prev => ({ ...prev, currency: v }))}>
-                    <SelectTrigger className="h-11">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="MXN">MXN — Peso Mexicano</SelectItem>
-                      <SelectItem value="USD">USD — Dólar</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="tax_rate" className="text-sm font-medium">Tasa IVA (%)</Label>
-                  <div className="relative">
-                    <Input
-                      id="tax_rate"
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      value={formData.tax_rate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, tax_rate: e.target.value }))}
-                      className="h-11 pr-8"
-                      placeholder="16"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">IVA México: 16%</p>
-                </div>
-              </div>
-
-              {/* ── Conceptos / Partidas ─────────────────────── */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium flex items-center gap-1.5">
-                    <Package className="h-3.5 w-3.5" /> Conceptos / Partidas *
-                  </Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addItem}
-                    className="h-7 text-xs gap-1"
-                  >
-                    <PlusCircle className="h-3.5 w-3.5" /> Agregar
-                  </Button>
-                </div>
-
-                {formErrors.items && (
-                  <p className="text-xs text-red-500">{formErrors.items}</p>
-                )}
-
-                <div className="rounded-lg border overflow-hidden">
-                  {/* Encabezado tabla */}
-                  <div className="grid grid-cols-[1fr_80px_110px_90px_32px] gap-2 px-3 py-2 bg-muted/50 text-xs font-medium text-muted-foreground">
-                    <span>Descripción</span>
-                    <span className="text-center">Cant.</span>
-                    <span className="text-right">Precio Unit.</span>
-                    <span className="text-right">Subtotal</span>
-                    <span />
-                  </div>
-
-                  {/* Filas de items */}
-                  <div className="divide-y">
+                  <div className="pl-7 space-y-3">
                     {formData.items.map((item, idx) => {
                       const itemErr = formErrors.itemErrors?.[idx];
                       const lineTotal = (parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0);
                       return (
-                        <div key={idx} className="px-3 py-2 space-y-1">
-                          <div className="grid grid-cols-[1fr_80px_110px_90px_32px] gap-2 items-center">
+                        <div
+                          key={idx}
+                          className={`rounded-xl border-2 p-4 space-y-3 transition-colors ${itemErr ? 'border-red-300 bg-red-50/30 dark:bg-red-950/10' : 'border-border bg-muted/20 hover:border-muted-foreground/25'}`}
+                        >
+                          {/* Fila cabecera del item */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                              Concepto #{idx + 1}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg"
+                              disabled={formData.items.length === 1}
+                              onClick={() => removeItem(idx)}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+
+                          {/* Descripción — fila completa */}
+                          <div className="space-y-1.5">
+                            <Label className="text-xs text-muted-foreground">Descripción *</Label>
                             <Input
                               value={item.description}
                               onChange={(e) => {
                                 updateItem(idx, 'description', e.target.value);
                                 if (formErrors.itemErrors) setFormErrors(prev => ({ ...prev, itemErrors: null }));
                               }}
-                              placeholder="Ej. Plan Hosting Pro — Mensual"
-                              className={`h-9 text-sm ${itemErr?.description ? 'border-red-400' : ''}`}
+                              placeholder="Ej. Plan Hosting Pro — Mensual (mayo 2026)"
+                              className={`h-10 rounded-lg text-sm ${itemErr?.description ? 'border-red-400' : ''}`}
                             />
-                            <Input
-                              type="number"
-                              min="0.01"
-                              step="0.01"
-                              value={item.quantity}
-                              onChange={(e) => updateItem(idx, 'quantity', e.target.value)}
-                              className={`h-9 text-sm text-center ${itemErr?.quantity ? 'border-red-400' : ''}`}
-                            />
-                            <div className="relative">
-                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                            {itemErr?.description && (
+                              <p className="text-xs text-red-500">{itemErr.description}</p>
+                            )}
+                          </div>
+
+                          {/* Cantidad + Precio + Subtotal */}
+                          <div className="grid grid-cols-3 gap-3 items-end">
+                            <div className="space-y-1.5">
+                              <Label className="text-xs text-muted-foreground">Cantidad *</Label>
                               <Input
                                 type="number"
                                 min="0.01"
                                 step="0.01"
-                                value={item.unit_price}
-                                onChange={(e) => updateItem(idx, 'unit_price', e.target.value)}
-                                className={`h-9 text-sm pl-6 text-right ${itemErr?.unit_price ? 'border-red-400' : ''}`}
-                                placeholder="0.00"
+                                value={item.quantity}
+                                onChange={(e) => updateItem(idx, 'quantity', e.target.value)}
+                                className={`h-10 rounded-lg text-sm text-center ${itemErr?.quantity ? 'border-red-400' : ''}`}
+                                placeholder="1"
                               />
+                              {itemErr?.quantity && (
+                                <p className="text-xs text-red-500">{itemErr.quantity}</p>
+                              )}
                             </div>
-                            <p className="text-sm font-medium text-right tabular-nums">
-                              {lineTotal > 0 ? formatMXN(lineTotal) : '—'}
-                            </p>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-red-500"
-                              disabled={formData.items.length === 1}
-                              onClick={() => removeItem(idx)}
-                            >
-                              <MinusCircle className="h-3.5 w-3.5" />
-                            </Button>
+
+                            <div className="space-y-1.5">
+                              <Label className="text-xs text-muted-foreground">Precio unitario *</Label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">$</span>
+                                <Input
+                                  type="number"
+                                  min="0.01"
+                                  step="0.01"
+                                  value={item.unit_price}
+                                  onChange={(e) => updateItem(idx, 'unit_price', e.target.value)}
+                                  className={`h-10 rounded-lg text-sm pl-6 ${itemErr?.unit_price ? 'border-red-400' : ''}`}
+                                  placeholder="0.00"
+                                />
+                              </div>
+                              {itemErr?.unit_price && (
+                                <p className="text-xs text-red-500">{itemErr.unit_price}</p>
+                              )}
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <Label className="text-xs text-muted-foreground">Subtotal</Label>
+                              <div className="h-10 rounded-lg border bg-muted/40 px-3 flex items-center justify-end">
+                                <span className="text-sm font-semibold tabular-nums text-foreground">
+                                  {lineTotal > 0 ? formatMXN(lineTotal) : <span className="text-muted-foreground font-normal">—</span>}
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          {(itemErr?.description || itemErr?.quantity || itemErr?.unit_price) && (
-                            <p className="text-xs text-red-500 pl-1">
-                              {itemErr.description || itemErr.quantity || itemErr.unit_price}
-                            </p>
-                          )}
                         </div>
                       );
                     })}
-                  </div>
-                </div>
 
-                {/* Totales */}
-                <div className="rounded-lg border bg-muted/20 px-4 py-3 space-y-1.5">
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Subtotal</span>
-                    <span className="tabular-nums font-medium text-foreground">{formatMXN(totals.subtotal)}</span>
+                    {/* ── Resumen de totales ─────────────────────── */}
+                    <div className="rounded-xl border-2 border-dashed border-muted-foreground/20 bg-muted/10 overflow-hidden">
+                      <div className="px-5 py-4 space-y-2.5">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Subtotal</span>
+                          <span className="tabular-nums font-medium">{formatMXN(totals.subtotal)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground flex items-center gap-1.5">
+                            <Calculator className="h-3.5 w-3.5" />
+                            IVA ({formData.tax_rate || 0}%)
+                          </span>
+                          <span className="tabular-nums font-medium">{formatMXN(totals.tax)}</span>
+                        </div>
+                      </div>
+                      <div className="px-5 py-3.5 bg-primary/8 border-t flex items-center justify-between">
+                        <span className="text-sm font-bold">Total a pagar</span>
+                        <span className="text-lg font-bold tabular-nums text-primary">{formatMXN(totals.total)}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Calculator className="h-3 w-3" />
-                      IVA ({formData.tax_rate || 0}%)
-                    </span>
-                    <span className="tabular-nums font-medium text-foreground">{formatMXN(totals.tax)}</span>
+                </section>
+
+                <Separator />
+
+                {/* ══ SECCIÓN 4: Notas ═════════════════════════════ */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-5 w-5 rounded-full bg-muted-foreground/30 text-background flex items-center justify-center text-[10px] font-bold shrink-0">4</div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                      Notas <span className="text-xs normal-case font-normal">(opcional)</span>
+                    </h3>
                   </div>
-                  <div className="flex justify-between text-sm font-semibold border-t pt-1.5 mt-1">
-                    <span>Total</span>
-                    <span className="tabular-nums text-primary">{formatMXN(totals.total)}</span>
+
+                  <div className="pl-7">
+                    <Textarea
+                      id="notes"
+                      value={formData.notes}
+                      onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                      className="rounded-xl text-sm min-h-[80px] resize-none"
+                      placeholder="Instrucciones de pago, número de orden de compra, observaciones para el cliente…"
+                    />
                   </div>
-                </div>
+                </section>
+
               </div>
-
-              {/* ── Notas ────────────────────────────────────── */}
-              <div className="space-y-2">
-                <Label htmlFor="notes" className="text-sm font-medium">Notas</Label>
-                <Input
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  className="h-11"
-                  placeholder="Notas adicionales para el cliente (opcional)"
-                />
-              </div>
-
             </div>{/* end scroll area */}
 
-            {/* Footer */}
-            <div className="px-6 py-4 border-t shrink-0 bg-background">
-              <div className="flex gap-3">
-                <Button type="button" variant="outline" onClick={closeSheet} className="flex-1" disabled={isSubmitting}>
+            {/* ── Footer sticky ──────────────────────────────────── */}
+            <div className="px-7 py-4 border-t shrink-0 bg-background/95 backdrop-blur-sm">
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeSheet}
+                  className="flex-1 h-11 rounded-xl"
+                  disabled={isSubmitting}
+                >
                   Cancelar
                 </Button>
-                <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  className="flex-2 h-11 rounded-xl px-8 font-semibold"
+                  disabled={isSubmitting}
+                >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {isEditMode ? 'Guardando...' : 'Creando...'}
+                      {isEditMode ? 'Guardando cambios…' : 'Creando factura…'}
                     </>
+                  ) : isEditMode ? (
+                    'Guardar cambios'
                   ) : (
-                    isEditMode ? 'Guardar Cambios' : 'Crear Factura'
+                    <>
+                      <Receipt className="h-4 w-4 mr-2" />
+                      Crear factura · {formatMXN(totals.total)}
+                    </>
                   )}
                 </Button>
               </div>
