@@ -305,15 +305,27 @@ export default function CheckoutPage() {
       >
         <button
           onClick={() => navigate("/client/contract-service")}
-          className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition"
+          className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition shrink-0"
           aria-label="Volver"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Checkout</h1>
-          <p className="text-muted-foreground">
-            Finaliza tu contratación de servicio
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-bold text-foreground">Checkout</h1>
+            {plan?.name && (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-foreground/10 text-foreground">
+                {plan.name}
+              </span>
+            )}
+            {billingCycle && billingCycles[billingCycle] && (
+              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-black/8 dark:bg-white/8 text-muted-foreground">
+                {billingCycles[billingCycle].name}
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Paso {step} de 2 · Finaliza tu contratación
           </p>
         </div>
       </motion.div>
@@ -336,9 +348,6 @@ export default function CheckoutPage() {
           >
             {step === 1 ? (
               <div className="space-y-8">
-                <h2 className="text-2xl font-semibold text-foreground">
-                  Información del Servicio
-                </h2>
                 <ServiceFields
                   formData={formData}
                   errors={errors}

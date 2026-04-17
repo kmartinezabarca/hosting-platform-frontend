@@ -1,5 +1,12 @@
 import React from "react";
-import { Check } from "lucide-react";
+import { Check, Zap, RefreshCw, ArrowRight, ChevronLeft } from "lucide-react";
+
+const CYCLE_LABELS = {
+  monthly:     { label: "mes",       badge: "Mensual",     savings: null   },
+  quarterly:   { label: "trimestre", badge: "Trimestral",  savings: "10%"  },
+  semi_annually: { label: "semestre", badge: "Semestral",  savings: "15%"  },
+  annually:    { label: "año",       badge: "Anual",       savings: "20%"  },
+};
 
 export default function OrderSummary({
   plan,
@@ -7,7 +14,7 @@ export default function OrderSummary({
   billingCycles,
   formData,
   setFormData,
-  totals, // { subtotal, iva, total }
+  totals,
   step,
   onNext,
   onBack,
@@ -20,126 +27,162 @@ export default function OrderSummary({
     const price = plan.price?.[billingCycle] ?? 0;
     items.push({
       key: `plan-${plan.id}-${billingCycle}`,
-      name: `${plan.name} (${
-        billingCycles[billingCycle]?.name || billingCycle
-      })`,
+      name: `${plan.name} · ${billingCycles[billingCycle]?.name || billingCycle}`,
       price,
     });
   }
   selectedAddOns.forEach((id) => {
     const add = addons.find((a) => a.uuid === id || a.id === id);
-    if (add) {
-      items.push({ key: `addon-${id}`, name: add.name, price: add.price });
-    }
+    if (add) items.push({ key: `addon-${id}`, name: add.name, price: add.price });
   });
 
+  const cycle = CYCLE_LABELS[billingCycle] || CYCLE_LABELS.monthly;
+
   return (
-    <aside className="sticky top-6 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0f1115] p-6">
-      <h3 className="text-lg font-semibold text-foreground mb-5">
-        Resumen del Pedido
-      </h3>
+    <aside className="sticky top-6 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0f1115] overflow-hidden">
 
-      <div className="space-y-3">
-        {items.map((item) => (
-          <div key={item.key} className="flex justify-between text-sm">
-            <span className="text-muted-foreground">{item.name}</span>
-            <span className="text-foreground font-medium">
-              ${parseFloat(item.price)?.toFixed(2) ?? "0.00"}
-            </span>
+      {/* Plan header */}
+      <div className="px-5 py-4 border-b border-black/8 dark:border-white/8 bg-foreground/[0.025] dark:bg-white/[0.03]">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-foreground/10 dark:bg-white/10 flex items-center justify-center shrink-0">
+            <Zap className="w-4 h-4 text-foreground" />
           </div>
-        ))}
-
-        <hr className="border-black/10 dark:border-white/10 my-2" />
-
-        {/* Desglose con IVA */}
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Subtotal</span>
-          <span className="text-foreground">${totals.subtotal.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">IVA 16%</span>
-          <span className="text-foreground">${totals.iva.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between text-lg font-semibold">
-          <span className="text-foreground">Total</span>
-          <span className="text-foreground">${totals.total.toFixed(2)}/
-          {billingCycle === "monthly"
-            ? "mes"
-            : billingCycle === "quarterly"
-            ? "trimestre"
-            : "año"}</span>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-sm text-foreground leading-tight truncate">
+              {plan.name}
+            </p>
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-foreground/10 text-foreground">
+                {cycle.badge}
+              </span>
+              {cycle.savings && (
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                  −{cycle.savings}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Auto-renovación */}
-      <label className="mt-5 flex items-start gap-3 p-4 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] cursor-pointer">
-        <input
-          type="checkbox"
-          checked={formData.autoRenew}
-          onChange={(e) =>
-            setFormData((p) => ({ ...p, autoRenew: e.target.checked }))
-          }
-          className="mt-1.5 accent-foreground"
-        />
-        <div>
-          <h4 className="font-medium text-foreground">Renovación automática</h4>
-          <p className="text-muted-foreground text-sm">
-            Si activas esta opción, se cargará automáticamente el total (
-            {`$${totals.total.toFixed(2)} MXN`}) en cada ciclo. Puedes
-            desactivarla en cualquier momento desde tu panel.
-          </p>
-        </div>
-      </label>
+      <div className="px-5 py-4 space-y-4">
 
-      <div className="mt-6 pt-5 border-t border-black/10 dark:border-white/10">
-        <h4 className="font-semibold text-foreground mb-3">Incluye:</h4>
+        {/* Line items */}
         <div className="space-y-2">
-          {plan.features.slice(0, 4).map((f, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span className="text-sm text-muted-foreground">{f}</span>
+          {items.map((item) => (
+            <div key={item.key} className="flex justify-between items-start gap-3 text-sm">
+              <span className="text-muted-foreground leading-snug">{item.name}</span>
+              <span className="text-foreground font-medium shrink-0">
+                ${parseFloat(item.price)?.toFixed(2) ?? "0.00"}
+              </span>
             </div>
           ))}
-          {plan.features.length > 4 && (
-            <p className="text-muted-foreground text-sm">
-              +{plan.features.length - 4} características más
-            </p>
-          )}
         </div>
-      </div>
 
-      {/* Único bloque de botones */}
-      {step === 1 ? (
-        <button
-          type="button"
-          onClick={onNext}
-          className="w-full mt-6 rounded-xl px-5 py-3 bg-foreground text-background font-semibold hover:opacity-90 transition"
-        >
-          Continuar al Pago
-        </button>
-      ) : (
-        <div className="mt-6 grid grid-cols-1 gap-3">
+        {/* Totals breakdown */}
+        <div className="border-t border-black/8 dark:border-white/8 pt-3 space-y-1.5">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Subtotal</span>
+            <span className="text-foreground">${totals.subtotal.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">IVA 16%</span>
+            <span className="text-foreground">${totals.iva.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-baseline pt-1">
+            <span className="text-base font-bold text-foreground">Total</span>
+            <div className="text-right">
+              <span className="text-lg font-bold text-foreground">
+                ${totals.total.toFixed(2)}
+              </span>
+              <span className="text-xs text-muted-foreground ml-1">
+                MXN/{cycle.label}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Auto-renewal toggle */}
+        <label className="flex items-center gap-3 p-3.5 rounded-xl border border-black/8 dark:border-white/8 bg-black/[0.015] dark:bg-white/[0.02] cursor-pointer hover:border-foreground/20 transition-colors">
+          <div className="shrink-0 relative">
+            <div
+              className={[
+                "w-9 h-5 rounded-full transition-colors duration-200",
+                formData.autoRenew ? "bg-foreground" : "bg-black/20 dark:bg-white/20",
+              ].join(" ")}
+            >
+              <div
+                className={[
+                  "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200",
+                  formData.autoRenew ? "translate-x-4" : "translate-x-0.5",
+                ].join(" ")}
+              />
+            </div>
+            <input
+              type="checkbox"
+              checked={formData.autoRenew}
+              onChange={(e) =>
+                setFormData((p) => ({ ...p, autoRenew: e.target.checked }))
+              }
+              className="sr-only"
+            />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+              <RefreshCw className="w-3.5 h-3.5 shrink-0" />
+              Renovación automática
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+              ${totals.total.toFixed(2)} MXN cada {cycle.label}
+            </p>
+          </div>
+        </label>
+
+        {/* Plan features */}
+        {plan.features?.length > 0 && (
+          <div className="border-t border-black/8 dark:border-white/8 pt-3 space-y-2">
+            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+              Incluye
+            </p>
+            <div className="space-y-1.5">
+              {plan.features.slice(0, 4).map((f, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <Check className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
+                  <span className="text-xs text-muted-foreground leading-snug">
+                    {typeof f === "string" ? f : f.feature}
+                  </span>
+                </div>
+              ))}
+              {plan.features.length > 4 && (
+                <p className="text-xs text-muted-foreground pl-5">
+                  +{plan.features.length - 4} más incluidas
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* CTA buttons */}
+        {step === 1 ? (
+          <button
+            type="button"
+            onClick={onNext}
+            className="w-full mt-1 rounded-xl px-5 py-3 bg-foreground text-background font-semibold hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2"
+          >
+            Continuar al Pago
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        ) : (
           <button
             type="button"
             onClick={onBack}
-            className="w-full rounded-xl px-5 py-3 border border-black/10 dark:border-white/10 bg-transparent text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition"
+            className="w-full mt-1 rounded-xl px-5 py-3 border border-black/10 dark:border-white/10 text-foreground hover:bg-black/5 dark:hover:bg-white/8 transition font-medium inline-flex items-center justify-center gap-2"
           >
+            <ChevronLeft className="w-4 h-4" />
             Volver
           </button>
-          {/* <button
-            type="button"
-            onClick={() => {
-              if (payRef?.current) payRef.current();
-              else document
-                .querySelector("#stripe-payment-element")
-                ?.scrollIntoView({ behavior: "smooth", block: "center" });
-            }}
-            className="w-full rounded-xl px-5 py-3 bg-foreground text-background font-semibold hover:opacity-90 transition"
-          >
-            {`Pagar $${totals.total.toFixed(2)} MXN`}
-          </button> */}
-        </div>
-      )}
+        )}
+      </div>
     </aside>
   );
 }
