@@ -2,61 +2,44 @@ import React from 'react';
 import { User, Shield, MonitorSmartphone } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-/**
- * Un componente de pestañas de perfil con un diseño de "tarjetas" o "píldoras",
- * utilizando la paleta de colores del portal para una apariencia consistente.
- *
- * @param {object} props
- * @param {'profile' | 'security' | 'devices'} props.activeTab - El ID de la pestaña activa.
- * @param {function} props.onTabChange - Callback que se ejecuta al cambiar de pestaña.
- * @param {React.ReactNode} props.children - El contenido de la pestaña activa que se renderizará.
- */
-const ProfileTabs = ({ activeTab, onTabChange, children }) => {
-  const tabs = [
-    { id: 'profile', label: 'Información Personal', icon: User },
-    { id: 'security', label: 'Seguridad', icon: Shield },
-    { id: 'devices', label: 'Dispositivos', icon: MonitorSmartphone },
-  ];
+const tabs = [
+  { id: 'profile',  label: 'Información',  icon: User              },
+  { id: 'security', label: 'Seguridad',    icon: Shield            },
+  { id: 'devices',  label: 'Dispositivos', icon: MonitorSmartphone },
+];
 
-  return (
-    <div className="space-y-8">
-      <div className="bg-muted/50 p-1.5 rounded-2xl">
-        <div className="flex items-center gap-1.5">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.id;
-            const Icon = tab.icon;
+const ProfileTabs = ({ activeTab, onTabChange, children }) => (
+  <div className="space-y-6">
 
-            return (
-              <button
-                key={tab.id}
-                onClick={() => onTabChange(tab.id)}
-                className={cn(
-                  'relative flex-1 flex items-center justify-center gap-2.5 px-3 py-3 text-sm font-medium rounded-xl transition-colors duration-200',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-muted/50 focus-visible:ring-primary/80',
-                  isActive
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                <Icon
-                  className={cn(
-                    'w-5 h-5 flex-shrink-0',
-                    isActive ? 'text-primary' : ''
-                  )}
-                />
-                <span className="hidden sm:inline">{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div>
-        {children}
+    {/* Tab bar */}
+    <div className="bg-[#F7F8FA] dark:bg-[#0B0C0F] border border-border/60 rounded-2xl p-1.5">
+      <div className="flex items-center gap-1">
+        {tabs.map(({ id, label, icon: Icon }) => {
+          const active = activeTab === id;
+          return (
+            <button
+              key={id}
+              onClick={() => onTabChange(id)}
+              className={cn(
+                'relative flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20',
+                active
+                  ? 'bg-white dark:bg-white/[0.07] text-foreground shadow-[0_1px_4px_rgba(0,0,0,0.08)] dark:shadow-[0_1px_4px_rgba(0,0,0,0.3)] border border-black/[0.06] dark:border-white/[0.08]'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-black/[0.04] dark:hover:bg-white/[0.04]'
+              )}
+              aria-current={active ? 'page' : undefined}
+            >
+              <Icon className={cn('w-4 h-4 shrink-0', active ? 'text-foreground' : 'text-muted-foreground')} />
+              <span className="hidden sm:inline">{label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
-  );
-};
+
+    {/* Content */}
+    <div>{children}</div>
+  </div>
+);
 
 export default ProfileTabs;
