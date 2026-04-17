@@ -58,6 +58,10 @@ const planSchema = z.object({
     billing_cycle_id: z.number(),
     price: z.string()
   })).optional(),
+  specifications: z.array(z.object({
+    key: z.string(),
+    value: z.string()
+  })).optional(),
 });
 
 const AdminServicePlansPage = () => {
