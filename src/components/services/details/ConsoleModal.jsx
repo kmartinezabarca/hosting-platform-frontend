@@ -38,29 +38,29 @@ const ConsoleModal = ({ onClose }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 dark:bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       >
         <motion.div
           initial={{ scale: 0.95, y: 20 }}
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.95, y: -20 }}
-          className="relative flex flex-col bg-black border border-border rounded-2xl shadow-xl w-full max-w-3xl max-h-[80vh]"
+          className="relative flex flex-col bg-background dark:bg-card border border-border dark:border-white/10 rounded-2xl shadow-xl w-full max-w-3xl max-h-[80vh]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-white/10">
-            <h3 className="text-lg font-semibold text-white">Consola del Servidor</h3>
-            <button onClick={onClose} className="p-1 rounded-full text-gray-400 hover:bg-white/10">
+          <div className="flex items-center justify-between p-4 border-b border-border dark:border-white/10">
+            <h3 className="text-lg font-semibold text-foreground dark:text-foreground">Consola del Servidor</h3>
+            <button onClick={onClose} className="p-1 rounded-full text-muted-foreground dark:text-gray-400 hover:bg-muted dark:hover:bg-white/10">
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Contenido de la Consola */}
-          <div className="p-4 flex-1 overflow-y-auto font-mono text-sm">
+          <div className="p-4 flex-1 overflow-y-auto font-mono text-sm text-foreground dark:text-gray-300">
             {lines.map((line, index) => (
-              <div key={index} className={`flex items-start gap-2 ${line.type === 'input' ? 'text-yellow-400' : 'text-gray-300'}`}>
-                <ChevronRight className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <div key={index} className={`flex items-start gap-2 ${line.type === 'input' ? 'text-yellow-500 dark:text-yellow-400' : 'text-foreground dark:text-gray-300'}`}>
+                <ChevronRight className="w-4 h-4 mt-0.5 flex-shrink-0 text-muted-foreground dark:text-gray-400" />
                 <p className="whitespace-pre-wrap break-words">{line.text}</p>
               </div>
             ))}
@@ -68,15 +68,15 @@ const ConsoleModal = ({ onClose }) => {
           </div>
 
           {/* Input de Comandos */}
-          <form onSubmit={handleCommand} className="p-4 border-t border-white/10">
+          <form onSubmit={handleCommand} className="p-4 border-t border-border dark:border-white/10">
             <div className="relative">
-              <ChevronRight className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <ChevronRight className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground dark:text-gray-400" />
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Escribe un comando..."
-                className="w-full bg-white/5 text-white placeholder-gray-500 pl-10 pr-4 py-2 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-muted/50 dark:bg-white/5 text-foreground dark:text-white placeholder-muted-foreground dark:placeholder-gray-500 pl-10 pr-4 py-2 rounded-lg border border-border dark:border-white/20 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-blue-500"
                 autoFocus
               />
             </div>

@@ -24,7 +24,7 @@ const BaseModal = ({ open, onClose, title, headerDescription, children }) => {
   return (
     <div className="fixed inset-0 z-[900] flex items-center justify-center px-4" role="dialog" aria-modal="true">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" onMouseDown={onBackdropClick} />
+      <div className="absolute inset-0 bg-black/50 dark:bg-black/50 backdrop-blur-[2px]" onMouseDown={onBackdropClick} />
 
       {/* Card */}
       <div

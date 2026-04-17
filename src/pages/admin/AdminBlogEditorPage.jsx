@@ -388,11 +388,7 @@ const AdminBlogEditorPage = () => {
                           {cat.name}
                         </SelectItem>
                       ))
-                    ) : (
-                      <SelectItem value="" disabled>
-                        No hay categorías disponibles
-                      </SelectItem>
-                    )}
+                    ) : null}
                   </SelectContent>
                 </Select>
               </div>
@@ -442,7 +438,7 @@ const AdminBlogEditorPage = () => {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white"
+                        className="absolute top-2 right-2 bg-black/50 dark:bg-black/50 hover:bg-black/70 dark:hover:bg-black/70 text-white dark:text-white"
                         onClick={() => {
                           setImagePreview(null);
                           setFormData(prev => ({ ...prev, image: '' }));

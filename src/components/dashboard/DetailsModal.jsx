@@ -310,7 +310,7 @@ const DetailsModal = ({ isOpen, onClose, contentType, stats }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 dark:bg-black/60 backdrop-blur-sm p-4"
           onClick={onClose}
         >
           <motion.div
@@ -325,7 +325,7 @@ const DetailsModal = ({ isOpen, onClose, contentType, stats }) => {
               onClick={onClose}
               className="absolute top-4 right-4 p-2 rounded-full transition-colors hover:bg-accent"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-foreground dark:text-foreground" />
             </button>
             {renderContent()}
           </motion.div>

@@ -77,9 +77,9 @@ const AvatarUploader = ({ onAvatarChange, onClose, isUploading }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-card border border-border rounded-2xl shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="p-6 border-b border-border">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 dark:bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-background dark:bg-[#0f1115] border border-border dark:border-white/10 rounded-2xl shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="p-6 border-b border-border dark:border-white/10">
           <h3 className="text-lg font-semibold">Actualizar Avatar</h3>
           <p className="text-sm text-muted-foreground">Sube y recorta tu nueva imagen de perfil.</p>
         </div>

@@ -30,21 +30,21 @@ const InvoiceDetailModal = ({ show, invoice, onClose, onPay }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-60 p-4"
+        className="fixed inset-0 bg-black/50 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center z-60 p-4"
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-white dark:bg-card border border-border rounded-2xl p-6 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto"
+          className="bg-background dark:bg-card border border-border rounded-2xl p-6 max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-y-auto"
         >
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-semibold text-foreground">Detalles de Factura</h3>
             <button
               onClick={onClose}
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground dark:hover:text-foreground transition-colors"
             >
-              <XCircle className="w-6 h-6" />
+              <XCircle className="w-6 h-6 text-foreground dark:text-foreground" />
             </button>
           </div>
           <div className="space-y-6">
@@ -82,7 +82,7 @@ const InvoiceDetailModal = ({ show, invoice, onClose, onPay }) => {
                   {invoice.items.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
+                      className="flex justify-between items-center p-3 bg-muted dark:bg-gray-800/50 rounded-lg"
                     >
                       <span className="text-foreground">{item.description}</span>
                       <span className="font-semibold text-foreground">

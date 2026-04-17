@@ -282,7 +282,7 @@ const AdminUserRequestsPage = () => {
                               className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition"
                               title="Marcar como resuelta"
                             >
-                              <CheckCircle className="w-4 h-4" />
+                              <CheckCircle className="w-4 h-4 text-green-600 dark:text-emerald-400" />
                             </button>
                           )}
                           <button

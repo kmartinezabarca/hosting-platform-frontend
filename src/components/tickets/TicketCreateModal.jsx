@@ -81,7 +81,7 @@ const TicketCreateModal = ({ open, onClose, form, setForm, onSubmit, creating })
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
-          className="fixed inset-0 z-[60] grid place-items-center bg-black/55 backdrop-blur-[2px] p-4"
+          className="fixed inset-0 z-[60] grid place-items-center bg-black/55 dark:bg-black/55 backdrop-blur-[2px] p-4"
           onClick={onClose}
         >
           <motion.div
@@ -92,21 +92,20 @@ const TicketCreateModal = ({ open, onClose, form, setForm, onSubmit, creating })
             onClick={(e) => e.stopPropagation()}
             className={cx(
               "w-full max-w-2xl rounded-2xl",
-              "bg-white text-foreground shadow-2xl",
-              "border border-black/10",
-              "dark:bg-[#0f1115] dark:border-white/10"
+              "bg-background dark:bg-[#0f1115] text-foreground shadow-2xl",
+              "border border-border dark:border-white/10"
             )}
             role="dialog" aria-modal="true"
           >
             {/* header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-black/10 dark:border-white/10">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-border dark:border-white/10">
               <h2 className="text-xl font-semibold leading-none">Crear Nuevo Ticket de Soporte</h2>
               <button
                 onClick={onClose}
-                className="rounded-md p-2 text-muted-foreground hover:bg-black/5 dark:hover:bg-white/10"
+                className="rounded-md p-2 text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10"
                 aria-label="Cerrar"
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5 text-foreground dark:text-foreground" />
               </button>
             </div>
 
@@ -128,10 +127,10 @@ const TicketCreateModal = ({ open, onClose, form, setForm, onSubmit, creating })
                   aria-describedby={errors.subject ? "subject-error" : undefined}
                   className={cx(
                     "w-full h-11 rounded-xl px-3",
-                    "bg-white text-foreground border placeholder:text-black/45",
-                    errors.subject ? "border-rose-400 focus:ring-rose-400/30" : "border-black/10 focus:ring-primary/40 focus:border-primary/50",
+                    "bg-background dark:bg-[#0b0e14] text-foreground border border-border",
+                    errors.subject ? "border-rose-400 focus:ring-rose-400/30" : "focus:ring-primary/40 focus:border-primary/50",
                     "focus:outline-none focus:ring-2",
-                    "dark:bg-[#0b0e14] dark:border-white/10 dark:placeholder:text-white/50",
+                    "dark:border-white/10 dark:placeholder:text-white/50",
                     errors.subject && "dark:border-rose-400"
                   )}
                 />
@@ -158,10 +157,10 @@ const TicketCreateModal = ({ open, onClose, form, setForm, onSubmit, creating })
                       aria-describedby={errors.priority ? "priority-error" : undefined}
                       className={cx(
                         "w-full h-11 rounded-xl pl-10 pr-9 appearance-none",
-                        "bg-white text-foreground border",
-                        errors.priority ? "border-rose-400 focus:ring-rose-400/30" : "border-black/10 focus:ring-primary/40 focus:border-primary/50",
+                        "bg-background dark:bg-[#0b0e14] text-foreground border border-border",
+                        errors.priority ? "border-rose-400 focus:ring-rose-400/30" : "focus:ring-primary/40 focus:border-primary/50",
                         "focus:outline-none focus:ring-2",
-                        "dark:bg-[#0b0e14] dark:border-white/10",
+                        "dark:border-white/10",
                         errors.priority && "dark:border-rose-400"
                       )}
                     >
@@ -169,7 +168,7 @@ const TicketCreateModal = ({ open, onClose, form, setForm, onSubmit, creating })
                         <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
                     </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground dark:text-muted-foreground" />
                   </div>
                   {errors.priority && (
                     <p id="priority-error" role="alert" className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-rose-600 dark:text-rose-400">
@@ -192,10 +191,10 @@ const TicketCreateModal = ({ open, onClose, form, setForm, onSubmit, creating })
                       aria-describedby={errors.category ? "category-error" : undefined}
                       className={cx(
                         "w-full h-11 rounded-xl pl-10 pr-9 appearance-none",
-                        "bg-white text-foreground border",
-                        errors.category ? "border-rose-400 focus:ring-rose-400/30" : "border-black/10 focus:ring-primary/40 focus:border-primary/50",
+                        "bg-background dark:bg-[#0b0e14] text-foreground border border-border",
+                        errors.category ? "border-rose-400 focus:ring-rose-400/30" : "focus:ring-primary/40 focus:border-primary/50",
                         "focus:outline-none focus:ring-2",
-                        "dark:bg-[#0b0e14] dark:border-white/10",
+                        "dark:border-white/10",
                         errors.category && "dark:border-rose-400"
                       )}
                     >
@@ -203,7 +202,7 @@ const TicketCreateModal = ({ open, onClose, form, setForm, onSubmit, creating })
                         <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
                     </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground dark:text-muted-foreground" />
                   </div>
                   {errors.category && (
                     <p id="category-error" role="alert" className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-rose-600 dark:text-rose-400">
@@ -230,10 +229,10 @@ const TicketCreateModal = ({ open, onClose, form, setForm, onSubmit, creating })
                   aria-describedby={errors.description ? "description-error" : undefined}
                   className={cx(
                     "w-full min-h-[120px] rounded-xl px-3 py-3 resize-y",
-                    "bg-white text-foreground border placeholder:text-black/45",
-                    errors.description ? "border-rose-400 focus:ring-rose-400/30" : "border-black/10 focus:ring-primary/40 focus:border-primary/50",
+                    "bg-background dark:bg-[#0b0e14] text-foreground border border-border",
+                    errors.description ? "border-rose-400 focus:ring-rose-400/30" : "focus:ring-primary/40 focus:border-primary/50",
                     "focus:outline-none focus:ring-2",
-                    "dark:bg-[#0b0e14] dark:border-white/10 dark:placeholder:text-white/50",
+                    "dark:border-white/10 dark:placeholder:text-white/50",
                     errors.description && "dark:border-rose-400"
                   )}
                 />
@@ -245,7 +244,7 @@ const TicketCreateModal = ({ open, onClose, form, setForm, onSubmit, creating })
                 )}
               </div>
 
-              <div className="h-px bg-black/10 dark:bg-white/10" />
+              <div className="h-px bg-border dark:bg-white/10" />
 
               {/* acciones */}
               <div className="flex items-center justify-end gap-3 pb-1">

@@ -97,11 +97,22 @@ export const useAdminCreateAddOn = (options = {}) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload) => addOnsService.createAddOn(payload),
-    onSuccess: (...args) => {
+    onSuccess: (data, variables, context) => {
       qc.invalidateQueries({ queryKey: ['admin', 'addOns'] });
-      options.onSuccess?.(...args);
+      if (options.onSuccess) {
+        options.onSuccess(data, variables, context);
+      }
     },
-    ...options,
+    onError: (error, variables, context) => {
+      if (options.onError) {
+        options.onError(error, variables, context);
+      }
+    },
+    onSettled: () => {
+      if (options.onSettled) {
+        options.onSettled();
+      }
+    },
   });
 };
 
@@ -109,12 +120,23 @@ export const useAdminUpdateAddOn = (options = {}) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ uuid, data }) => addOnsService.updateAddOn(uuid, data),
-    onSuccess: (data, vars, ctx) => {
+    onSuccess: (data, variables, context) => {
       qc.invalidateQueries({ queryKey: ['admin', 'addOns'] });
-      if (vars?.uuid) qc.invalidateQueries({ queryKey: QK.addOn(vars.uuid) });
-      options.onSuccess?.(data, vars, ctx);
+      if (variables?.uuid) qc.invalidateQueries({ queryKey: QK.addOn(variables.uuid) });
+      if (options.onSuccess) {
+        options.onSuccess(data, variables, context);
+      }
     },
-    ...options,
+    onError: (error, variables, context) => {
+      if (options.onError) {
+        options.onError(error, variables, context);
+      }
+    },
+    onSettled: () => {
+      if (options.onSettled) {
+        options.onSettled();
+      }
+    },
   });
 };
 
@@ -122,11 +144,22 @@ export const useAdminDeleteAddOn = (options = {}) => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (uuid) => addOnsService.deleteAddOn(uuid),
-    onSuccess: (...args) => {
+    onSuccess: (data, variables, context) => {
       qc.invalidateQueries({ queryKey: ['admin', 'addOns'] });
-      options.onSuccess?.(...args);
+      if (options.onSuccess) {
+        options.onSuccess(data, variables, context);
+      }
     },
-    ...options,
+    onError: (error, variables, context) => {
+      if (options.onError) {
+        options.onError(error, variables, context);
+      }
+    },
+    onSettled: () => {
+      if (options.onSettled) {
+        options.onSettled();
+      }
+    },
   });
 };
 

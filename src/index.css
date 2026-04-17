@@ -25,7 +25,7 @@
   --color-card: var(--color-pure-white);
   --color-card-foreground: var(--color-dark-charcoal);
   --color-popover: var(--color-pure-white);
-  --color-popover-foreground: var(--color-dark-charcoal);
+  --color-popover-foreground: 0 0% 13.3%; /* #222222 - Dark Charcoal Gray */
   --color-primary: 220 100% 50%;
   --color-primary-foreground: var(--color-pure-white);
   --color-secondary: var(--color-light-gray);

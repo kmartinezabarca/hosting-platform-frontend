@@ -1,113 +1,173 @@
-// src/pages/admin/AdminAddOnsPage.jsx
-import React, { useState } from 'react';
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import ConfirmationModal from '@/components/modals/ConfirmationModal';
 import {
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  Eye,
-  EyeOff,
-  DollarSign,
-  Package,
-  ChevronDown,
-  Check
+  Plus, Edit, Trash2, Search, Eye, EyeOff, DollarSign, Package, RefreshCw, Sparkles, Filter, X, Loader2
 } from 'lucide-react';
-
-// Hooks React Query (admin)
-import {
-  useAdminAddOns,
-  useAdminServicePlans,
-  useAdminCreateAddOn,
-  useAdminUpdateAddOn,
-  useAdminDeleteAddOn,
-} from '@/hooks/useAdminAddOns';
-
-const menuItemCls =
-  'relative flex w-full cursor-pointer select-none items-center gap-2 rounded-md px-3 py-2 text-sm outline-none hover:bg-accent hover:text-foreground';
-
-const menuContentCls =
-  'min-w-[220px] overflow-hidden rounded-xl border bg-popover p-1 text-popover-foreground shadow-md';
-
-const triggerButtonCls =
-  'inline-flex h-9 items-center justify-between gap-2 rounded-lg border bg-background px-3 text-sm font-medium text-foreground shadow-sm hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40';
-
-const smallIcon = 'h-4 w-4';
-const medIcon = 'h-5 w-5';
+import { useAdminAddOns, useAdminServicePlans, useAdminCreateAddOn, useAdminUpdateAddOn, useAdminDeleteAddOn } from '@/hooks/useAdminAddOns';
+import { toast } from 'sonner';
 
 const AdminAddOnsPage = () => {
-  /* ---------------- UI State ---------------- */
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'active' | 'inactive'
-  const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingAddOn, setEditingAddOn] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, addOn: null });
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     slug: '',
     name: '',
     description: '',
     price: '',
-    currency: 'MXN', // Usaremos DropdownMenu
+    currency: 'MXN',
     is_active: true,
-    metadata: {},
-    service_plans: [],
+    service_plans: []
   });
 
-  /* ---------------- Query Params ---------------- */
   const listParams = {
     search: searchTerm || undefined,
     is_active: statusFilter === 'all' ? undefined : statusFilter === 'active' ? true : false,
-    page,
-    per_page: 20,
+    page: currentPage,
+    per_page: perPage
   };
 
-  /* ---------------- Queries ---------------- */
-  const { data: addOnsData, isLoading: isLoadingAddOns } = useAdminAddOns(listParams, {
-    keepPreviousData: true,
-  });
-
+  const { data: addOnsData, isLoading, refetch, isFetching } = useAdminAddOns(listParams, { keepPreviousData: true });
   const { data: plansData, isLoading: isLoadingPlans } = useAdminServicePlans();
 
-  const addOns = addOnsData?.rows ?? [];
+  const addOns = addOnsData?.rows ?? addOnsData?.data ?? [];
   const pagination = addOnsData?.meta ?? {};
-  const servicePlans = plansData?.rows ?? [];
+  const servicePlans = plansData?.rows ?? plansData?.data ?? [];
 
-  /* ---------------- Mutations ---------------- */
+  React.useEffect(() => {
+    if (addOnsData) {
+      const total = pagination?.total || addOns.length;
+      const lastPage = pagination?.last_page || Math.ceil(total / perPage) || 1;
+      setTotalPages(lastPage);
+    }
+  }, [addOnsData, addOns.length, perPage, pagination]);
+
+  React.useEffect(() => {
+    if (!dataLoaded) {
+      setDataLoaded(true);
+      return;
+    }
+  }, [dataLoaded]);
+
   const createAddOn = useAdminCreateAddOn({
-    onSuccess: () => {
-      resetForm();
-      setIsCreateModalOpen(false);
+    onSuccess: (data, variables) => {
+      toast.success(`Add-on "${variables.name}" creado correctamente`, {
+        description: `El add-on ha sido agregado exitosamente.`,
+      });
+      closeSheet();
+      setCurrentPage(1);
+      setDataLoaded(false);
     },
+    onError: (error, variables) => {
+      const message = error?.response?.data?.message || error?.message || 'Error al crear add-on';
+      toast.error(`Error al crear "${variables?.name || 'add-on'}"`, {
+        description: message,
+      });
+    },
+    onSettled: () => {
+      setIsSubmitting(false);
+    }
   });
 
   const updateAddOn = useAdminUpdateAddOn({
-    onSuccess: () => {
-      resetForm();
-      setIsEditModalOpen(false);
+    onSuccess: (data, variables) => {
+      toast.success(`Add-on "${variables?.data?.name || editingAddOn?.name}" actualizado`, {
+        description: 'Los cambios han sido guardados exitosamente.',
+      });
+      closeSheet();
+      setCurrentPage(1);
+      setDataLoaded(false);
     },
+    onError: (error, variables) => {
+      const message = error?.response?.data?.message || error?.message || 'Error al actualizar add-on';
+      toast.error(`Error al actualizar "${variables?.data?.name || editingAddOn?.name || 'add-on'}"`, {
+        description: message,
+      });
+    },
+    onSettled: () => {
+      setIsSubmitting(false);
+    }
   });
 
-  const deleteAddOn = useAdminDeleteAddOn();
+  const deleteAddOn = useAdminDeleteAddOn({
+    onSuccess: () => {
+      toast.success(`Add-on eliminado`, {
+        description: `El add-on ha sido eliminado correctamente.`,
+      });
+      setConfirmModal({ isOpen: false, addOn: null });
+      setCurrentPage(1);
+      setDataLoaded(false);
+    },
+    onError: (error) => {
+      const message = error?.response?.data?.message || error?.message || 'Error al eliminar add-on';
+      toast.error('Error al eliminar add-on', {
+        description: message,
+      });
+    },
+    onSettled: () => {
+      setIsActionLoading(false);
+    }
+  });
 
-  /* ---------------- Handlers ---------------- */
+  const [formErrors, setFormErrors] = useState({});
+
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!formData.name || formData.name.trim() === '') {
+      errors.name = 'El nombre es requerido';
+    } else if (formData.name.length < 2) {
+      errors.name = 'El nombre debe tener al menos 2 caracteres';
+    }
+    
+    if (!formData.slug || formData.slug.trim() === '') {
+      errors.slug = 'El slug es requerido';
+    } else if (!/^[a-z0-9-]+$/.test(formData.slug)) {
+      errors.slug = 'El slug solo puede contener letras minúsculas, números y guiones';
+    }
+    
+    if (!formData.price || formData.price === '') {
+      errors.price = 'El precio es requerido';
+    } else if (isNaN(parseFloat(formData.price)) || parseFloat(formData.price) < 0) {
+      errors.price = 'El precio debe ser un número válido mayor o igual a 0';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    const payload = {
-      ...formData,
-      price: parseFloat(formData.price || 0),
-    };
+    
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsSubmitting(true);
+    const payload = { ...formData, price: parseFloat(formData.price || 0) };
+    
     if (editingAddOn) {
       updateAddOn.mutate({ uuid: editingAddOn.uuid, data: payload });
     } else {
@@ -115,9 +175,15 @@ const AdminAddOnsPage = () => {
     }
   };
 
-  const handleDelete = (uuid) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este add-on?')) return;
-    deleteAddOn.mutate(uuid);
+  const handleDelete = (addOn) => {
+    setConfirmModal({ isOpen: true, addOn });
+  };
+
+  const handleConfirmDelete = () => {
+    if (confirmModal.addOn) {
+      setIsActionLoading(true);
+      deleteAddOn.mutate(confirmModal.addOn.uuid);
+    }
   };
 
   const resetForm = () => {
@@ -128,13 +194,18 @@ const AdminAddOnsPage = () => {
       price: '',
       currency: 'MXN',
       is_active: true,
-      metadata: {},
-      service_plans: [],
+      service_plans: []
     });
+    setFormErrors({});
     setEditingAddOn(null);
   };
 
-  const openEditModal = (addOn) => {
+  const openCreateSheet = () => {
+    resetForm();
+    setIsSheetOpen(true);
+  };
+
+  const openEditSheet = (addOn) => {
     setEditingAddOn(addOn);
     setFormData({
       slug: addOn.slug ?? '',
@@ -143,10 +214,18 @@ const AdminAddOnsPage = () => {
       price: (addOn.price ?? '').toString(),
       currency: addOn.currency ?? 'MXN',
       is_active: Boolean(addOn.is_active),
-      metadata: addOn.metadata ?? {},
-      service_plans: addOn.plans?.map((p) => p.id) ?? [],
+      service_plans: addOn.plans?.map((p) => p.id) ?? []
     });
-    setIsEditModalOpen(true);
+    setIsSheetOpen(true);
+  };
+
+  const closeSheet = () => {
+    setIsSheetOpen(false);
+    resetForm();
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal({ isOpen: false, addOn: null });
   };
 
   const handleServicePlanChange = (planId, checked) => {
@@ -154,408 +233,496 @@ const AdminAddOnsPage = () => {
       ...prev,
       service_plans: checked
         ? [...prev.service_plans, planId]
-        : prev.service_plans.filter((id) => id !== planId),
+        : prev.service_plans.filter((id) => id !== planId)
     }));
   };
 
-  /* ---------------- Menús (DropdownMenu) ---------------- */
-  const StatusDropdown = () => {
-    const label =
-      statusFilter === 'all' ? 'Todos los estados' : statusFilter === 'active' ? 'Activos' : 'Inactivos';
-
-    return (
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
-          <button type="button" className={`${triggerButtonCls} w-48`}>
-            <span className="truncate">{label}</span>
-            <ChevronDown className={smallIcon} />
-          </button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content align="start" sideOffset={8} className={menuContentCls}>
-            {[
-              { value: 'all', label: 'Todos los estados' },
-              { value: 'active', label: 'Activos' },
-              { value: 'inactive', label: 'Inactivos' },
-            ].map((opt) => (
-              <DropdownMenu.Item
-                key={opt.value}
-                className={menuItemCls}
-                onSelect={() => {
-                  setStatusFilter(opt.value);
-                  setPage(1);
-                }}
-              >
-                <span className="flex-1">{opt.label}</span>
-                {statusFilter === opt.value && <Check className={smallIcon} />}
-              </DropdownMenu.Item>
-            ))}
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
-    );
+  const stats = {
+    total: pagination?.total || addOns.length,
+    activos: addOns.filter((a) => a.is_active).length,
+    avg: addOns.length > 0 ? addOns.reduce((sum, a) => sum + (parseFloat(a.price) || 0), 0) / addOns.length : 0
   };
 
-  const CurrencyDropdown = () => {
-    const currencies = [
-      { value: 'MXN', label: 'MXN - Peso Mexicano' },
-      { value: 'USD', label: 'USD - Dólar Americano' },
-      { value: 'EUR', label: 'EUR - Euro' },
-    ];
+  const getActivePercentage = () => stats.total === 0 ? 0 : (stats.activos / stats.total) * 100;
 
-    const current = currencies.find((c) => c.value === formData.currency)?.label ?? formData.currency;
+  const activeFilters = [statusFilter !== 'all'].filter(Boolean).length;
 
-    return (
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
-          <button type="button" className={`${triggerButtonCls} w-full justify-between`}>
-            <span className="truncate">{current}</span>
-            <ChevronDown className={smallIcon} />
-          </button>
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content align="start" sideOffset={8} className={menuContentCls}>
-            {currencies.map((c) => (
-              <DropdownMenu.Item
-                key={c.value}
-                className={menuItemCls}
-                onSelect={() => setFormData((p) => ({ ...p, currency: c.value }))}
-              >
-                <span className="flex-1">{c.label}</span>
-                {formData.currency === c.value && <Check className={smallIcon} />}
-              </DropdownMenu.Item>
-            ))}
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
-    );
-  };
+  const isLoadingState = isLoading || isFetching;
 
-  /* ---------------- Form ---------------- */
-  const AddOnForm = () => (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="slug">Slug</Label>
-          <Input
-            id="slug"
-            value={formData.slug}
-            onChange={(e) => setFormData((p) => ({ ...p, slug: e.target.value }))}
-            placeholder="ssl-certificate"
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="name">Nombre</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
-            placeholder="Certificado SSL"
-            required
-          />
-        </div>
-      </div>
-
-      <div>
-        <Label htmlFor="description">Descripción</Label>
-        <Textarea
-          id="description"
-          value={formData.description}
-          onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
-          placeholder="Descripción del add-on..."
-          rows={3}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="price">Precio</Label>
-          <Input
-            id="price"
-            type="number"
-            step="0.01"
-            value={formData.price}
-            onChange={(e) => setFormData((p) => ({ ...p, price: e.target.value }))}
-            placeholder="29.99"
-            required
-          />
-        </div>
-        <div>
-          <Label>Moneda</Label>
-          <CurrencyDropdown />
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Switch
-          id="is_active"
-          checked={formData.is_active}
-          onCheckedChange={(checked) => setFormData((p) => ({ ...p, is_active: checked }))}
-        />
-        <Label htmlFor="is_active">Add-on Activo</Label>
-      </div>
-
-      <div>
-        <Label className="text-base font-medium">Planes de Servicio Compatibles</Label>
-        <p className="text-sm text-muted-foreground mb-4">
-          Selecciona los planes de servicio que pueden usar este add-on
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto rounded-lg border p-4">
-          {isLoadingPlans ? (
-            <div className="col-span-2 text-sm text-muted-foreground">Cargando planes...</div>
-          ) : servicePlans.length ? (
-            servicePlans.map((plan) => (
-              <div key={plan.id} className="flex items-center gap-2">
-                <Checkbox
-                  id={`plan-${plan.id}`}
-                  checked={formData.service_plans.includes(plan.id)}
-                  onCheckedChange={(checked) => handleServicePlanChange(plan.id, checked)}
-                />
-                <Label htmlFor={`plan-${plan.id}`} className="text-sm">
-                  {plan.name}
-                </Label>
-              </div>
-            ))
-          ) : (
-            <div className="col-span-2 text-sm text-muted-foreground">No hay planes disponibles.</div>
-          )}
-        </div>
-      </div>
-
-      <div className="flex justify-end gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => {
-            resetForm();
-            setIsCreateModalOpen(false);
-            setIsEditModalOpen(false);
-          }}
-        >
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={createAddOn.isPending || updateAddOn.isPending}>
-          {editingAddOn ? 'Actualizar' : 'Crear'} Add-on
-        </Button>
-      </div>
-    </form>
-  );
-
-  /* ---------------- Loading ---------------- */
-  if (isLoadingAddOns) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex h-64 items-center justify-center text-lg">Cargando add-ons...</div>
-      </div>
-    );
-  }
-
-  /* ---------------- Stats ---------------- */
-  const activos = addOns.filter((a) => a.is_active).length;
-  const avg =
-    addOns.length > 0
-      ? addOns.reduce((sum, a) => sum + (parseFloat(a.price) || 0), 0) / addOns.length
-      : 0;
-
-  /* ---------------- Render ---------------- */
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="space-y-6 p-6 max-w-[1600px] mx-auto">
       {/* Header */}
-      <div className="mb-6 flex flex-col-reverse items-start justify-between gap-4 sm:flex-row sm:items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Add-ons</h1>
-          <p className="text-muted-foreground">Gestiona los complementos disponibles para los planes</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Add-ons</h1>
+          <p className="text-sm text-muted-foreground mt-1">{stats.total} add-ons registrados</p>
         </div>
-
-        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-          <DialogTrigger asChild>
-            <Button
-              onClick={() => {
-                resetForm();
-                setIsCreateModalOpen(true);
-              }}
-              className="gap-2"
-            >
-              <Plus className={smallIcon} />
-              Nuevo Add-on
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Crear Nuevo Add-on</DialogTitle>
-            </DialogHeader>
-            <AddOnForm />
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Quick stats */}
-      <div className="mb-6 grid items-stretch gap-4 md:grid-cols-3">
-        <Card className="h-full">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Add-ons</CardTitle>
-            <Package className={`${medIcon} text-muted-foreground`} />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{addOns.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="h-full">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Add-ons Activos</CardTitle>
-            <Eye className={`${medIcon} text-muted-foreground`} />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{activos}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="h-full">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Precio Promedio</CardTitle>
-            <DollarSign className={`${medIcon} text-muted-foreground`} />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">${avg.toFixed(2)}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <div className="mb-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Buscar add-ons…"
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setPage(1);
-            }}
-            className="pl-9"
-          />
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => { setDataLoaded(false); refetch(); }}
+            variant="outline"
+            size="sm"
+            disabled={isLoadingState}
+          >
+            {isLoadingState ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            Actualizar
+          </Button>
+          <Button onClick={openCreateSheet} size="sm" disabled={isLoadingState}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo Add-on
+          </Button>
         </div>
-        <StatusDropdown />
       </div>
 
-      {/* List */}
-      <div className="grid items-stretch gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {addOns.map((addOn) => (
-          <Card key={addOn.id} className="relative h-full">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="min-w-0">
-                  <CardTitle className="flex items-center gap-2">
-                    <span className="truncate">{addOn.name}</span>
-                    <Badge variant={addOn.is_active ? 'default' : 'secondary'}>
-                      {addOn.is_active ? 'Activo' : 'Inactivo'}
-                    </Badge>
-                  </CardTitle>
-                  <CardDescription className="truncate">{addOn.slug}</CardDescription>
-                </div>
-                <div className="mt-1 flex items-center gap-1">
-                  {addOn.is_active ? (
-                    <Eye className="text-green-500 h-4 w-4" />
-                  ) : (
-                    <EyeOff className="text-muted-foreground h-4 w-4" />
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <Card className="bg-gradient-to-br from-slate-100/80 to-slate-50/50 dark:from-slate-800/60 dark:to-slate-800/30 border-slate-200/50 dark:border-slate-700/50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-bold">
-                  ${addOn.price} {addOn.currency}
-                </div>
-                <div className="text-sm text-muted-foreground">Precio mensual</div>
+                <p className="text-xs font-medium text-slate-600 dark:text-slate-300">Total</p>
+                <p className="text-2xl font-semibold mt-1 text-slate-800 dark:text-slate-100">{stats.total}</p>
               </div>
+              <div className="p-2.5 bg-slate-500/15 rounded-xl">
+                <Package className="h-5 w-5 text-slate-600 dark:text-slate-300" />
+              </div>
+            </div>
+            <Progress value={100} className="h-1 mt-3 bg-slate-200/50 dark:bg-slate-700/50" />
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 dark:from-emerald-950/40 dark:to-emerald-950/20 border-emerald-200/50 dark:border-emerald-800/50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Activos</p>
+                <p className="text-2xl font-semibold mt-1 text-emerald-800 dark:text-emerald-100">{stats.activos}</p>
+              </div>
+              <div className="p-2.5 bg-emerald-500/15 rounded-xl">
+                <Eye className="h-5 w-5 text-emerald-600" />
+              </div>
+            </div>
+            <Progress value={getActivePercentage()} className="h-1 mt-3 bg-emerald-200/50 dark:bg-emerald-800/50 [&>div]:bg-emerald-500" />
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-violet-50/80 to-violet-50/30 dark:from-violet-950/40 dark:to-violet-950/20 border-violet-200/50 dark:border-violet-800/50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-violet-700 dark:text-violet-300">Precio Prom.</p>
+                <p className="text-2xl font-semibold mt-1 text-violet-800 dark:text-violet-100">${stats.avg.toFixed(0)}</p>
+              </div>
+              <div className="p-2.5 bg-violet-500/15 rounded-xl">
+                <DollarSign className="h-5 w-5 text-violet-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-              {addOn.description && (
-                <p className="line-clamp-2 text-sm text-muted-foreground">{addOn.description}</p>
-              )}
-
-              {!!addOn.plans?.length && (
-                <div>
-                  <div className="mb-2 text-sm font-medium">Planes compatibles:</div>
-                  <div className="flex flex-wrap gap-1">
-                    {addOn.plans.slice(0, 2).map((plan) => (
-                      <Badge key={plan.id} variant="outline" className="text-xs">
-                        {plan.name}
-                      </Badge>
-                    ))}
-                    {addOn.plans.length > 2 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{addOn.plans.length - 2} más
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => openEditModal(addOn)} className="gap-2">
-                  <Edit className={smallIcon} />
-                  Editar
+      {/* Add-ons Table */}
+      <Card className="bg-card border-border/50">
+        <CardContent className="p-4">
+          {/* Header with search, filters and count */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground dark:text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Buscar add-ons..."
+                  value={searchTerm}
+                  onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                  className="pl-9 h-9 w-48 sm:w-64"
+                />
+              </div>
+              <Button
+                variant={showFilters ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="h-9"
+              >
+                <Filter className="h-4 w-4 mr-1.5" />
+                Filtros
+                {activeFilters > 0 && (
+                  <Badge variant="secondary" className="ml-1.5 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    {activeFilters}
+                  </Badge>
+                )}
+              </Button>
+              {activeFilters > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setStatusFilter('all')}
+                  className="h-9 text-muted-foreground px-2"
+                >
+                  <X className="h-4 w-4" />
                 </Button>
+              )}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">{addOns.length}</span> add-ons
+            </div>
+          </div>
+
+          {/* Filter dropdowns inline */}
+          {showFilters && (
+            <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b">
+              <select
+                value={statusFilter}
+                onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                className="h-8 px-3 text-xs rounded-md border border-input bg-background"
+              >
+                <option value="all">Todos</option>
+                <option value="active">Activos</option>
+                <option value="inactive">Inactivos</option>
+              </select>
+            </div>
+          )}
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Add-on
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Precio
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">
+                    Descripción
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Estado
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {isLoadingState ? (
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <tr key={`skeleton-${index}`} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-10 w-10 rounded-lg" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-40" />
+                            <Skeleton className="h-3 w-24" />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Skeleton className="h-5 w-20" />
+                      </td>
+                      <td className="px-4 py-3 hidden md:table-cell">
+                        <Skeleton className="h-4 w-48" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Skeleton className="h-6 w-16 rounded-full" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-1">
+                          <Skeleton className="h-8 w-8 rounded" />
+                          <Skeleton className="h-8 w-8 rounded" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : addOns.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-12 text-center">
+                      <Package className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40" />
+                      <p className="text-sm text-muted-foreground">No se encontraron add-ons</p>
+                    </td>
+                  </tr>
+                ) : (
+                  addOns.map((addOn) => (
+                    <tr key={addOn.id || addOn.uuid} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                            <Sparkles className="h-5 w-5 text-violet-600" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{addOn.name}</p>
+                            <p className="text-xs text-muted-foreground truncate font-mono">{addOn.slug}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="h-4 w-4 text-emerald-600" />
+                          <span className="font-semibold text-sm">{addOn.price}</span>
+                          <span className="text-xs text-muted-foreground">{addOn.currency}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 hidden md:table-cell">
+                        <p className="text-sm text-muted-foreground truncate max-w-xs">{addOn.description || 'Sin descripción'}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        {addOn.is_active ? (
+                          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                            <Eye className="h-3 w-3 mr-1" />Activo
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-slate-500/10 text-slate-500 border-slate-500/20">
+                            <EyeOff className="h-3 w-3 mr-1" />Inactivo
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-1">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => openEditSheet(addOn)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Editar add-on</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleDelete(addOn)}
+                                disabled={deleteAddOn.isPending}
+                              >
+                                {deleteAddOn.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Eliminar add-on</TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {addOns.length > 0 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t">
+              <div className="text-sm text-muted-foreground">
+                Página <span className="font-medium">{currentPage}</span> de <span className="font-medium">{totalPages}</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleDelete(addOn.uuid)}
-                  className="gap-2 text-red-600 hover:text-red-700"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1 || isLoadingState}
                 >
-                  <Trash2 className={smallIcon} />
-                  Eliminar
+                  Anterior
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "ghost"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        disabled={isLoadingState}
+                        className="h-8 w-8 p-0"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages || isLoadingState}
+                >
+                  Siguiente
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Pagination */}
-      {(pagination?.last_page || 1) > 1 && (
-        <div className="mt-8 flex items-center justify-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => Math.max(1, (p || 1) - 1))}
-            disabled={(page || 1) <= 1}
-          >
-            Anterior
-          </Button>
-          <div className="text-sm text-muted-foreground">
-            Página {pagination?.current_page || page} de {pagination?.last_page}
+      {/* Create/Edit Sheet */}
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent side="bottom" className="max-h-[90vh] p-0">
+          <div className="flex flex-col h-full">
+            <SheetHeader className="px-6 py-4 border-b shrink-0">
+              <SheetTitle className="text-xl font-semibold">
+                {editingAddOn ? 'Editar Add-on' : 'Nuevo Add-on'}
+              </SheetTitle>
+              <SheetDescription>
+                {editingAddOn ? 'Modifica los datos del add-on' : 'Completa la información para crear un nuevo add-on'}
+              </SheetDescription>
+            </SheetHeader>
+
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-sm font-medium">Nombre *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => {
+                        setFormData((p) => ({ ...p, name: e.target.value }));
+                        if (formErrors.name) setFormErrors((prev) => ({ ...prev, name: undefined }));
+                      }}
+                      className={`h-10 ${formErrors.name ? 'border-red-500 focus:border-red-500' : ''}`}
+                      placeholder="SSL Extra"
+                    />
+                    {formErrors.name && (
+                      <p className="text-xs text-red-500 mt-1">{formErrors.name}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="slug" className="text-sm font-medium">Slug *</Label>
+                    <Input
+                      id="slug"
+                      value={formData.slug}
+                      onChange={(e) => {
+                        setFormData((p) => ({ ...p, slug: e.target.value }));
+                        if (formErrors.slug) setFormErrors((prev) => ({ ...prev, slug: undefined }));
+                      }}
+                      className={`h-10 ${formErrors.slug ? 'border-red-500 focus:border-red-500' : ''}`}
+                      placeholder="ssl-extra"
+                    />
+                    {formErrors.slug && (
+                      <p className="text-xs text-red-500 mt-1">{formErrors.slug}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="text-sm font-medium">Descripción</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
+                    rows={2}
+                    className="resize-none"
+                    placeholder="Descripción del add-on..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="price" className="text-sm font-medium">Precio (MXN) *</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      value={formData.price}
+                      onChange={(e) => {
+                        setFormData((p) => ({ ...p, price: e.target.value }));
+                        if (formErrors.price) setFormErrors((prev) => ({ ...prev, price: undefined }));
+                      }}
+                      className={`h-10 ${formErrors.price ? 'border-red-500 focus:border-red-500' : ''}`}
+                      placeholder="99.00"
+                    />
+                    {formErrors.price && (
+                      <p className="text-xs text-red-500 mt-1">{formErrors.price}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Moneda</Label>
+                    <div className="h-10 px-3 flex items-center rounded-md border border-input bg-muted dark:bg-muted text-sm text-foreground dark:text-foreground">
+                      MXN (Peso Mexicano)
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Switch
+                    id="is_active"
+                    checked={formData.is_active}
+                    onCheckedChange={(checked) => setFormData((p) => ({ ...p, is_active: checked }))}
+                  />
+                  <Label htmlFor="is_active" className="text-sm font-medium cursor-pointer">Add-on Activo</Label>
+                </div>
+
+                {servicePlans.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Planes de Servicio</Label>
+                    <div className="space-y-2 max-h-[150px] overflow-y-auto border border-border dark:border-white/10 rounded-lg p-3 bg-background dark:bg-[#0f1115]">
+                      {servicePlans.map((plan) => (
+                        <label key={plan.id} className="flex items-center gap-3 cursor-pointer text-foreground dark:text-foreground">
+                          <input
+                            type="checkbox"
+                            checked={formData.service_plans.includes(plan.id)}
+                            onChange={(e) => handleServicePlanChange(plan.id, e.target.checked)}
+                            className="rounded border-input w-4 h-4 accent-primary"
+                          />
+                          <span className="text-sm">{plan.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="px-6 py-4 border-t shrink-0 bg-background">
+                <div className="flex gap-3">
+                  <Button type="button" variant="outline" onClick={closeSheet} className="flex-1" disabled={isSubmitting}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        {editingAddOn ? 'Guardando...' : 'Creando...'}
+                      </>
+                    ) : (
+                      editingAddOn ? 'Guardar Cambios' : 'Crear Add-on'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </form>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => Math.min(pagination?.last_page || 1, (p || 1) + 1))}
-            disabled={(page || 1) >= (pagination?.last_page || 1)}
-          >
-            Siguiente
-          </Button>
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
 
-      {/* Empty state */}
-      {addOns.length === 0 && (
-        <div className="py-12 text-center">
-          <div className="text-muted-foreground">No se encontraron add-ons</div>
-        </div>
-      )}
-
-      {/* Edit modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Editar Add-on</DialogTitle>
-          </DialogHeader>
-          <AddOnForm />
-        </DialogContent>
-      </Dialog>
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirmModal}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Add-on"
+        confirmText="Eliminar"
+        isConfirming={isActionLoading}
+      >
+        <p>¿Estás seguro de que quieres eliminar el add-on <strong>{confirmModal.addOn?.name}</strong>? Esta acción no se puede deshacer.</p>
+      </ConfirmationModal>
     </div>
   );
 };

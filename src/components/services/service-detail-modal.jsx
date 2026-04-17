@@ -126,7 +126,7 @@ const ServiceDetailModal = ({ service, onClose, ...props }) => {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         /* z-60 no existe en Tailwind → usa valor arbitrario */
-        className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 dark:bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       >
         <motion.div
@@ -136,7 +136,7 @@ const ServiceDetailModal = ({ service, onClose, ...props }) => {
           transition={{ duration: 0.3, ease: "easeOut" }}
           className="
             w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col
-            rounded-2xl bg-white dark:bg-[#101214]
+            rounded-2xl bg-background dark:bg-[#101214]
             border border-black/5 dark:border-white/10
             shadow-2xl
           "

@@ -319,7 +319,7 @@ const BlogEditor = ({ content, onChange }) => {
   };
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-white">
+    <div className="border rounded-lg overflow-hidden bg-background dark:bg-[#101214]">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -343,7 +343,7 @@ const BlogEditor = ({ content, onChange }) => {
         <div className="min-h-[400px] border-r relative overflow-auto">
           {selectedImage && imageControls && (
             <div
-              className="absolute z-50 flex gap-1 p-2 bg-white border border-gray-300 rounded-lg shadow-lg"
+              className="absolute z-50 flex gap-1 p-2 bg-background dark:bg-[#101214] border border-border dark:border-gray-700 rounded-lg shadow-lg"
               style={{ top: `${imageControls.top}px`, left: `${imageControls.left}px` }}
             >
               <Button variant="ghost" size="sm" onClick={() => handleImageResize(10)} title="Aumentar tamaño">

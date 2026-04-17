@@ -51,7 +51,7 @@ const LogsModal = ({ serviceId, onClose }) => { // Pasamos el serviceId para el 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 dark:bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       >
         <motion.div
@@ -59,32 +59,32 @@ const LogsModal = ({ serviceId, onClose }) => { // Pasamos el serviceId para el 
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.95, y: -20 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="relative flex flex-col bg-card border border-border rounded-2xl shadow-xl w-full max-w-3xl max-h-[80vh]"
+          className="relative flex flex-col bg-background dark:bg-card border border-border rounded-2xl shadow-xl w-full max-w-3xl max-h-[80vh]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header del Modal */}
-          <div className="flex items-center justify-between p-4 border-b border-border">
+          <div className="flex items-center justify-between p-4 border-b border-border dark:border-white/10">
             <h3 className="text-lg font-semibold">Logs del Servidor</h3>
-            <button onClick={onClose} className="p-1 rounded-full text-muted-foreground hover:bg-muted">
-              <X className="w-5 h-5" />
+            <button onClick={onClose} className="p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-muted">
+              <X className="w-5 h-5 text-foreground dark:text-foreground" />
             </button>
           </div>
 
           {/* Contenido de los Logs */}
-          <div className="p-4 bg-black/80 flex-1 overflow-y-auto">
-            <pre className="font-mono text-xs whitespace-pre-wrap">
+          <div className="p-4 bg-muted/50 dark:bg-black/80 flex-1 overflow-y-auto">
+            <pre className="font-mono text-xs whitespace-pre-wrap text-foreground dark:text-gray-200">
               {logs.map((log, index) => (
                 <div key={index} className="flex gap-4">
-                  <span className="text-gray-500">{log.timestamp}</span>
+                  <span className="text-muted-foreground dark:text-gray-500">{log.timestamp}</span>
                   <span className={`font-bold ${getLogLevelClass(log.level)}`}>[{log.level}]</span>
-                  <span className="text-gray-300">{log.message}</span>
+                  <span className="text-foreground dark:text-gray-300">{log.message}</span>
                 </div>
               ))}
             </pre>
           </div>
 
           {/* --- FOOTER ACTUALIZADO CON BOTÓN DE DESCARGA --- */}
-          <div className="flex items-center justify-between p-4 border-t border-border">
+          <div className="flex items-center justify-between p-4 border-t border-border dark:border-white/10">
             <button
               onClick={handleDownload}
               className="inline-flex items-center gap-2 text-sm font-semibold bg-muted text-foreground hover:bg-muted/80 border border-border px-4 py-2 rounded-lg"

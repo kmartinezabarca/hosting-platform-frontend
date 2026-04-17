@@ -27,32 +27,30 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 const renderApp = () => {
   createRoot(document.getElementById("root")).render(
-    <StrictMode>
-      <ErrorBoundary>
-        {/* Suspense necesario para i18next con HttpBackend (carga async) */}
-        <Suspense fallback={null}>
-          <QueryClientProvider client={queryClient}>
-            <ThemeProvider>
-              <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-                <ToastProvider>
-                  <Router>
-                    <AuthProvider>
-                      <NotificationProvider>
-                        <TicketChatProvider>
-                          <App />
-                          <TicketChatDockPortal />
-                        </TicketChatProvider>
-                      </NotificationProvider>
-                    </AuthProvider>
-                  </Router>
-                  <ReactQueryDevtools initialIsOpen={false} />
-                </ToastProvider>
-              </GoogleOAuthProvider>
-            </ThemeProvider>
-          </QueryClientProvider>
-        </Suspense>
-      </ErrorBoundary>
-    </StrictMode>
+    <ErrorBoundary>
+      {/* Suspense necesario para i18next con HttpBackend (carga async) */}
+      <Suspense fallback={null}>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+              <ToastProvider>
+                <Router>
+                  <AuthProvider>
+                    <NotificationProvider>
+                      <TicketChatProvider>
+                        <App />
+                        <TicketChatDockPortal />
+                      </TicketChatProvider>
+                    </NotificationProvider>
+                  </AuthProvider>
+                </Router>
+                <ReactQueryDevtools initialIsOpen={false} />
+              </ToastProvider>
+            </GoogleOAuthProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </Suspense>
+    </ErrorBoundary>
   );
 };
 

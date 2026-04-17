@@ -123,7 +123,7 @@ const AdminDocumentationRequestsPage = () => {
               <div>
                 <label className="block text-sm font-medium mb-2">Buscar</label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground dark:text-muted-foreground" />
                   <input
                     type="text"
                     value={searchTerm}
@@ -267,7 +267,7 @@ const AdminDocumentationRequestsPage = () => {
                                 className="p-2 hover:bg-muted rounded-lg transition-colors"
                                 title="Marcar como resuelta"
                               >
-                                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-emerald-400" />
                               </button>
                             )}
                             <button
@@ -296,19 +296,19 @@ const AdminDocumentationRequestsPage = () => {
 
       {/* Detail Modal */}
       {showDetailModal && selectedRequest && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/50 z-50 flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="bg-card rounded-lg p-8 max-w-2xl w-full border border-border shadow-lg"
           >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Detalles de la Solicitud</h2>
+            <div className="flex items-center justify-between mb-6 border-b border-border dark:border-white/10 pb-4">
+              <h2 className="text-2xl font-bold text-foreground">Detalles de la Solicitud</h2>
               <button
                 onClick={() => setShowDetailModal(false)}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground dark:hover:text-foreground"
               >
-                ✕
+                <X className="w-6 h-6 text-foreground dark:text-foreground" />
               </button>
             </div>
 

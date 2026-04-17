@@ -35,18 +35,18 @@ const PaymentModal = ({ show, invoice, paymentMethods, onClose, onPay }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        className="fixed inset-0 bg-black/50 dark:bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-white dark:bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl"
+          className="bg-background dark:bg-card border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl"
         >
           <h3 className="text-xl font-semibold text-foreground mb-4">
             Pagar Factura {invoice.invoice_number}
           </h3>
-          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+          <div className="mb-6 p-4 bg-muted dark:bg-gray-800/50 rounded-xl">
             <p className="text-sm text-muted-foreground mb-1">Total a pagar</p>
             <p className="text-3xl font-bold text-foreground">
               {formatCurrency(invoice.total, invoice.currency)}
