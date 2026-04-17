@@ -1,5 +1,23 @@
-// src/components/UserAvatar.jsx
 import React, { useEffect, useMemo, useState } from 'react';
+
+/* Genera un color de fondo consistente a partir del nombre */
+const PALETTE = [
+  ['from-violet-500 to-purple-600',  'text-white'],
+  ['from-blue-500 to-indigo-600',    'text-white'],
+  ['from-emerald-500 to-teal-600',   'text-white'],
+  ['from-orange-400 to-rose-500',    'text-white'],
+  ['from-pink-500 to-fuchsia-600',   'text-white'],
+  ['from-cyan-500 to-blue-600',      'text-white'],
+  ['from-amber-400 to-orange-500',   'text-white'],
+  ['from-rose-500 to-pink-600',      'text-white'],
+];
+
+function colorFromName(name = '') {
+  const code = [...name].reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return PALETTE[code % PALETTE.length];
+}
+
+/* ─────────────────────────────────────────────────────────────────────── */
 
 const UserAvatar = ({ user, size = 32, className = '' }) => {
   const profile = user?.data ?? user ?? {};
@@ -15,14 +33,19 @@ const UserAvatar = ({ user, size = 32, className = '' }) => {
     .slice(0, 2)
     .map((w) => w[0])
     .join('')
-    .toUpperCase();
+    .toUpperCase() || 'U';
 
-  const rawUrl = profile.avatar_url || ''; // tu API devuelve absoluta
+  const rawUrl = profile.avatar_url || profile.google_avatar || profile.picture || '';
 
-  // cache-bust sólo cuando cambia la URL (no en cada render)
+  /* Cache-bust solo cuando la URL cambia */
   const [bust, setBust] = useState('');
+  const [imgError, setImgError] = useState(false);
+
   useEffect(() => {
-    if (rawUrl) setBust(String(Date.now()));
+    if (rawUrl) {
+      setBust(String(Date.now()));
+      setImgError(false);
+    }
   }, [rawUrl]);
 
   const src = useMemo(() => {
@@ -31,38 +54,43 @@ const UserAvatar = ({ user, size = 32, className = '' }) => {
     return `${rawUrl}${sep}v=${bust}`;
   }, [rawUrl, bust]);
 
+  const [gradientClass, textClass] = colorFromName(displayName);
+
+  /* Tamaño de fuente proporcional */
+  const fontSize = size <= 28 ? 10 : size <= 36 ? 12 : size <= 48 ? 14 : 16;
+
+  const showImage = src && !imgError;
+
   return (
-    <div className={`relative ${className}`} style={{ width: size, height: size }}>
-      {src ? (
+    <div
+      className={`relative shrink-0 ${className}`}
+      style={{ width: size, height: size }}
+    >
+      {showImage ? (
         <img
-          key={src} // 🔑 fuerza remontaje cuando cambia la URL
+          key={src}
           src={src}
           alt={`Avatar de ${displayName}`}
           loading="lazy"
           referrerPolicy="no-referrer"
-          className="w-full h-full rounded-full object-cover border border-black/10 dark:border-white/20 shadow-sm"
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-            const fallback = e.currentTarget.nextSibling;
-            if (fallback) fallback.style.display = 'grid';
-          }}
+          className="w-full h-full rounded-full object-cover border border-black/10 dark:border-white/15 shadow-sm"
+          onError={() => setImgError(true)}
         />
-      ) : null}
-
-      {/* Fallback de iniciales */}
-      <div
-        className="
-          hidden w-full h-full rounded-full
-          bg-gradient-to-br from-primary/20 to-primary/40
-          grid place-items-center select-none
-          text-xs font-semibold uppercase
-          text-[#222222] dark:text-white
-          border border-black/10 dark:border-white/20
-          shadow-sm
-        "
-      >
-        {initials || 'U'}
-      </div>
+      ) : (
+        <div
+          className={`
+            w-full h-full rounded-full
+            bg-gradient-to-br ${gradientClass}
+            flex items-center justify-center select-none
+            border border-black/10 dark:border-white/10
+            shadow-sm font-bold ${textClass}
+          `}
+          style={{ fontSize }}
+          aria-label={displayName}
+        >
+          {initials}
+        </div>
+      )}
     </div>
   );
 };
