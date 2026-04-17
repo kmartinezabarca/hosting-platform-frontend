@@ -517,7 +517,7 @@ const AdminServicePlansPage = () => {
 
       {/* Create/Edit Sheet */}
       <Sheet open={isSheetOpen} onOpenChange={(open) => { if (!open) closeSheet(); }}>
-        <SheetContent side="bottom" className="max-h-[90vh] p-0 bg-background dark:bg-[#0f1115]">
+        <SheetContent side="right" className="!w-full !max-w-[640px] p-0 flex flex-col gap-0 bg-background dark:bg-[#0f1115]">
           <div className="flex flex-col h-full">
             <SheetHeader className="px-6 py-4 border-b border-border dark:border-white/10 shrink-0">
               <SheetTitle className="text-xl font-semibold text-foreground">{editingPlan ? 'Editar Plan' : 'Nuevo Plan'}</SheetTitle>
@@ -596,7 +596,7 @@ const AdminServicePlansPage = () => {
                         <Plus className="h-4 w-4 mr-1" />Agregar
                       </Button>
                     </div>
-                    <div className="space-y-2 max-h-[calc(90vh-280px)] overflow-y-auto pr-1">
+                    <div className="space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
                       {features.map((feature, index) => (
                         <div key={index} className="flex gap-2">
                           <Input value={feature} onChange={(e) => updateFeature(index, e.target.value)} placeholder="Característica..." className="flex-1 h-10 bg-background dark:bg-[#0f1115] border-border dark:border-white/10 text-foreground" />
@@ -622,7 +622,7 @@ const AdminServicePlansPage = () => {
                         <Plus className="h-4 w-4 mr-1" />Agregar
                       </Button>
                     </div>
-                    <div className="space-y-2 max-h-[calc(90vh-280px)] overflow-y-auto pr-1">
+                    <div className="space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
                       {pricing.map((item, index) => (
                         <div key={index} className="flex gap-2">
                           <Select value={item.billing_cycle_id?.toString() || ''} onValueChange={(v) => updatePricing(index, 'billing_cycle_id', Number(v))}>
@@ -661,7 +661,7 @@ const AdminServicePlansPage = () => {
                         <Plus className="h-4 w-4 mr-1" />Agregar
                       </Button>
                     </div>
-                    <div className="space-y-2 max-h-[calc(90vh-300px)] overflow-y-auto pr-1">
+                    <div className="space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
                       {specifications.map((spec, index) => (
                         <div key={index} className="flex gap-2 items-center">
                           <Input
