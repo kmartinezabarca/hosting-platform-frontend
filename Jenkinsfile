@@ -40,34 +40,44 @@ pipeline {
     stages {
 
         stage('Checkout') {
-            steps {
-                checkout scm
-                sh '''
-                    echo "Branch:  $(git rev-parse --abbrev-ref HEAD)"
-                    echo "Commit:  $(git rev-parse --short HEAD)"
-                    echo "Mensaje: $(git log -1 --pretty=format:'%s')"
-                '''
-            }
+    steps {
+        checkout scm
+        sh '''
+            echo "Commit:  $(git rev-parse --short HEAD)"
+            echo "Mensaje: $(git log -1 --pretty=format:'%s')"
+        '''
+        script {
+            echo "Branch: ${env.GIT_BRANCH ?: env.BRANCH_NAME ?: 'desconocido'}"
         }
+    }
+}
 
         stage('Validar branch') {
-            steps {
-                script {
-                    def branch = sh(returnStdout: true,
-                        script: "git rev-parse --abbrev-ref HEAD").trim()
-                    def isProduccion = params.TARGET.contains('produccion')
+    steps {
+        script {
+            // En Jenkins el checkout queda en detached HEAD
+            // Hay que obtener el branch del environment de Jenkins
+            def branch = env.GIT_BRANCH?.replaceAll('origin/', '') 
+                      ?: env.BRANCH_NAME 
+                      ?: sh(returnStdout: true,
+                            script: "git name-rev --name-only HEAD | sed 's|remotes/origin/||'").trim()
 
-                    if (isProduccion && branch != 'master') {
-                        error("Produccion solo se puede deployar desde master. Branch actual: ${branch}")
-                    }
-                    if (!isProduccion && branch != 'develop') {
-                        error("Staging solo se puede deployar desde develop. Branch actual: ${branch}")
-                    }
+            echo "Branch detectado: ${branch}"
+            echo "Target seleccionado: ${params.TARGET}"
 
-                    echo "Branch: ${branch} | Target: ${params.TARGET}"
-                }
+            def isProduccion = params.TARGET.contains('produccion')
+
+            if (isProduccion && branch != 'master') {
+                error("Produccion solo desde master. Branch actual: ${branch}")
             }
+            if (!isProduccion && branch != 'develop') {
+                error("Staging solo desde develop. Branch actual: ${branch}")
+            }
+
+            echo "Validacion OK — Branch: ${branch} | Target: ${params.TARGET}"
         }
+    }
+}
 
         stage('Instalar dependencias') {
             steps {
