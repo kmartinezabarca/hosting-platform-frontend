@@ -17,6 +17,8 @@
     "noFallthroughCasesInSwitch": true,
     "allowJs": true,
     "checkJs": false,
+    "ignoreDeprecations": "6.0",
+    "noImplicitAny": false,
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"]

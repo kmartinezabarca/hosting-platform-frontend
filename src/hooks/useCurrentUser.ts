@@ -1,12 +1,12 @@
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
+// src/hooks/useCurrentUser.ts
+import { useQuery } from '@tanstack/react-query';
 import authService from '@/services/authService';
-import type { User } from '@/types/models';
 
-export const useCurrentUser = (): UseQueryResult<User | null> => {
+export const useCurrentUser = () => {
   return useQuery({
-    queryKey: ['auth', 'me'],
+    queryKey: ['auth','me'],
     queryFn: ({ signal }) => authService.getCurrentUser(signal),
-    select: (response) => response?.data ?? null,
+    select: (u: any) => u.data,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     retry: false,

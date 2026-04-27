@@ -1,0 +1,198 @@
+import apiClient from './apiClient';
+import type { ApiResponse, PaginatedResponse, MessageResponse } from '@/types/api';
+import type { PaymentMethod, Transaction } from '@/types/models';
+
+export interface PaymentIntentData {
+  amount?: number;
+  currency?: string;
+  [key: string]: unknown;
+}
+
+export interface PaymentProcessData {
+  payment_method_id: string | number;
+  invoice_id?: number;
+  [key: string]: unknown;
+}
+
+export interface PaymentMethodData {
+  payment_method_id: string;
+  [key: string]: unknown;
+}
+
+export interface PaymentStats {
+  total_paid: number;
+  total_pending: number;
+  transactions_count: number;
+  [key: string]: unknown;
+}
+
+export interface StripeSetupIntent {
+  client_secret: string;
+  [key: string]: unknown;
+}
+
+export interface Subscription {
+  id: number;
+  uuid: string;
+  status: string;
+  [key: string]: unknown;
+}
+
+export interface SubscriptionData {
+  plan_id: number;
+  payment_method_id?: string;
+  [key: string]: unknown;
+}
+
+// --- Payment Services ---
+export const paymentService = {
+  // Create payment intent for Stripe
+  async createPaymentIntent(paymentData?: PaymentIntentData): Promise<ApiResponse<StripeSetupIntent>> {
+    try {
+      // 3. Reemplazamos fetch por apiClient.post
+      const response = await apiClient.post<ApiResponse<StripeSetupIntent>>('/payments/intent', paymentData);
+      return response.data; // 4. Devolvemos response.data
+    } catch (error) {
+      console.error('Error creating payment intent:', error);
+      throw error;
+    }
+  },
+
+  // Process payment
+  async processPayment(paymentData: PaymentProcessData): Promise<ApiResponse<Transaction>> {
+    try {
+      const response = await apiClient.post<ApiResponse<Transaction>>('/payments/process', paymentData);
+      return response.data;
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      throw error;
+    }
+  },
+
+  // Get payment methods
+  async getPaymentMethods(): Promise<ApiResponse<PaymentMethod[]>> {
+    try {
+      const response = await apiClient.get<ApiResponse<PaymentMethod[]>>('/payments/methods');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching payment methods:', error);
+      throw error;
+    }
+  },
+
+  // Add payment method
+  async addPaymentMethod(methodData: PaymentMethodData): Promise<ApiResponse<PaymentMethod>> {
+    try {
+      const response = await apiClient.post<ApiResponse<PaymentMethod>>('/payments/methods', methodData);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding payment method:', error);
+      throw error;
+    }
+  },
+
+  //Delete payment method
+  async deletePaymentMethod(methodId: number | string): Promise<MessageResponse> {
+    try {
+      const response = await apiClient.delete<MessageResponse>(`/payments/methods/${methodId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting payment method:', error);
+      throw error;
+    }
+  },
+
+  // Set default payment method
+  async updatePaymentMethod(methodId: number | string, data: Partial<PaymentMethod>): Promise<ApiResponse<PaymentMethod>> {
+    try {
+      const response = await apiClient.put<ApiResponse<PaymentMethod>>(`/payments/methods/${methodId}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error setting default payment method:', error);
+      throw error;
+    }
+  },
+
+  // Get transactions
+  async getTransactions(): Promise<PaginatedResponse<Transaction>> {
+    try {
+      const response = await apiClient.get<PaginatedResponse<Transaction>>('/payments/transactions');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      throw error;
+    }
+  },
+
+  // Get payment stats
+  async getPaymentStats(): Promise<ApiResponse<PaymentStats>> {
+    try {
+      const response = await apiClient.get<ApiResponse<PaymentStats>>('/payments/stats');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching payment stats:', error);
+      throw error;
+    }
+  }
+};
+
+// --- Subscription Services ---
+export const subscriptionService = {
+  // Get user subscriptions
+  async getUserSubscriptions(): Promise<ApiResponse<Subscription[]>> {
+    try {
+      const response = await apiClient.get<ApiResponse<Subscription[]>>('/subscriptions');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching subscriptions:', error);
+      throw error;
+    }
+  },
+
+  // Create subscription
+  async createSubscription(subscriptionData: SubscriptionData): Promise<ApiResponse<Subscription>> {
+    try {
+      const response = await apiClient.post<ApiResponse<Subscription>>('/subscriptions', subscriptionData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating subscription:', error);
+      throw error;
+    }
+  },
+
+  // Get subscription details
+  async getSubscriptionDetails(subscriptionId: number | string): Promise<ApiResponse<Subscription>> {
+    try {
+      const response = await apiClient.get<ApiResponse<Subscription>>(`/subscriptions/${subscriptionId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching subscription details:', error);
+      throw error;
+    }
+  },
+
+  // Cancel subscription
+  async cancelSubscription(subscriptionId: number | string, reason: string): Promise<ApiResponse<Subscription>> {
+    try {
+      const response = await apiClient.post<ApiResponse<Subscription>>(`/subscriptions/${subscriptionId}/cancel`, { reason });
+      return response.data;
+    } catch (error) {
+      console.error('Error canceling subscription:', error);
+      throw error;
+    }
+  },
+
+  // Resume subscription
+  async resumeSubscription(subscriptionId: number | string): Promise<ApiResponse<Subscription>> {
+    try {
+      const response = await apiClient.post<ApiResponse<Subscription>>(`/subscriptions/${subscriptionId}/resume`);
+      return response.data;
+    } catch (error) {
+      console.error('Error resuming subscription:', error);
+      throw error;
+    }
+  }
+};
+
+// Exportamos ambos servicios para que puedan ser importados donde se necesiten.
+export default { paymentService, subscriptionService };

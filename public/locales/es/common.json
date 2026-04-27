@@ -9,10 +9,13 @@
     "invoices": "Facturas",
     "tickets": "Soporte",
     "profile": "Perfil",
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "admin": "Administración"
   },
   "auth": {
     "login": "Iniciar sesión",
+    "loginTitle": "Iniciar Sesión",
+    "loginSubtitle": "Accede a tu panel de control",
     "register": "Registrarse",
     "logout": "Cerrar sesión",
     "email": "Correo electrónico",
@@ -20,15 +23,16 @@
     "confirmPassword": "Confirmar contraseña",
     "firstName": "Nombre",
     "lastName": "Apellido",
-    "rememberMe": "Recuérdame",
+    "rememberMe": "Recordarme",
     "forgotPassword": "¿Olvidaste tu contraseña?",
     "loginWithGoogle": "Continuar con Google",
-    "noAccount": "¿No tienes cuenta?",
+    "noAccount": "¿No tienes una cuenta?",
     "alreadyAccount": "¿Ya tienes cuenta?",
-    "createAccount": "Crear cuenta",
+    "createAccount": "Regístrate aquí",
     "verifyCode": "Verificar código",
     "twoFactorTitle": "Verificación en dos pasos",
     "twoFactorDesc": "Ingresa el código de tu aplicación autenticadora",
+    "cooldown": "Espera {{seconds}}s antes de reintentar",
     "errors": {
       "emailRequired": "El correo electrónico es obligatorio.",
       "emailInvalid": "El formato del correo no es válido.",
@@ -37,7 +41,8 @@
       "firstNameRequired": "El nombre es obligatorio.",
       "lastNameRequired": "El apellido es obligatorio.",
       "passwordMismatch": "Las contraseñas no coinciden.",
-      "termsRequired": "Debes aceptar los términos y condiciones."
+      "termsRequired": "Debes aceptar los términos y condiciones.",
+      "googleError": "Error al conectar con Google. Inténtalo de nuevo."
     }
   },
   "common": {
@@ -62,7 +67,20 @@
     "close": "Cerrar",
     "open": "Abrir",
     "yes": "Sí",
-    "no": "No"
+    "no": "No",
+    "or": "o continúa con",
+    "copyright": "© {{year}} ROKE Industries. Todos los derechos reservados."
+  },
+  "errors": {
+    "generic": "Algo salió mal",
+    "genericDesc": "Ocurrió un error inesperado. Puedes intentar recargar la página.",
+    "sectionFailed": "No se pudo cargar esta sección.",
+    "sectionFailedAdmin": "Ocurrió un error en esta sección del panel. Puedes reintentar sin perder el menú de navegación.",
+    "sectionFailedClient": "Ocurrió un error en esta página. Puedes reintentar o navegar a otra sección.",
+    "reload": "Recargar página",
+    "retry": "Reintentar",
+    "goHome": "Ir al inicio",
+    "devHint": "Detalle del error (solo en desarrollo)"
   },
   "status": {
     "active": "Activo",
@@ -73,7 +91,45 @@
     "overdue": "Vencido",
     "open": "Abierto",
     "closed": "Cerrado",
-    "in_progress": "En proceso"
+    "in_progress": "En proceso",
+    "sent": "Enviado"
+  },
+  "dashboard": {
+    "greeting": {
+      "morning": "Buenos días",
+      "afternoon": "Buenas tardes",
+      "evening": "Buenas noches"
+    },
+    "welcomeBack": "Bienvenido de nuevo",
+    "stats": {
+      "activeServices": "Servicios activos",
+      "totalDomains": "Dominios",
+      "monthlySpend": "Gasto mensual",
+      "openTickets": "Tickets abiertos",
+      "vsLastMonth": "vs. mes anterior"
+    },
+    "activity": {
+      "title": "Actividad reciente",
+      "empty": "No hay actividad reciente",
+      "loading": "Cargando actividad..."
+    },
+    "services": {
+      "title": "Mis servicios",
+      "empty": "No tienes servicios activos",
+      "loading": "Cargando servicios..."
+    },
+    "quickActions": {
+      "title": "Acciones rápidas",
+      "services": "Ver servicios",
+      "invoices": "Mis facturas",
+      "support": "Ir a soporte",
+      "newService": "Nuevo servicio"
+    },
+    "errors": {
+      "stats": "No se pudieron cargar las estadísticas.",
+      "services": "No se pudieron cargar los servicios.",
+      "activity": "No se pudo cargar la actividad reciente."
+    }
   },
   "billing": {
     "monthly": "Mensual",
@@ -87,7 +143,31 @@
     "dueDate": "Fecha de vencimiento",
     "paymentMethod": "Método de pago",
     "addPaymentMethod": "Agregar método de pago",
-    "noPaymentMethods": "No tienes métodos de pago registrados"
+    "noPaymentMethods": "No tienes métodos de pago registrados",
+    "defaultMethod": "Predeterminado",
+    "setDefault": "Establecer como predeterminado",
+    "removeMethod": "Eliminar método"
+  },
+  "invoices": {
+    "title": "Mis facturas",
+    "empty": "No tienes facturas",
+    "download": "Descargar",
+    "pay": "Pagar ahora",
+    "paid": "Pagada",
+    "pending": "Pendiente",
+    "overdue": "Vencida",
+    "cfdi": {
+      "request": "Solicitar CFDI",
+      "requested": "CFDI solicitado",
+      "ready": "CFDI listo",
+      "updateFiscal": "Actualizar datos fiscales",
+      "window": "Ventana disponible por 72 horas desde la emisión"
+    },
+    "stats": {
+      "totalPaid": "Total pagado",
+      "totalPending": "Total pendiente",
+      "totalOverdue": "Total vencido"
+    }
   },
   "services": {
     "title": "Mis servicios",
@@ -95,6 +175,17 @@
     "manage": "Administrar",
     "details": "Ver detalles",
     "nextBilling": "Próximo pago"
+  },
+  "gameServer": {
+    "provisioning": "Creando servidor...",
+    "online": "En línea",
+    "offline": "Desconectado",
+    "suspended": "Suspendido",
+    "ipPort": "IP : Puerto",
+    "copyIp": "Copiar IP",
+    "copied": "¡Copiado!",
+    "pendingBanner": "Tu servidor se está aprovisionando. Estará listo en unos minutos.",
+    "connect": "Conectar"
   },
   "tickets": {
     "title": "Soporte",
@@ -140,5 +231,39 @@
     "processing": "Procesando...",
     "success": "¡Pago exitoso!",
     "successDesc": "Tu servicio ha sido activado"
+  },
+  "a11y": {
+    "skipToContent": "Saltar al contenido principal",
+    "toggleTheme": "Cambiar tema",
+    "toggleDarkMode": "Activar modo oscuro",
+    "toggleLightMode": "Activar modo claro",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú",
+    "openProfile": "Abrir menú de perfil",
+    "closeProfile": "Cerrar menú de perfil",
+    "openSearch": "Abrir búsqueda",
+    "closeSearch": "Cerrar búsqueda",
+    "togglePassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "notifications": "Ver notificaciones",
+    "copyToClipboard": "Copiar al portapapeles",
+    "loadingPage": "Cargando página...",
+    "loadingSection": "Cargando sección...",
+    "errorSection": "Error en la sección",
+    "dialogTitle": "Diálogo de confirmación"
+  },
+  "features": {
+    "security": {
+      "title": "Seguridad Avanzada",
+      "desc": "Protección 24/7 con autenticación de doble factor"
+    },
+    "performance": {
+      "title": "Rendimiento Óptimo",
+      "desc": "Servidores de alta velocidad y disponibilidad"
+    },
+    "global": {
+      "title": "Alcance Global",
+      "desc": "Infraestructura distribuida mundialmente"
+    }
   }
 }

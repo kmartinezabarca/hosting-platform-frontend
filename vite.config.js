@@ -5,48 +5,40 @@ import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
 
-// https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
+  const isAdmin   = mode === 'admin' || mode === 'admin-staging';
+  const env       = loadEnv(mode, process.cwd(), '');
   const isAnalyze = mode === 'analyze';
-  const isProd = mode === 'production';
+  const isProd    = mode === 'production' || mode === 'admin';
 
   return {
     plugins: [
       react(),
       tailwindcss(),
-
-      // Sentry: sube source maps en producción si hay auth token
       isProd && env.SENTRY_AUTH_TOKEN && sentryVitePlugin({
-        org: env.SENTRY_ORG,
-        project: env.SENTRY_PROJECT,
-        authToken: env.SENTRY_AUTH_TOKEN,
+        org:        env.SENTRY_ORG,
+        project:    env.SENTRY_PROJECT,
+        authToken:  env.SENTRY_AUTH_TOKEN,
         sourcemaps: { assets: './dist/**' },
-        release: { name: env.VITE_APP_VERSION ?? 'unknown' },
+        release:    { name: env.VITE_APP_VERSION ?? 'unknown' },
       }),
-
-      // Bundle analyzer: genera stats.html al hacer `pnpm analyze`
       isAnalyze && visualizer({
         filename: 'dist/stats.html',
-        open: true,
-        gzipSize: true,
+        open:       true,
+        gzipSize:   true,
         brotliSize: true,
-        template: 'treemap',
+        template:   'treemap',
       }),
     ].filter(Boolean),
 
     resolve: {
-      alias: {
-        '@': path.resolve(__dirname, './src'),
-      },
+      alias: { '@': path.resolve(__dirname, './src') },
     },
 
     server: {
-      host: true,
-      port: Number(env.VITE_DEV_PORT) || 5173,
+      host:       true,
+      port:       Number(env.VITE_DEV_PORT) || 5173,
       strictPort: true,
-      // Agregar hosts permitidos en VITE_ALLOWED_HOSTS (separados por coma)
-      // allowedHosts: env.VITE_ALLOWED_HOSTS?.split(',') ?? [],
     },
 
     preview: {
@@ -54,14 +46,17 @@ export default defineConfig(({ mode }) => {
     },
 
     build: {
-      // Source maps en producción para Sentry (no expuestos al usuario)
+      outDir:    isAdmin ? 'dist-admin' : 'dist-portal',
       sourcemap: isProd ? 'hidden' : true,
       rollupOptions: {
+        input: isAdmin
+          ? path.resolve(__dirname, 'index-admin.html')
+          : path.resolve(__dirname, 'index.html'),
         output: {
           manualChunks: {
-            vendor:  ['react', 'react-dom', 'react-router-dom'],
-            query:   ['@tanstack/react-query'],
-            ui:      ['framer-motion', 'lucide-react', 'sonner'],
+            vendor: ['react', 'react-dom', 'react-router-dom'],
+            query:  ['@tanstack/react-query'],
+            ui:     ['framer-motion', 'lucide-react', 'sonner'],
             radix: [
               '@radix-ui/react-dialog',
               '@radix-ui/react-select',
@@ -74,19 +69,16 @@ export default defineConfig(({ mode }) => {
     },
 
     test: {
-      globals: true,
+      globals:     true,
       environment: 'jsdom',
-      environmentOptions: {
-        jsdom: { url: 'http://localhost' },
-      },
-      // Incluir solo tests unitarios — excluir E2E de Playwright
-      include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
-      exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
-      setupFiles: ['./src/test/setup.js'],
-      css: false,
+      environmentOptions: { jsdom: { url: 'http://localhost' } },
+      include:     ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+      exclude:     ['e2e/**', 'node_modules/**', 'dist/**'],
+      setupFiles:  ['./src/test/setup.js'],
+      css:         false,
       coverage: {
         reporter: ['text', 'html'],
-        exclude: ['src/test/**', 'src/components/ui/**', 'src/stories/**'],
+        exclude:  ['src/test/**', 'src/components/ui/**', 'src/stories/**'],
       },
     },
   };

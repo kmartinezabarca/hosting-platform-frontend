@@ -9,10 +9,13 @@
     "invoices": "Invoices",
     "tickets": "Support",
     "profile": "Profile",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "admin": "Administration"
   },
   "auth": {
     "login": "Sign in",
+    "loginTitle": "Sign In",
+    "loginSubtitle": "Access your control panel",
     "register": "Sign up",
     "logout": "Sign out",
     "email": "Email address",
@@ -25,10 +28,11 @@
     "loginWithGoogle": "Continue with Google",
     "noAccount": "Don't have an account?",
     "alreadyAccount": "Already have an account?",
-    "createAccount": "Create account",
+    "createAccount": "Sign up here",
     "verifyCode": "Verify code",
     "twoFactorTitle": "Two-step verification",
     "twoFactorDesc": "Enter the code from your authenticator app",
+    "cooldown": "Wait {{seconds}}s before retrying",
     "errors": {
       "emailRequired": "Email address is required.",
       "emailInvalid": "Invalid email format.",
@@ -37,7 +41,8 @@
       "firstNameRequired": "First name is required.",
       "lastNameRequired": "Last name is required.",
       "passwordMismatch": "Passwords do not match.",
-      "termsRequired": "You must accept the terms and conditions."
+      "termsRequired": "You must accept the terms and conditions.",
+      "googleError": "Failed to connect with Google. Please try again."
     }
   },
   "common": {
@@ -62,7 +67,20 @@
     "close": "Close",
     "open": "Open",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "or": "or continue with",
+    "copyright": "© {{year}} ROKE Industries. All rights reserved."
+  },
+  "errors": {
+    "generic": "Something went wrong",
+    "genericDesc": "An unexpected error occurred. You can try reloading the page.",
+    "sectionFailed": "Failed to load this section.",
+    "sectionFailedAdmin": "An error occurred in this panel section. You can retry without losing the navigation menu.",
+    "sectionFailedClient": "An error occurred on this page. You can retry or navigate to another section.",
+    "reload": "Reload page",
+    "retry": "Retry",
+    "goHome": "Go home",
+    "devHint": "Error detail (development only)"
   },
   "status": {
     "active": "Active",
@@ -73,7 +91,45 @@
     "overdue": "Overdue",
     "open": "Open",
     "closed": "Closed",
-    "in_progress": "In progress"
+    "in_progress": "In progress",
+    "sent": "Sent"
+  },
+  "dashboard": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "welcomeBack": "Welcome back",
+    "stats": {
+      "activeServices": "Active services",
+      "totalDomains": "Domains",
+      "monthlySpend": "Monthly spend",
+      "openTickets": "Open tickets",
+      "vsLastMonth": "vs. last month"
+    },
+    "activity": {
+      "title": "Recent activity",
+      "empty": "No recent activity",
+      "loading": "Loading activity..."
+    },
+    "services": {
+      "title": "My services",
+      "empty": "You have no active services",
+      "loading": "Loading services..."
+    },
+    "quickActions": {
+      "title": "Quick actions",
+      "services": "View services",
+      "invoices": "My invoices",
+      "support": "Go to support",
+      "newService": "New service"
+    },
+    "errors": {
+      "stats": "Failed to load statistics.",
+      "services": "Failed to load services.",
+      "activity": "Failed to load recent activity."
+    }
   },
   "billing": {
     "monthly": "Monthly",
@@ -87,7 +143,31 @@
     "dueDate": "Due date",
     "paymentMethod": "Payment method",
     "addPaymentMethod": "Add payment method",
-    "noPaymentMethods": "No payment methods on file"
+    "noPaymentMethods": "No payment methods on file",
+    "defaultMethod": "Default",
+    "setDefault": "Set as default",
+    "removeMethod": "Remove method"
+  },
+  "invoices": {
+    "title": "My invoices",
+    "empty": "You have no invoices",
+    "download": "Download",
+    "pay": "Pay now",
+    "paid": "Paid",
+    "pending": "Pending",
+    "overdue": "Overdue",
+    "cfdi": {
+      "request": "Request CFDI",
+      "requested": "CFDI requested",
+      "ready": "CFDI ready",
+      "updateFiscal": "Update fiscal data",
+      "window": "Window available for 72 hours from issuance"
+    },
+    "stats": {
+      "totalPaid": "Total paid",
+      "totalPending": "Total pending",
+      "totalOverdue": "Total overdue"
+    }
   },
   "services": {
     "title": "My services",
@@ -95,6 +175,17 @@
     "manage": "Manage",
     "details": "View details",
     "nextBilling": "Next billing"
+  },
+  "gameServer": {
+    "provisioning": "Setting up server...",
+    "online": "Online",
+    "offline": "Offline",
+    "suspended": "Suspended",
+    "ipPort": "IP : Port",
+    "copyIp": "Copy IP",
+    "copied": "Copied!",
+    "pendingBanner": "Your server is being provisioned. It will be ready in a few minutes.",
+    "connect": "Connect"
   },
   "tickets": {
     "title": "Support",
@@ -140,5 +231,39 @@
     "processing": "Processing...",
     "success": "Payment successful!",
     "successDesc": "Your service has been activated"
+  },
+  "a11y": {
+    "skipToContent": "Skip to main content",
+    "toggleTheme": "Toggle theme",
+    "toggleDarkMode": "Enable dark mode",
+    "toggleLightMode": "Enable light mode",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "openProfile": "Open profile menu",
+    "closeProfile": "Close profile menu",
+    "openSearch": "Open search",
+    "closeSearch": "Close search",
+    "togglePassword": "Show password",
+    "hidePassword": "Hide password",
+    "notifications": "View notifications",
+    "copyToClipboard": "Copy to clipboard",
+    "loadingPage": "Loading page...",
+    "loadingSection": "Loading section...",
+    "errorSection": "Section error",
+    "dialogTitle": "Confirmation dialog"
+  },
+  "features": {
+    "security": {
+      "title": "Advanced Security",
+      "desc": "24/7 protection with two-factor authentication"
+    },
+    "performance": {
+      "title": "Optimal Performance",
+      "desc": "High-speed servers with maximum availability"
+    },
+    "global": {
+      "title": "Global Reach",
+      "desc": "Distributed infrastructure worldwide"
+    }
   }
 }

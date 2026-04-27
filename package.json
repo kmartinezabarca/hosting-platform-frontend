@@ -5,8 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:admin": "vite --mode admin",
+    "build:portal": "vite build --mode portal",
+    "build:admin": "vite build --mode admin",
+    "build:portal:staging": "vite build --mode portal-staging",
+    "build:admin:staging": "vite build --mode admin-staging",
     "build": "vite build",
-    "build:staging": "vite build --mode staging",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
@@ -50,6 +54,7 @@
     "@radix-ui/react-toggle-group": "^1.1.9",
     "@radix-ui/react-tooltip": "^1.2.6",
     "@react-oauth/google": "^0.12.2",
+    "@sentry/react": "^10.48.0",
     "@stripe/react-stripe-js": "^3.9.2",
     "@stripe/stripe-js": "^7.9.0",
     "@tailwindcss/vite": "^4.1.7",
@@ -71,6 +76,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^3.0.0",
+    "dompurify": "^3.4.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.15.0",
     "i18next": "^26.0.4",
@@ -100,6 +106,7 @@
     "tailwindcss": "^4.1.7",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
+    "web-vitals": "^5.2.0",
     "zod": "^3.24.4"
   },
   "devDependencies": {

@@ -1,104 +1,111 @@
-import { useQuery, useMutation, useQueryClient, UseQueryResult, UseMutationResult } from '@tanstack/react-query';
-import profileService from '@/services/profileService';
-import { queryConfigs } from '@/config/queryConfig';
-import type { Profile, SecurityInfo } from '@/types/models';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import profileService from '../services/profileService';
+import { queryConfigs } from '../config/queryConfig';
 
-interface UpdateProfilePayload {
-  first_name?: string;
-  last_name?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  postal_code?: string;
-}
-
-interface UpdatePasswordPayload {
-  current_password: string;
-  password: string;
-  password_confirmation: string;
-}
-
-export const useProfile = (options = {}): UseQueryResult<Profile> => {
+/**
+ * Hook para obtener información del perfil del usuario
+ */
+export const useProfile = (options = {}) => {
   return useQuery({
     queryKey: ['profile'],
     queryFn: profileService.getProfile,
     select: (data) => data.data,
-    ...queryConfigs.sensitive,
+    ...queryConfigs.sensitive, // Usar configuración para datos sensibles
     ...options,
   });
 };
 
-export const useUpdateProfile = (): UseMutationResult<
-  Awaited<ReturnType<typeof profileService.updateProfile>>,
-  Error,
-  UpdateProfilePayload
-> => {
-  const qc = useQueryClient();
-
+/**
+ * Hook para actualizar información del perfil
+ */
+export const useUpdateProfile = () => {
+  const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: profileService.updateProfile,
     onMutate: async (newProfile) => {
-      await qc.cancelQueries({ queryKey: ['profile'] });
-      const previousProfile = qc.getQueryData(['profile']);
-      qc.setQueryData(['profile'], (old: { data: Profile } | undefined) => ({
-        ...old,
-        data: { ...old?.data, ...newProfile },
+      // Cancelar queries en progreso
+      await queryClient.cancelQueries({ queryKey: ['profile'] });
+      
+      // Snapshot del estado anterior
+      const previousProfile = queryClient.getQueryData(['profile']);
+      
+      // Optimistic update
+      queryClient.setQueryData(['profile'], (old: any) => ({
+        ...(old as any),
+        data: { ...(old as any)?.data, ...newProfile }
       }));
+
       return { previousProfile };
     },
-    onError: (_err, _newProfile, context) => {
-      qc.setQueryData(['profile'], context?.previousProfile);
+    onError: (err, newProfile, context) => {
+      // Revertir en caso de error
+      queryClient.setQueryData(['profile'], context?.previousProfile);
+      console.error("Error al actualizar perfil", err);
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: ['profile'] });
+      // Refetch para asegurar consistencia
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
     },
   });
 };
 
+/**
+ * Hook para subir avatar del usuario
+ */
 export const useUploadAvatar = () => {
-  const qc = useQueryClient();
-
+  const queryClient = useQueryClient();
+  
   return useMutation({
-    mutationFn: (file: File) => profileService.uploadAvatar(file),
+    mutationFn: profileService.uploadAvatar,
     onSuccess: (data) => {
       const newAvatarUrl = data.data.avatar_url;
-      qc.invalidateQueries({ queryKey: ['profile'] });
-      qc.invalidateQueries({ queryKey: ['auth', 'me'] });
-      qc.setQueryData(['profile'], (old: { data: Profile } | undefined) => ({
-        ...old,
-        data: { ...old?.data, avatar_url: newAvatarUrl },
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      queryClient.refetchQueries({ queryKey: ['auth', 'me'] });
+      queryClient.setQueryData(['profile'], (old: any) => ({
+        ...(old as any),
+        data: { ...(old as any)?.data, avatar_url: newAvatarUrl }
       }));
-      qc.setQueryData(['auth', 'me'], (old: { data: Profile } | undefined) => ({
-        ...old,
-        data: { ...old?.data, avatar_url: newAvatarUrl },
+      queryClient.setQueryData(['auth', 'me'], (old: any) => ({
+        ...(old as any),
+        data: { ...(old as any)?.data, avatar_url: newAvatarUrl }
       }));
+    },
+    onError: (error) => {
+      console.error("Error al subir avatar", error);
     },
   });
 };
 
-export const useSecurity = (options = {}): UseQueryResult<SecurityInfo> => {
+/**
+ * Hook para obtener información de seguridad
+ */
+export const useSecurity = (options = {}) => {
   return useQuery({
     queryKey: ['security'],
     queryFn: profileService.getSecurity,
     select: (data) => data.data,
-    ...queryConfigs.sensitive,
+    ...queryConfigs.sensitive, // Usar configuración para datos sensibles
     ...options,
   });
 };
 
-export const useUpdatePassword = (): UseMutationResult<
-  { message: string },
-  Error,
-  UpdatePasswordPayload
-> => {
-  const qc = useQueryClient();
-
+/**
+ * Hook para actualizar contraseña
+ */
+export const useUpdatePassword = () => {
+  const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: profileService.updatePassword,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['security'] });
+      // Invalidar datos de seguridad tras cambio de contraseña
+      queryClient.invalidateQueries({ queryKey: ['security'] });
+    },
+    onError: (error) => {
+      console.error("Error al actualizar contraseña", error);
     },
   });
 };
+

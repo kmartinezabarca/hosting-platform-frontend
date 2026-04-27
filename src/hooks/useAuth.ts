@@ -1,48 +1,24 @@
-import { useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import authService from '@/services/authService';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import authService from '../services/authService';
 
-interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-interface RegisterPayload {
-  first_name: string;
-  last_name: string;
-  email: string;
-  password: string;
-  password_confirmation: string;
-}
-
-interface Verify2FAPayload {
-  code: string;
-}
-
-interface GoogleUserData {
-  given_name: string;
-  family_name?: string;
-  email: string;
-  sub: string;
-  picture?: string | null;
-}
-
-type AuthMutation<TVariables> = UseMutationResult<
-  Awaited<ReturnType<typeof authService.login>>,
-  Error,
-  TVariables
->;
-
-export const useLogin = (): AuthMutation<LoginCredentials> => {
+/**
+ * Hook para iniciar sesión
+ */
+export const useLogin = () => {
   const qc = useQueryClient();
+
   return useMutation({
     mutationFn: authService.login,
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ['auth', 'me'] });
+      await qc.invalidateQueries({ queryKey: ["auth", "me"] });
     },
   });
 };
 
-export const useLoginWithGoogle = (): AuthMutation<GoogleUserData> => {
+/**
+ * Hook para iniciar sesión con Google
+ */
+export const useLoginWithGoogle = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: authService.loginWithGoogle,
@@ -52,41 +28,62 @@ export const useLoginWithGoogle = (): AuthMutation<GoogleUserData> => {
   });
 };
 
-export const useRegister = (): AuthMutation<RegisterPayload> => {
-  const qc = useQueryClient();
+/**
+ * Hook para registrar usuario
+ */
+export const useRegister = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: authService.register,
     onSuccess: (data) => {
-      if (data?.user) {
-        qc.setQueryData(['auth', 'me'], { data: data.user });
+      if (data && data.user) {
+        queryClient.setQueryData(['auth', 'me'], { data: data.user });
       } else {
-        qc.invalidateQueries({ queryKey: ['auth', 'me'] });
+        queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       }
+    },
+    onError: (error) => {
+      console.error("Error al registrar usuario", error);
     },
   });
 };
 
-export const useVerify2FA = (): AuthMutation<Verify2FAPayload> => {
-  const qc = useQueryClient();
+/**
+ * Hook para verificar 2FA
+ */
+export const useVerify2FA = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: authService.verify2FA,
     onSuccess: (data) => {
-      if (data?.user) {
-        qc.setQueryData(['auth', 'me'], { data: data.user });
+      if (data && data.user) {
+        queryClient.setQueryData(['auth', 'me'], { data: data.user });
       } else {
-        qc.invalidateQueries({ queryKey: ['auth', 'me'] });
+        queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       }
+    },
+    onError: (error) => {
+      console.error("Error al verificar 2FA", error);
     },
   });
 };
 
+/**
+ * Hook para cerrar sesión
+ */
 export const useLogout = () => {
-  const qc = useQueryClient();
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: authService.logout,
     onSuccess: () => {
-      qc.setQueryData(['auth', 'me'], null);
-      qc.removeQueries({ queryKey: ['auth', 'me'] });
+      queryClient.setQueryData(['auth', 'me'], null);
+      queryClient.removeQueries({ queryKey: ['auth', 'me'] });
+    },
+    onError: (error) => {
+      console.error("Error al cerrar sesión", error);
     },
   });
 };
+

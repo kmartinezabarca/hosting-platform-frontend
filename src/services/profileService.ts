@@ -1,55 +1,55 @@
-import apiClient from './apiClient';
+import ApiService from './apiClient';
 import type { ApiResponse } from '@/types/api';
-import type { Profile, SecurityInfo } from '@/types/models';
+import type { User, SecurityInfo } from '@/types/models';
 
-interface UpdateProfilePayload {
+export interface UpdateProfilePayload {
   first_name?: string;
   last_name?: string;
+  email?: string;
   phone?: string;
-  address?: string;
+  country?: string;
   city?: string;
   state?: string;
-  country?: string;
+  address?: string;
   postal_code?: string;
+  [key: string]: unknown;
 }
 
-interface UpdatePasswordPayload {
+export interface UpdatePasswordPayload {
   current_password: string;
   password: string;
   password_confirmation: string;
 }
 
-interface AvatarResponse {
-  avatar_url: string;
-}
-
 const profileService = {
-  getProfile: async (): Promise<ApiResponse<Profile>> => {
-    const response = await apiClient.get<ApiResponse<Profile>>('/profile');
+  getProfile: async (): Promise<ApiResponse<User>> => {
+    const response = await ApiService.get<ApiResponse<User>>('/profile');
     return response.data;
   },
 
-  updateProfile: async (payload: UpdateProfilePayload): Promise<ApiResponse<Profile>> => {
-    const response = await apiClient.put<ApiResponse<Profile>>('/profile', payload);
+  updateProfile: async (payload: UpdateProfilePayload): Promise<ApiResponse<User>> => {
+    const response = await ApiService.put<ApiResponse<User>>('/profile', payload);
     return response.data;
   },
 
-  uploadAvatar: async (file: File): Promise<ApiResponse<AvatarResponse>> => {
+  uploadAvatar: async (file: File): Promise<ApiResponse<{ avatar_url: string }>> => {
     const formData = new FormData();
     formData.append('avatar', file);
-    const response = await apiClient.post<ApiResponse<AvatarResponse>>('/profile/avatar', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await ApiService.post<ApiResponse<{ avatar_url: string }>>(
+      '/profile/avatar',
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    );
     return response.data;
   },
 
   getSecurity: async (): Promise<ApiResponse<SecurityInfo>> => {
-    const response = await apiClient.get<ApiResponse<SecurityInfo>>('/profile/security');
+    const response = await ApiService.get<ApiResponse<SecurityInfo>>('/profile/security');
     return response.data;
   },
 
-  updatePassword: async (payload: UpdatePasswordPayload): Promise<{ message: string }> => {
-    const response = await apiClient.put<{ message: string }>('/profile/password', payload);
+  updatePassword: async (payload: UpdatePasswordPayload): Promise<ApiResponse<{ message: string }>> => {
+    const response = await ApiService.put<ApiResponse<{ message: string }>>('/profile/password', payload);
     return response.data;
   },
 };
