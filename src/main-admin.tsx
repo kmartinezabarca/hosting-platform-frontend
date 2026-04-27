@@ -1,13 +1,55 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
-import AppAdmin from './AppAdmin'
-import './index.css'
+import '@/lib/i18n';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <AppAdmin />
-    </BrowserRouter>
-  </React.StrictMode>
-)
+import { StrictMode, Suspense } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import AppAdmin from './AppAdmin'
+import { initSentry } from '@/lib/sentry';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { queryClient } from '@/lib/react-query';
+import { ThemeProvider } from './context/ThemeContext'
+import { ToastProvider } from "@/components/ToastProvider";
+import { initializeCsrf } from './lib/bootstrap';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { AuthProvider } from '@/context/AuthContext';
+import { NotificationProvider } from '@/context/NotificationContext';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { initSentry as initSentryAdmin } from '@/lib/sentry';
+import { initWebVitals } from '@/lib/webVitals';
+
+initSentry();
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+const renderApp = () => {
+  createRoot(document.getElementById("root")!).render(
+    <ErrorBoundary>
+      <Suspense fallback={null}>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+              <ToastProvider>
+                <Router>
+                  <AuthProvider>
+                    <NotificationProvider>
+                      <AppAdmin />
+                    </NotificationProvider>
+                  </AuthProvider>
+                </Router>
+                <ReactQueryDevtools initialIsOpen={false} />
+              </ToastProvider>
+            </GoogleOAuthProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </Suspense>
+    </ErrorBoundary>
+  );
+};
+
+initializeCsrf()
+  .then(() => renderApp())
+  .catch(() => renderApp());
+
+initWebVitals();
