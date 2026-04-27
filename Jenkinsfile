@@ -1,9 +1,9 @@
 // Jenkinsfile — ROKE Industries Frontend
 pipeline {
-    agent {
+  agent {
     docker {
         image 'roke-jenkins-agent:latest'
-        args '-v /var/run/docker.sock:/var/run/docker.sock -v /opt/apps:/opt/apps:ro'
+        args '-v /var/run/docker.sock:/var/run/docker.sock -v /opt/apps:/opt/apps:rw'
         reuseNode true
     }
 }
