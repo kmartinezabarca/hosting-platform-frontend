@@ -217,16 +217,11 @@ pipeline {
             echo "Desplegando ${distDir}/ → ${deployPath}/"
 
             sh """
-                # Limpiar destino y copiar build
-                rm -rf ${deployPath}/*
                 cp -r ${distDir}/. ${deployPath}/
-
-                # Verificar deploy
                 test -f ${deployPath}/index.html && echo "Deploy exitoso"
-                ls -la ${deployPath}/ | head -10
+                ls ${deployPath}/ | head -5
             """
 
-            // Reload nginx en produccion
             if (isProduccion) {
                 sh 'sudo /usr/bin/systemctl reload nginx'
             }
