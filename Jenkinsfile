@@ -1,12 +1,12 @@
 // Jenkinsfile — ROKE Industries Frontend
 pipeline {
     agent {
-        docker {
-            image 'roke-jenkins-agent:latest'
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
-            reuseNode true
-        }
+    docker {
+        image 'roke-jenkins-agent:latest'
+        args '-v /var/run/docker.sock:/var/run/docker.sock -v /opt/apps:/opt/apps:ro'
+        reuseNode true
     }
+}
 
     environment {
         DEPLOY_HOST = '100.124.151.68'
@@ -96,25 +96,25 @@ pipeline {
         }
 
         stage('Obtener .env del servidor') {
-            steps {
-                script {
-                    def isProduccion = params.TARGET.contains('produccion')
-                    def isAdmin      = params.TARGET.contains('admin')
-                    def envPath      = isProduccion
-                        ? '/opt/apps/portal/.env.production'
-                        : '/opt/apps/portal-staging/.env.staging'
+    steps {
+        script {
+            def isProduccion = params.TARGET.contains('produccion')
+            def isAdmin      = params.TARGET.contains('admin')
 
-                    sshagent(credentials: ['roke-ssh-key']) {
-                        sh """
-                            scp -o StrictHostKeyChecking=no \
-                                ${DEPLOY_USER}@${DEPLOY_HOST}:${envPath} .env
-                            echo ".env descargado desde el servidor:"
-                            grep -E "VITE_API_URL|VITE_REVERB_HOST|VITE_APP_NAME" .env
-                        """
-                    }
-                }
-            }
+            def envPath = isProduccion
+                ? (isAdmin ? '/opt/apps/admin/.env.production'
+                           : '/opt/apps/portal/.env.production')
+                : (isAdmin ? '/opt/apps/admin-staging/.env.staging'
+                           : '/opt/apps/portal-staging/.env.staging')
+
+            sh """
+                cp ${envPath} .env
+                echo ".env cargado desde: ${envPath}"
+                grep -E "VITE_API_URL|VITE_REVERB_HOST|VITE_APP_NAME" .env
+            """
         }
+    }
+}
 
         stage('Build') {
             steps {
@@ -183,61 +183,58 @@ pipeline {
         }
 
         stage('Deploy') {
-            when {
-                expression { !params.SOLO_BUILD }
+    when {
+        expression { !params.SOLO_BUILD }
+    }
+    steps {
+        script {
+            def isAdmin      = params.TARGET.contains('admin')
+            def isProduccion = params.TARGET.contains('produccion')
+            def distDir      = isAdmin ? 'dist-admin' : 'dist-portal'
+
+            def deployPath = ''
+            def deployUrl  = ''
+
+            switch(params.TARGET) {
+                case 'portal-staging':
+                    deployPath = '/opt/apps/portal-staging'
+                    deployUrl  = 'https://app.rokeindustries.dev'
+                    break
+                case 'admin-staging':
+                    deployPath = '/opt/apps/admin-staging'
+                    deployUrl  = 'https://admin.rokeindustries.dev'
+                    break
+                case 'portal-produccion':
+                    deployPath = '/opt/apps/portal'
+                    deployUrl  = 'https://app.rokeindustries.com'
+                    break
+                case 'admin-produccion':
+                    deployPath = '/opt/apps/admin'
+                    deployUrl  = 'https://admin.rokeindustries.com'
+                    break
             }
-            steps {
-                script {
-                    def isAdmin      = params.TARGET.contains('admin')
-                    def isProduccion = params.TARGET.contains('produccion')
-                    def distDir      = isAdmin ? 'dist-admin' : 'dist-portal'
 
-                    def deployPath = ''
-                    def deployUrl  = ''
+            echo "Desplegando ${distDir}/ → ${deployPath}/"
 
-                    switch(params.TARGET) {
-                        case 'portal-staging':
-                            deployPath = '/opt/apps/portal-staging'
-                            deployUrl  = 'https://app.rokeindustries.dev'
-                            break
-                        case 'admin-staging':
-                            deployPath = '/opt/apps/admin-staging'
-                            deployUrl  = 'https://admin.rokeindustries.dev'
-                            break
-                        case 'portal-produccion':
-                            deployPath = '/opt/apps/portal'
-                            deployUrl  = 'https://app.rokeindustries.com'
-                            break
-                        case 'admin-produccion':
-                            deployPath = '/opt/apps/admin'
-                            deployUrl  = 'https://admin.rokeindustries.com'
-                            break
-                    }
+            sh """
+                # Limpiar destino y copiar build
+                rm -rf ${deployPath}/*
+                cp -r ${distDir}/. ${deployPath}/
 
-                    echo "Desplegando ${distDir}/ → ${deployPath}/ ..."
+                # Verificar deploy
+                test -f ${deployPath}/index.html && echo "Deploy exitoso"
+                ls -la ${deployPath}/ | head -10
+            """
 
-                    sshagent(credentials: ['roke-ssh-key']) {
-                        sh """
-                            rsync -avz --delete \
-                                -e "ssh -o StrictHostKeyChecking=no" \
-                                ${distDir}/ \
-                                ${DEPLOY_USER}@${DEPLOY_HOST}:${deployPath}/
-                        """
-
-                        // Reload nginx solo en produccion
-                        if (isProduccion) {
-                            sh """
-                                ssh -o StrictHostKeyChecking=no \
-                                    ${DEPLOY_USER}@${DEPLOY_HOST} \
-                                    "sudo /usr/bin/systemctl reload nginx"
-                            """
-                        }
-                    }
-
-                    echo "Desplegado exitosamente en: ${deployUrl}"
-                }
+            // Reload nginx en produccion
+            if (isProduccion) {
+                sh 'sudo /usr/bin/systemctl reload nginx'
             }
+
+            echo "Disponible en: ${deployUrl}"
         }
+    }
+}
     }
 
     post {
