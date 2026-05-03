@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo, lazy, Suspense, useCallback } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LayoutDashboard, Users, Server, FileText, HelpCircle, 
-  Settings, Package, LogOut, Menu, X, Search, 
-  ChevronDown, Sun, Moon, Shield, Zap, Tag, Book, Code, 
+import {
+  LayoutDashboard, Users, Server, FileText, HelpCircle,
+  Settings, Package, LogOut, Menu, X, Search,
+  ChevronDown, Sun, Moon, Shield, Zap, Tag, Book, Code,
   AlertCircle, Plus, Ticket, CreditCard, Sparkles,
   Layers, Database, Gamepad2, Globe, Bug, Clock,
   ChevronLeft, ChevronRight, LayoutGrid, Bell,
-  Loader2, ExternalLink
+  Loader2, ExternalLink, Receipt
 } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';
 import { useTheme } from '../context/ThemeContext';
@@ -39,6 +39,7 @@ const AdminApiDocumentationPage = lazy(() => import('../pages/admin/AdminApiDocu
 const AdminSystemStatusPage   = lazy(() => import('../pages/admin/AdminSystemStatusPage'));
 const AdminGameServersPage    = lazy(() => import('../pages/admin/AdminGameServersPage'));
 const AdminCfdiPage           = lazy(() => import('../pages/admin/AdminCfdiPage'));
+const AdminQuotationsPage     = lazy(() => import('../pages/admin/AdminQuotationsPage'));
 const NotFoundPage           = lazy(() => import('../pages/NotFoundPage'));
 import logoROKE from "../assets/logo_v4.png";
 
@@ -55,6 +56,7 @@ const navigationConfig = {
     { name: 'Game Servers', href: '/admin/game-servers', icon: Gamepad2, description: 'Pterodactyl servers', badgeKey: null },
     { name: 'Tickets', href: '/admin/tickets', icon: Ticket, description: 'Soporte y helpdesk', badgeKey: 'tickets_open' },
     { name: 'Facturas', href: '/admin/invoices', icon: CreditCard, description: 'Facturación', badgeKey: 'invoices_pending' },
+    { name: 'Cotizaciones', href: '/admin/quotations', icon: Receipt, description: 'Propuestas comerciales', badgeKey: null },
     { name: 'CFDI', href: '/admin/cfdi', icon: FileText, description: 'Facturas electrónicas SAT', badgeKey: null },
   ],
   catalog: [
@@ -82,6 +84,7 @@ const searchItems = [
   { name: 'Servicios', href: '/admin/services', category: 'Gestión', icon: Server },
   { name: 'Tickets', href: '/admin/tickets', category: 'Gestión', icon: Ticket },
   { name: 'Facturas', href: '/admin/invoices', category: 'Gestión', icon: CreditCard },
+  { name: 'Cotizaciones', href: '/admin/quotations', category: 'Gestión', icon: Receipt },
   { name: 'Planes de Servicio', href: '/admin/service-plans', category: 'Catálogo', icon: Package },
   { name: 'Add-ons', href: '/admin/add-ons', category: 'Catálogo', icon: Sparkles },
   { name: 'Blog', href: '/admin/blog', category: 'Contenido', icon: FileText },
@@ -782,6 +785,7 @@ const AdminLayout = () => {
                 <Route path="system-status"  element={<AdminSystemStatusPage />} />
                 <Route path="game-servers"  element={<AdminGameServersPage />} />
                 <Route path="cfdi"          element={<AdminCfdiPage />} />
+                <Route path="quotations"    element={<AdminQuotationsPage />} />
                 <Route path="*"             element={<NotFoundPage />} />
               </Routes>
             </Suspense>

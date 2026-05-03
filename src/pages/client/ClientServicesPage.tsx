@@ -8,6 +8,7 @@ const ServiceCard = ServiceCardImport as React.ComponentType<any>;
 import ServiceDetailModal from "../../components/services/service-detail-modal";
 import { useUserServices } from "../../hooks/useServices";
 import { useServiceActions } from "../../hooks/useServiceActions";
+import { useServicesMetrics } from "../../hooks/useServicesMetrics";
 import ErrorState from "@/components/ui/ErrorState";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -19,6 +20,7 @@ const ClientServicesPage = () => {
     error,
     refetch,
   } = useUserServices();
+
   const { handleServiceAction, actionLoading } = useServiceActions();
   const navigate = useNavigate();
   const [selectedService, setSelectedService] = useState(null);
@@ -26,126 +28,80 @@ const ClientServicesPage = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "active":
-        return "text-success";
-      case "pending":
-        return "text-warning";
-      case "suspended":
-        return "text-error";
-      case "terminated":
-        return "text-muted-foreground";
-      case "failed":
-        return "text-error";
-      default:
-        return "text-muted-foreground";
-    }
+  const hasActiveGameServers = (services as any[]).some(
+    (s) => s.type === "game_server" && s.status === "active"
+  );
+
+  const { data: metricsMap = {} } = useServicesMetrics(hasActiveGameServers);
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  const getStatusColor = (status: string) => {
+    const map: Record<string, string> = {
+      active: "text-success", pending: "text-warning",
+      suspended: "text-error", terminated: "text-muted-foreground", failed: "text-error",
+    };
+    return map[status] ?? "text-muted-foreground";
   };
 
-  const getStatusBgColor = (status) => {
-    switch (status) {
-      case "active":
-        return "bg-success/10";
-      case "pending":
-        return "bg-warning/10";
-      case "suspended":
-        return "bg-error/10";
-      case "terminated":
-        return "bg-muted/10";
-      case "failed":
-        return "bg-error/10";
-      default:
-        return "bg-muted/10";
-    }
+  const getStatusBgColor = (status: string) => {
+    const map: Record<string, string> = {
+      active: "bg-success/10", pending: "bg-warning/10",
+      suspended: "bg-error/10", terminated: "bg-muted/10", failed: "bg-error/10",
+    };
+    return map[status] ?? "bg-muted/10";
   };
 
-  const getStatusText = (status) => {
-    switch (status) {
-      case "active":
-        return "Activo";
-      case "pending":
-        return "Pendiente";
-      case "suspended":
-        return "Suspendido";
-      case "terminated":
-        return "Terminado";
-      case "failed":
-        return "Fallido";
-      default:
-        return "Desconocido";
-    }
+  const getStatusText = (status: string) => {
+    const map: Record<string, string> = {
+      active: "Activo", pending: "Pendiente", suspended: "Suspendido",
+      terminated: "Terminado", failed: "Fallido",
+    };
+    return map[status] ?? "Desconocido";
   };
 
-  const getTypeIcon = (type, isGameServer = false) => {
-    if (isGameServer) return Gamepad2;
-    switch (type) {
-      case "shared_hosting":
-        return Globe;
-      case "vps":
-        return Server;
-      case "game_server":
-        return Gamepad2;
-      case "database":
-        return Database;
-      default:
-        return Server;
-    }
+  const getTypeIcon = (type: string, isGameServer = false) => {
+    if (isGameServer || type === "game_server") return Gamepad2;
+    const map: Record<string, React.ElementType> = {
+      shared_hosting: Globe, vps: Server, database: Database,
+    };
+    return map[type] ?? Server;
   };
 
-  const getTypeText = (type) => {
-    switch (type) {
-      case "shared_hosting":
-        return "Web Hosting";
-      case "vps":
-        return "VPS";
-      case "game_server":
-        return "Servidor de Juegos";
-      case "database":
-        return "Base de Datos";
-      default:
-        return "Servicio";
-    }
+  const getTypeText = (type: string) => {
+    const map: Record<string, string> = {
+      shared_hosting: "Web Hosting", vps: "VPS",
+      game_server: "Servidor de Juegos", database: "Base de Datos",
+    };
+    return map[type] ?? "Servicio";
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("es-ES", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString("es-ES", {
+      day: "numeric", month: "short", year: "numeric",
     });
-  };
 
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-  };
+  const copyToClipboard = (text: string) => navigator.clipboard.writeText(text);
 
-  const getUsageColor = (percentage) => {
-    if (percentage >= 90) return "text-error";
-    if (percentage >= 70) return "text-warning";
-    return "text-success";
-  };
+  const getUsageColor = (pct: number) =>
+    pct >= 90 ? "text-error" : pct >= 70 ? "text-warning" : "text-success";
 
-  const getUsageBarColor = (percentage) => {
-    if (percentage >= 90) return "bg-error";
-    if (percentage >= 70) return "bg-warning";
-    return "bg-success";
-  };
+  const getUsageBarColor = (pct: number) =>
+    pct >= 90 ? "bg-error" : pct >= 70 ? "bg-warning" : "bg-success";
 
+  // ── Filtrado ───────────────────────────────────────────────────────────────
   const filteredServices = (services as any[]).filter((service) => {
     const matchesSearch =
       service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       service.domain?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || service.status === statusFilter;
-    const matchesType = typeFilter === "all" || service.type === typeFilter;
-
+    const matchesStatus = statusFilter === "all" || service.status === statusFilter;
+    const matchesType   = typeFilter   === "all" || service.type   === typeFilter;
     return matchesSearch && matchesStatus && matchesType;
   });
+
+  // ── Loading ────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" aria-busy="true" aria-live="polite">
-        {/* Header skeleton */}
         <div className="flex items-center justify-between mb-8">
           <div className="min-w-0">
             <Skeleton className="h-4 w-32 mb-2" />
@@ -153,26 +109,16 @@ const ClientServicesPage = () => {
           </div>
           <Skeleton className="h-10 w-36 rounded-lg" />
         </div>
-
-        {/* Grid de cards skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
             <div
               key={i}
-              className="
-              group rounded-2xl border border-border/60 bg-card/80
-              shadow-sm hover:shadow-lg hover:-translate-y-0.5
-              transition-all duration-300 will-change-transform
-              ring-1 ring-black/5 dark:ring-white/5 overflow-hidden
-            "
+              className="rounded-2xl border border-border/60 bg-card/80 shadow-sm overflow-hidden"
             >
-              {/* Header del card */}
               <div className="p-5 border-b border-border/60">
                 <Skeleton className="h-5 w-1/3 mb-2" />
                 <Skeleton className="h-4 w-1/2" />
               </div>
-
-              {/* Cuerpo del card */}
               <div className="p-6 space-y-3">
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-4 w-2/3" />
@@ -185,26 +131,24 @@ const ClientServicesPage = () => {
     );
   }
 
+  // ── Error ──────────────────────────────────────────────────────────────────
   if (isError) {
     return (
       <ErrorState
         title="Error al cargar los servicios"
         error={error}
         hint="Intenta nuevamente. Si el problema persiste, contacta a soporte."
-        primaryAction={{
-          label: "Reintentar",
-          onClick: () => refetch(),
-          icon: RefreshCw,
-          variant: "primary",
-        }}
+        primaryAction={{ label: "Reintentar", onClick: () => refetch(), icon: RefreshCw, variant: "primary" }}
         secondaryAction={undefined}
       />
     );
   }
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      {/* --- Cabecera de la Página --- */}
+
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Mis Servicios</h1>
@@ -231,7 +175,7 @@ const ClientServicesPage = () => {
         </motion.div>
       </div>
 
-      {/* --- Filtros (usando el nuevo componente) --- */}
+      {/* Filtros */}
       <ServiceFilters
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -241,7 +185,7 @@ const ClientServicesPage = () => {
         setTypeFilter={setTypeFilter}
       />
 
-      {/* --- Grid de Servicios --- */}
+      {/* Grid */}
       <motion.div
         layout
         className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
@@ -251,18 +195,21 @@ const ClientServicesPage = () => {
             filteredServices.map((service) => (
               <ServiceCard
                 key={service.uuid}
-                service={service}
+                service={{
+                  ...service,
+                  // Inyectar métricas cacheadas del hook unificado.
+                  // null si el servidor no es game server o no está activo.
+                  metrics: metricsMap[service.uuid] ?? service.metrics ?? null,
+                }}
                 actionLoading={actionLoading}
                 onAction={handleServiceAction}
                 onQuickView={() => setSelectedService(service)}
                 onManage={() => navigate(`/client/services/${service.uuid}`)}
-                onSettings={() =>
-                  navigate(`/client/services/${service.uuid}/manage`)
-                }
+                onSettings={() => navigate(`/client/services/${service.uuid}/manage`)}
                 getStatusColor={getStatusColor}
                 getStatusBgColor={getStatusBgColor}
                 getStatusText={getStatusText}
-                getTypeIcon={(type) => getTypeIcon(type, service.is_game_server)}
+                getTypeIcon={(type: string) => getTypeIcon(type, service.type === "game_server")}
                 getTypeText={getTypeText}
                 getUsageColor={getUsageColor}
                 getUsageBarColor={getUsageBarColor}
@@ -293,7 +240,7 @@ const ClientServicesPage = () => {
         </AnimatePresence>
       </motion.div>
 
-      {/* --- Modal Detalles del Servicio --- */}
+      {/* Modal */}
       <ServiceDetailModal
         service={selectedService}
         onClose={() => setSelectedService(null)}

@@ -62,6 +62,7 @@ const authService = {
       google_id:  googleUserData.sub,
       picture:    googleUserData.picture ?? null,
     });
+    console.log('callback response:', response.data);
     return response.data;
   },
 

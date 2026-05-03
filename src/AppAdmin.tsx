@@ -4,9 +4,10 @@ import './App.css'
 import ProtectedRoute from './components/ProtectedRoute'
 import ErrorBoundary from './components/ErrorBoundary'
 
-const AdminLayout  = lazy(() => import('./components/AdminLayout'))
-const LoginPage    = lazy(() => import('./pages/LoginPage'))
-const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
+const AdminLayout         = lazy(() => import('./components/AdminLayout'))
+const LoginPage           = lazy(() => import('./pages/LoginPage'))
+const NotFoundPage        = lazy(() => import('./pages/NotFoundPage'))
+const QuotationPublicPage = lazy(() => import('./pages/QuotationPublicPage'))
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -30,6 +31,9 @@ export default function AppAdmin() {
               </ProtectedRoute>
             }
           />
+
+          {/* Public quotation page — no auth required */}
+          <Route path="/cotizacion/:token" element={<QuotationPublicPage />} />
 
           <Route path="/"  element={<LoginPage />} />
           <Route path="*"  element={<NotFoundPage />} />

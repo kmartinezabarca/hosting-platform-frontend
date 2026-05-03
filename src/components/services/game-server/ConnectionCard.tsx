@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Copy, Check, ExternalLink, Gamepad2 } from 'lucide-react';
+import { Copy, Check, ExternalLink, Network, Loader2 } from 'lucide-react';
 
-function CopyButton({ text }) {
+function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
     navigator.clipboard.writeText(text);
@@ -11,9 +11,12 @@ function CopyButton({ text }) {
   return (
     <button
       onClick={handleCopy}
-      className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors font-medium"
+      className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors font-medium shrink-0"
     >
-      {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+      {copied
+        ? <Check className="w-3 h-3 text-emerald-500" />
+        : <Copy className="w-3 h-3 text-muted-foreground" />
+      }
       {copied ? 'Copiado' : 'Copiar'}
     </button>
   );
@@ -23,58 +26,37 @@ export default function ConnectionCard({ connection, status }) {
   const ipPort = connection ? `${connection.server_ip}:${connection.server_port}` : null;
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-6">
-      <div className="flex items-center gap-3 mb-5">
-        <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
-          <Gamepad2 className="w-5 h-5 text-violet-500" />
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="flex items-center gap-2.5 mb-4">
+        <div className="w-8 h-8 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
+          <Network className="w-4 h-4 text-violet-500" />
         </div>
-        <div>
-          <h3 className="text-sm font-semibold text-foreground">Datos de Conexión</h3>
-          <p className="text-xs text-muted-foreground">Usa estos datos en tu cliente de juego</p>
-        </div>
+        <h3 className="text-sm font-semibold text-foreground">Conexión</h3>
       </div>
 
       {(!connection || status === 'pending' || status === 'failed') ? (
-        <div className="text-center py-6">
+        <div className="flex items-center gap-2.5 py-3">
           {status === 'failed' ? (
-            <p className="text-sm text-red-500">
-              Error al crear tu servidor. El equipo de soporte fue notificado.
-            </p>
+            <p className="text-sm text-red-500">Error al obtener datos de conexión.</p>
           ) : (
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
+            <>
+              <Loader2 className="w-4 h-4 text-violet-400 animate-spin shrink-0" />
               <p className="text-sm text-muted-foreground">Aprovisionando servidor…</p>
-            </div>
+            </>
           )}
         </div>
       ) : (
-        <div className="space-y-4">
-          {/* IP:Port */}
-          <div className="flex items-center justify-between gap-4 p-3 rounded-xl bg-muted/40">
-            <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">IP : Puerto</p>
-              <p className="text-sm font-mono font-semibold text-foreground mt-0.5">{ipPort}</p>
+        <div className="space-y-2.5">
+          {/* IP:Puerto */}
+          <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-muted/50">
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">
+                IP : Puerto
+              </p>
+              <p className="text-sm font-mono font-semibold text-foreground truncate">{ipPort}</p>
             </div>
-            <CopyButton text={ipPort} />
+            <CopyButton text={ipPort!} />
           </div>
-
-          {/* Panel link */}
-          {connection.panel_url && (
-            <a
-              href={connection.panel_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between gap-4 p-3 rounded-xl border border-border hover:bg-muted/40 transition-colors group"
-            >
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Panel de Control</p>
-                <p className="text-sm font-medium text-foreground mt-0.5 group-hover:text-violet-500 transition-colors">
-                  Abrir panel de juego
-                </p>
-              </div>
-              <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-violet-500 transition-colors shrink-0" />
-            </a>
-          )}
         </div>
       )}
     </div>
