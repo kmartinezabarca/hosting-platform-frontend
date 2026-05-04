@@ -20,7 +20,7 @@ import logoROKE from "../assets/ROKEIndustriesFusionLogo.png";
 
 const LoginPage = () => {
   const { t } = useTranslation();
-  const { isAuthenticated, isAuthReady } = useAuth();
+  const { isAuthenticated, isAuthReady, user } = useAuth();
   
   const [formData, setFormData] = useState({
     email: "",
@@ -60,7 +60,7 @@ const LoginPage = () => {
   }
   
   if (isAuthenticated) {
-    return <Navigate to="/client/dashboard" replace />;
+    return <Navigate to={user?.needs_username ? '/auth/setup-username' : '/client/dashboard'} replace />;
   }
 
   const handleChange = (e) => {
@@ -103,8 +103,10 @@ const LoginPage = () => {
         await queryClient.refetchQueries({ queryKey: ['auth', 'me'] });
         if ((response as any).two_factor_required || response.requires_2fa) {
           navigate("/verify-2fa", { state: { email: formData.email } });
+        } else if ((response as any).needs_username) {
+          navigate('/auth/setup-username');
         } else {
-          window.location.href = '/client/dashboard';
+          window.location.href = (response as any).redirect_to || '/client/dashboard';
         }
       } catch (err) {
         setError((err as any)?.message || "Error al iniciar sesión. Verifica tus credenciales.");
@@ -117,6 +119,11 @@ const LoginPage = () => {
     return {
       twoFactorRequired: !!resp.two_factor_required,
       email: resp.email || resp.user?.email || null,
+      usernameRequired: !!resp.username_required,
+      needsUsername: !!resp.needs_username,
+      setupToken: resp.setup_token || null,
+      userPreview: resp.user_preview || null,
+      redirectTo: resp.redirect_to || '/client/dashboard',
     };
   }
 
@@ -131,13 +138,20 @@ const LoginPage = () => {
 
       const googleUserInfo = await userInfoResponse.json();
       const backendResponse = await loginWithGoogle(googleUserInfo);
+      console.log('Backend response after Google login:', backendResponse);
       await queryClient.refetchQueries({ queryKey: ['auth', 'me'] });
-      const { twoFactorRequired, email } = normalizeAuthResponse(backendResponse);
+      const { twoFactorRequired, email, usernameRequired, setupToken, userPreview, needsUsername, redirectTo } = normalizeAuthResponse(backendResponse);
 
       if (twoFactorRequired) {
         navigate("/verify-2fa", { state: { email } });
+      } else if (usernameRequired && setupToken) {
+        navigate(`/auth/complete-profile?setup_token=${encodeURIComponent(setupToken)}`, {
+          state: { setup_token: setupToken, user_preview: userPreview },
+        });
+      } else if (needsUsername) {
+        navigate('/auth/setup-username');
       } else {
-        window.location.href = '/client/dashboard';
+        window.location.href = redirectTo;
       }
     } catch (err) {
       setError((err as any)?.message || "No se pudo completar el inicio de sesión.");

@@ -7,13 +7,18 @@ import {
   ChevronDown, Sun, Moon
 } from "lucide-react";
 import { useGameServerWebSocket } from "@/hooks/useGameServerHooks";
+import { detectEulaRequiredFromLog, detectJavaVersionError, stripAnsi } from "@/components/services/game-server/consoleDetectors";
 
 interface ConsoleLog { id: number; text: string; ts: Date; }
+
 interface GameServerConsoleProps {
   serviceUuid: string;
   serverName?: string;
   className?: string;
   enabled?: boolean;
+  onJavaVersionError?: (requiredJava: number) => void;
+  onServerReady?: () => void;
+  onEulaRequired?: () => void;
 }
 
 // Colores de línea según tema
@@ -31,7 +36,7 @@ const getLineColor = (text: string, dark: boolean) => {
 };
 
 export function GameServerConsole({
-  serviceUuid, serverName, className, enabled = true,
+  serviceUuid, serverName, className, enabled = true, onJavaVersionError, onServerReady, onEulaRequired
 }: GameServerConsoleProps) {
   const [logs, setLogs]               = useState<ConsoleLog[]>([]);
   const [command, setCommand]         = useState("");
@@ -99,6 +104,18 @@ export function GameServerConsole({
   const histPosRef   = useRef(-1);
   const currentInputRef = useRef("");
 
+  // Keep the callback in a ref so changes to onJavaVersionError from the parent
+  // don't invalidate addLog → connect → useEffect (which was causing WS reconnect
+  // on every render and triggering Pterodactyl's 429 rate-limit).
+  const onJavaVersionErrorRef = useRef(onJavaVersionError);
+  useEffect(() => { onJavaVersionErrorRef.current = onJavaVersionError; }, [onJavaVersionError]);
+
+  const onServerReadyRef = useRef(onServerReady);
+  useEffect(() => { onServerReadyRef.current = onServerReady; }, [onServerReady]);
+
+  const onEulaRequiredRef = useRef(onEulaRequired);
+  useEffect(() => { onEulaRequiredRef.current = onEulaRequired; }, [onEulaRequired]);
+
   const fetchCredentials = useGameServerWebSocket(serviceUuid);
 
   const handleScroll = () => {
@@ -113,12 +130,44 @@ export function GameServerConsole({
 
   useEffect(() => { if (isAutoScroll) scrollToBottom(); }, [logs, isAutoScroll]);
 
+  // Ref to avoid calling onJavaVersionError multiple times per session
+  const javaErrorFiredRef = useRef(false);
+  const eulaFiredRef = useRef(false);
+
+  // addLog has NO dependency on onJavaVersionError — it reads from the ref instead.
+  // This keeps addLog (and therefore connect) stable across renders, preventing
+  // the reconnect-loop that caused Pterodactyl 429 rate-limit errors.
   const addLog = useCallback((text: string) => {
     setLogs(prev => {
       const next = [...prev, { id: ++logIdRef.current, text, ts: new Date() }];
       return next.length > 500 ? next.slice(-500) : next;
     });
-  }, []);
+
+    // Detect Java version incompatibility in console output (once per connection)
+    if (!javaErrorFiredRef.current && onJavaVersionErrorRef.current) {
+      const requiredJava = detectJavaVersionError(text);
+      if (requiredJava !== null) {
+        javaErrorFiredRef.current = true;
+        onJavaVersionErrorRef.current(requiredJava);
+      }
+    }
+
+    if (!eulaFiredRef.current && onEulaRequiredRef.current && detectEulaRequiredFromLog(text)) {
+      eulaFiredRef.current = true;
+      onEulaRequiredRef.current();
+    }
+
+    const clean = stripAnsi(text);
+    const SERVER_READY_PATTERNS = [
+      /Done \(\d+\.\d+s\)!/,              // Vanilla / Paper / Fabric
+      /Server marked as running/,          // Pterodactyl Wings
+    ];
+    if (SERVER_READY_PATTERNS.some(p => p.test(clean))) {
+      javaErrorFiredRef.current = false;   // reset para próximo arranque
+      eulaFiredRef.current = false;
+      onServerReadyRef.current?.();
+    }
+  }, []); // intentionally empty — uses refs for mutable values
 
   const connect = useCallback(async () => {
     if (!enabled) return;
@@ -144,7 +193,13 @@ export function GameServerConsole({
     ws.onerror = () => { setError("Error de conexión."); setConnected(false); setLoading(false); };
   }, [fetchCredentials, addLog, enabled]);
 
-  useEffect(() => { connect(); return () => wsRef.current?.close(); }, [serviceUuid, enabled, connect]);
+  useEffect(() => {
+    // Reset Java error flag so we can detect it again on reconnect
+    javaErrorFiredRef.current = false;
+    eulaFiredRef.current = false;
+    connect();
+    return () => wsRef.current?.close();
+  }, [serviceUuid, enabled, connect]);
 
   const sendCommand = useCallback(() => {
     const cmd = command.trim();

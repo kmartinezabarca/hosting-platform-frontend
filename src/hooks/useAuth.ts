@@ -87,3 +87,23 @@ export const useLogout = () => {
   });
 };
 
+export const useCompleteProfile = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: authService.completeProfile,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+    },
+  });
+};
+
+export const useSetupUsername = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (username: string) => authService.setupUsername(username),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+    },
+  });
+};
+

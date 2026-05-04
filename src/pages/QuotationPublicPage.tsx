@@ -2,26 +2,19 @@ import React, { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { usePublicQuotation } from '@/hooks/useQuotations';
 import quotationService from '@/services/quotationService';
-import { Loader2, Download, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Loader2, Download, CheckCircle, XCircle, Clock, AlertTriangle, Printer, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import logoROKE from '../assets/logo_v4.png';
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 const fmt = (amount: number, currency: string) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency }).format(amount);
 
 const fmtDate = (iso: string | null) => {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('es-MX', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return new Intl.DateTimeFormat('es-MX', { dateStyle: 'long', timeStyle: 'short' }).format(new Date(iso));
 };
 
 const isExpired = (expiresAt: string | null): boolean => {
@@ -29,17 +22,19 @@ const isExpired = (expiresAt: string | null): boolean => {
   return new Date(expiresAt) < new Date();
 };
 
+const shortUuid = (uuid: string) => uuid?.slice(-8).toUpperCase() ?? '';
+
 const STATUS_LABEL: Record<string, string> = {
   draft:    'Borrador',
   sent:     'Enviada',
   viewed:   'Vista',
   accepted: 'Aceptada',
   rejected: 'Rechazada',
-  expired:  'Expirada',
+  expired:  'Vencida',
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  draft:    'bg-gray-100 text-gray-700',
+  draft:    'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
   sent:     'bg-blue-100 text-blue-700',
   viewed:   'bg-purple-100 text-purple-700',
   accepted: 'bg-green-100 text-green-700',
@@ -47,13 +42,12 @@ const STATUS_COLOR: Record<string, string> = {
   expired:  'bg-orange-100 text-orange-700',
 };
 
-// ── Print styles injected once ────────────────────────────────────────────────
+// ── Print styles ──────────────────────────────────────────────────────────────
 
 const PRINT_STYLES = `
 @media print {
   body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .no-print { display: none !important; }
-  .print-break { page-break-before: always; }
   @page { margin: 1.5cm; }
 }
 `;
@@ -65,7 +59,7 @@ export default function QuotationPublicPage() {
   const { data: quotation, isLoading, isError, error } = usePublicQuotation(token ?? '');
   const markedRef = useRef(false);
 
-  // Inject print CSS once
+  // Inject print CSS
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = PRINT_STYLES;
@@ -73,7 +67,7 @@ export default function QuotationPublicPage() {
     return () => { document.head.removeChild(style); };
   }, []);
 
-  // Mark as viewed once on load
+  // Mark viewed on first successful load
   useEffect(() => {
     if (!token || markedRef.current || !quotation) return;
     markedRef.current = true;
@@ -85,13 +79,42 @@ export default function QuotationPublicPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground text-sm">Cargando cotización…</p>
+        <Loader2 className="h-10 w-10 animate-spin text-blue-600 mb-4" />
+        <p className="text-gray-500 text-sm">Cargando cotización…</p>
       </div>
     );
   }
 
-  // ── Error / Not found ────────────────────────────────────────────────────
+  // ── 410 Gone — expired ───────────────────────────────────────────────────
+
+  const httpStatus = (error as any)?.response?.status;
+
+  if (httpStatus === 410) {
+    const expiresAt = (error as any)?.response?.data?.data?.expires_at ?? null;
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
+        <div className="bg-white rounded-2xl shadow-md p-8 max-w-md w-full text-center">
+          <Clock className="h-12 w-12 text-orange-400 mx-auto mb-4" />
+          <h1 className="text-xl font-bold text-gray-800 mb-2">Este enlace ha vencido</h1>
+          <p className="text-gray-500 text-sm mb-2">
+            El período de validez de esta cotización ha expirado.
+          </p>
+          {expiresAt && (
+            <p className="text-xs text-gray-400 mb-4">Venció el {fmtDate(expiresAt)}</p>
+          )}
+          <div className="mt-4 p-3 rounded-xl bg-orange-50 border border-orange-200 text-orange-700 text-sm flex items-start gap-2">
+            <Mail className="h-4 w-4 mt-0.5 shrink-0" />
+            <span>Contacta a tu asesor para obtener un enlace actualizado.</span>
+          </div>
+          <a href="mailto:soporte@rokeindustries.com" className="mt-4 inline-block text-blue-600 hover:underline text-sm">
+            soporte@rokeindustries.com
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // ── 404 / generic error ──────────────────────────────────────────────────
 
   if (isError || !quotation) {
     const msg = (error as any)?.response?.data?.message ?? 'Esta cotización no existe o el enlace no es válido.';
@@ -106,38 +129,35 @@ export default function QuotationPublicPage() {
     );
   }
 
-  // ── Expired ──────────────────────────────────────────────────────────────
-
   const expired = isExpired(quotation.expires_at);
+
+  // ── Render document ──────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4">
-      {/* Expiration banner */}
+
+      {/* Expired banner */}
       {expired && (
         <div className="no-print max-w-4xl mx-auto mb-6">
           <div className="flex items-center gap-3 bg-orange-50 border border-orange-200 text-orange-700 rounded-xl px-4 py-3 text-sm">
-            <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+            <AlertTriangle className="h-5 w-5 shrink-0" />
             <span>
               Este enlace expiró el <strong>{fmtDate(quotation.expires_at)}</strong>.
-              Contacta a ROKE Industries para solicitar un nuevo enlace.
+              Contacta a ROKE Industries para solicitar uno nuevo.
             </span>
           </div>
         </div>
       )}
 
-      {/* Download button */}
+      {/* Action bar */}
       <div className="no-print max-w-4xl mx-auto mb-4 flex justify-end">
-        <Button
-          onClick={() => window.print()}
-          className="flex items-center gap-2 shadow-sm"
-          disabled={expired}
-        >
-          <Download className="h-4 w-4" />
-          Descargar PDF
+        <Button onClick={() => window.print()} className="flex items-center gap-2 shadow-sm">
+          <Printer className="h-4 w-4" />
+          Imprimir / Descargar PDF
         </Button>
       </div>
 
-      {/* ── Quotation document ─────────────────────────────────────────────── */}
+      {/* Document */}
       <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
 
         {/* Header */}
@@ -151,8 +171,9 @@ export default function QuotationPublicPage() {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-slate-300 text-xs uppercase tracking-widest mb-1">Cotización</p>
-              <h1 className="text-2xl font-bold">{quotation.title}</h1>
+              <p className="text-slate-400 text-xs uppercase tracking-widest mb-0.5">Cotización</p>
+              <p className="text-slate-200 text-xs font-mono mb-1">#{shortUuid(quotation.uuid)}</p>
+              <h1 className="text-xl font-bold leading-tight">{quotation.title}</h1>
               <div className="mt-2">
                 <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLOR[quotation.status] ?? 'bg-gray-100 text-gray-700'}`}>
                   {STATUS_LABEL[quotation.status] ?? quotation.status}
@@ -187,18 +208,14 @@ export default function QuotationPublicPage() {
 
         <div className="px-8 py-8 space-y-8">
 
-          {/* Client info */}
+          {/* Client / Company */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
               <p className="text-xs uppercase tracking-widest text-slate-400 font-medium mb-3">Para</p>
               <p className="font-bold text-lg text-slate-800">{quotation.client_name}</p>
-              {quotation.client_company && (
-                <p className="text-slate-500 text-sm">{quotation.client_company}</p>
-              )}
+              {quotation.client_company && <p className="text-slate-500 text-sm">{quotation.client_company}</p>}
               <p className="text-slate-500 text-sm">{quotation.client_email}</p>
-              {quotation.client_phone && (
-                <p className="text-slate-500 text-sm">{quotation.client_phone}</p>
-              )}
+              {quotation.client_phone && <p className="text-slate-500 text-sm">{quotation.client_phone}</p>}
             </div>
             <div className="sm:text-right">
               <p className="text-xs uppercase tracking-widest text-slate-400 font-medium mb-3">De</p>
@@ -217,6 +234,7 @@ export default function QuotationPublicPage() {
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
                   <tr>
+                    <th className="text-left px-4 py-3 font-medium">#</th>
                     <th className="text-left px-4 py-3 font-medium">Descripción</th>
                     <th className="text-center px-4 py-3 font-medium w-20">Cant.</th>
                     <th className="text-right px-4 py-3 font-medium w-36">Precio Unit.</th>
@@ -225,7 +243,8 @@ export default function QuotationPublicPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {(quotation.items ?? []).map((item: any, i: number) => (
-                    <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+                    <tr key={i} className="hover:bg-slate-50/60">
+                      <td className="px-4 py-3.5 text-slate-400 text-xs">{i + 1}</td>
                       <td className="px-4 py-3.5 text-slate-700">{item.description}</td>
                       <td className="px-4 py-3.5 text-center text-slate-600">{item.quantity}</td>
                       <td className="px-4 py-3.5 text-right text-slate-600">
@@ -262,8 +281,8 @@ export default function QuotationPublicPage() {
               )}
               <Separator />
               <div className="flex justify-between font-bold text-lg text-slate-800 pt-1">
-                <span>Total</span>
-                <span>{fmt(quotation.total, quotation.currency)}</span>
+                <span>TOTAL</span>
+                <span>{fmt(quotation.total, quotation.currency)} {quotation.currency}</span>
               </div>
             </div>
           </div>
@@ -290,11 +309,15 @@ export default function QuotationPublicPage() {
             </>
           )}
 
-          {/* Acceptance status */}
+          {/* Acceptance status banner */}
           {(quotation.status === 'accepted' || quotation.status === 'rejected') && (
             <>
               <Separator />
-              <div className="flex items-center justify-center gap-3 py-4">
+              <div className={`flex items-center justify-center gap-3 py-4 rounded-xl ${
+                quotation.status === 'accepted'
+                  ? 'bg-green-50 border border-green-200'
+                  : 'bg-red-50 border border-red-200'
+              }`}>
                 {quotation.status === 'accepted' ? (
                   <>
                     <CheckCircle className="h-6 w-6 text-green-500" />
@@ -310,33 +333,37 @@ export default function QuotationPublicPage() {
             </>
           )}
 
+          {/* Contact to accept/reject — public page has no admin auth */}
+          {!expired && quotation.status !== 'accepted' && quotation.status !== 'rejected' && (
+            <>
+              <Separator />
+              <div className="no-print rounded-xl bg-blue-50 border border-blue-200 p-5 text-center">
+                <p className="text-slate-700 font-medium mb-1">¿Deseas aceptar o rechazar esta cotización?</p>
+                <p className="text-slate-500 text-sm mb-3">
+                  Para confirmar tu decisión, contacta directamente a tu asesor.
+                </p>
+                <a
+                  href={`mailto:soporte@rokeindustries.com?subject=Cotización %23${shortUuid(quotation.uuid)} — ${quotation.title}`}
+                  className="inline-flex items-center gap-2 text-blue-600 hover:underline font-medium text-sm"
+                >
+                  <Mail className="h-4 w-4" />soporte@rokeindustries.com
+                </a>
+              </div>
+            </>
+          )}
+
         </div>
 
         {/* Footer */}
         <div className="bg-slate-50 border-t px-8 py-5">
           <p className="text-center text-slate-400 text-xs">
-            Esta cotización fue generada por ROKE Industries · rokeindustries.com
+            Generada por ROKE Industries · rokeindustries.com
             {quotation.expires_at && !expired && (
               <> · Válida hasta el {fmtDate(quotation.expires_at)}</>
             )}
           </p>
         </div>
       </div>
-
-      {/* Bottom CTA for non-expired quotations */}
-      {!expired && quotation.status !== 'accepted' && quotation.status !== 'rejected' && (
-        <div className="no-print max-w-4xl mx-auto mt-6 text-center">
-          <p className="text-slate-500 text-sm">
-            ¿Tienes preguntas sobre esta cotización?{' '}
-            <a
-              href="mailto:soporte@rokeindustries.com"
-              className="text-primary hover:underline font-medium"
-            >
-              Contáctanos
-            </a>
-          </p>
-        </div>
-      )}
     </div>
   );
 }

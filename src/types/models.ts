@@ -13,6 +13,13 @@ export interface User {
   email: string;
   first_name: string;
   last_name: string;
+  /** Nombre de usuario único (mínimo 3, máximo 30 caracteres) */
+  username?: string | null;
+  /**
+   * true cuando el usuario se registró con Google y aún no ha elegido username.
+   * Redirigir a /auth/setup-username después del login.
+   */
+  needs_username?: boolean;
   role: UserRole;
   avatar_url: string | null;
   /** Avatar de Google OAuth */

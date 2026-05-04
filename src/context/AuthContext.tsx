@@ -58,7 +58,15 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 // ─── Rutas públicas (no requieren autenticación) ───────────────────────────
 
-const PUBLIC_ROUTES = ['/login', '/register', '/forgot-password', '/reset-password', '/'];
+const PUBLIC_ROUTES = [
+  '/login',
+  '/register',
+  '/forgot-password',
+  '/reset-password',
+  '/auth/complete-profile',  // Google OAuth — nuevo usuario sin username
+  '/auth/setup-username',    // Usuario autenticado que aún no tiene username
+  '/',
+];
 
 // ─── Provider ──────────────────────────────────────────────────────────────
 

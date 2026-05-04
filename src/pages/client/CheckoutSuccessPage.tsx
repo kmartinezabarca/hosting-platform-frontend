@@ -1,5 +1,5 @@
 // src/pages/CheckoutSuccessPage.jsx
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   CheckCircle,
@@ -12,8 +12,10 @@ import {
   Clock,
   Shield,
   Zap,
+  Loader2,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useServiceDetails } from "@/hooks/useServices";
 
 const iconCircle =
   "inline-flex items-center justify-center w-12 h-12 rounded-full";
@@ -23,13 +25,27 @@ const cardShell =
 export default function CheckoutSuccessPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const state = (location.state as any) || {};
 
-  const { plan, category, billingCycle, total, serviceName } =
-    location.state || {};
+  const { plan, category, billingCycle, total, serviceName, service } = state;
+
+  const serviceId = service?.uuid || service?.id;
+  const shouldFetchService = Boolean(serviceId);
+  const { data: serviceResponse, isLoading: isLoadingService } = useServiceDetails(serviceId);
+
+  const liveService = serviceResponse?.service || serviceResponse || service;
+  const liveStatus = (liveService?.status || service?.status || "pending").toLowerCase();
+
+  const isProvisioning = ["pending", "provisioning", "creating", "processing"].includes(liveStatus);
+  const isFailed = ["failed", "error", "cancelled"].includes(liveStatus);
+  const isReady = ["active", "running", "online"].includes(liveStatus);
+
+  const serviceLabel = liveService?.name || serviceName || "Tu servicio";
+  const selectedCategory = (category || liveService?.type || "hosting").toLowerCase();
 
   useEffect(() => {
-    if (!plan) navigate("/client/dashboard");
-  }, [plan, navigate]);
+    if (!plan && !service) navigate("/client/services");
+  }, [plan, service, navigate]);
 
   const nextSteps = [
     {
@@ -86,9 +102,19 @@ export default function CheckoutSuccessPage() {
         "Conectar usando las credenciales de la base de datos enviadas",
     },
   };
-  const cur = serviceDetails[category] || serviceDetails.hosting;
+  const cur = serviceDetails[selectedCategory] || serviceDetails.hosting;
 
-  if (!plan) return null;
+  const statusMeta = useMemo(() => {
+    if (isReady) {
+      return { dot: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", label: "Activo" };
+    }
+    if (isFailed) {
+      return { dot: "bg-rose-500", text: "text-rose-600 dark:text-rose-400", label: "Con error" };
+    }
+    return { dot: "bg-amber-500 animate-pulse", text: "text-amber-600 dark:text-amber-400", label: "Configurando" };
+  }, [isReady, isFailed]);
+
+  if (!plan && !service) return null;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-14 space-y-10">
@@ -109,7 +135,7 @@ export default function CheckoutSuccessPage() {
           ¡Pago Exitoso!
         </h1>
         <p className="text-base sm:text-lg text-muted-foreground mt-2">
-          Tu servicio <span className="font-medium">“{serviceName}”</span> ha
+          Tu servicio <span className="font-medium">“{serviceLabel}”</span> ha
           sido contratado exitosamente.
         </p>
 
@@ -147,23 +173,25 @@ export default function CheckoutSuccessPage() {
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 Plan Contratado
               </p>
-              <p className="text-foreground mt-1">{plan.name}</p>
+              <p className="text-foreground mt-1">{plan?.name || liveService?.plan_name || "Servicio contratado"}</p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 Nombre del Servicio
               </p>
-              <p className="text-foreground mt-1">{serviceName}</p>
+              <p className="text-foreground mt-1">{serviceLabel}</p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 Estado
               </p>
               <div className="mt-1 inline-flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                <span className="text-amber-600 dark:text-amber-400">
-                  Configurando
-                </span>
+                {isLoadingService && shouldFetchService ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                ) : (
+                  <span className={`w-2 h-2 rounded-full ${statusMeta.dot}`} />
+                )}
+                <span className={statusMeta.text}>{statusMeta.label}</span>
               </div>
             </div>
           </div>
@@ -175,20 +203,28 @@ export default function CheckoutSuccessPage() {
               </p>
               <div className="mt-1 flex items-center gap-2 text-foreground">
                 <Clock className="w-4 h-4 text-muted-foreground" />
-                <span className="text-muted-foreground">{cur.setupTime}</span>
+                <span className="text-muted-foreground">{isReady ? "Listo para usar" : cur.setupTime}</span>
               </div>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 Acceso
               </p>
-              <p className="text-muted-foreground mt-1">{cur.accessInfo}</p>
+              <p className="text-muted-foreground mt-1">
+                {liveService?.connection_details?.panel_url
+                  ? "Panel de control disponible"
+                  : cur.accessInfo}
+              </p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 Próximo Paso
               </p>
-              <p className="text-muted-foreground mt-1">{cur.nextAction}</p>
+              <p className="text-muted-foreground mt-1">
+                {liveService?.connection_details?.panel_url
+                  ? "Abre tu panel y termina la configuración inicial"
+                  : cur.nextAction}
+              </p>
             </div>
           </div>
         </div>
@@ -306,6 +342,15 @@ export default function CheckoutSuccessPage() {
           <Settings className="w-5 h-5" />
           Gestionar Servicios
         </button>
+        {liveService?.connection_details?.panel_url && (
+          <button
+            onClick={() => window.open(liveService.connection_details.panel_url, "_blank", "noopener,noreferrer")}
+            className="rounded-xl px-5 py-3 font-semibold border border-black/10 dark:border-white/10 bg-transparent text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition inline-flex items-center gap-2"
+          >
+            <ExternalLink className="w-5 h-5" />
+            Abrir Panel
+          </button>
+        )}
         <button
           onClick={() => navigate("/client/dashboard")}
           className="rounded-xl px-5 py-3 font-semibold

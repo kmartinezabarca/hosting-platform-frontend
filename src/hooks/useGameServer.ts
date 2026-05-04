@@ -77,6 +77,27 @@ export function useUpdateGameServerProperties(serviceUuid: string) {
   });
 }
 
+export function useAcceptGameServerEula(serviceUuid: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => servicesService.acceptGameServerEula(serviceUuid),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['gameServer', 'configuration', serviceUuid] });
+    },
+  });
+}
+
+export function useFixGameServerJava(serviceUuid: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (targetJava?: number) => servicesService.fixGameServerJava(serviceUuid, targetJava),
+    onSuccess: () => {
+      // Refrescar configuración para que java_version_mismatch pase a false
+      qc.invalidateQueries({ queryKey: ['gameServer', 'configuration', serviceUuid] });
+    },
+  });
+}
+
 /** Control de energía: start | stop | restart | kill */
 export function useGameServerPower(serviceUuid) {
   const qc = useQueryClient();

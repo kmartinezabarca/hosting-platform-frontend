@@ -1,24 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Eye, EyeOff, Mail, Lock, User, Chrome, ArrowRight, 
-  Shield, Zap, Globe, Check, X, AlertCircle, CheckCircle2 
+import {
+  Eye, EyeOff, Mail, Lock, User, ArrowRight, AtSign,
+  Shield, Zap, Globe, X, AlertCircle, CheckCircle2, Loader2
 } from 'lucide-react';
 import { useRegister, useLoginWithGoogle } from '../hooks/useAuth';
+import authService from '../services/authService';
 import logoROKE from "../assets/ROKEIndustriesFusionLogo.png";
+
+type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';
+
+const USERNAME_REGEX = /^[a-zA-Z0-9_-]{3,30}$/;
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: '',
-    acceptTerms: false
+    acceptTerms: false,
   });
-  
+
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -26,8 +32,12 @@ const RegisterPage = () => {
   const [passwordStrength, setPasswordStrength] = useState<{score: number; feedback: {text: string; valid: boolean}[]; isValid: boolean}>({
     score: 0,
     feedback: [],
-    isValid: false
+    isValid: false,
   });
+
+  // Username availability state
+  const [usernameStatus, setUsernameStatus] = useState<UsernameStatus>('idle');
+  const usernameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { mutateAsync: register, isPending: isRegisterLoading } = useRegister();
   const { mutateAsync: loginWithGoogle, isPending: isGoogleRegisterLoading } = useLoginWithGoogle();
@@ -89,6 +99,28 @@ const RegisterPage = () => {
     }
   }, [formData.password]);
 
+  // Debounced username availability check
+  const checkUsername = useCallback((value: string) => {
+    if (usernameDebounceRef.current) clearTimeout(usernameDebounceRef.current);
+    if (!value) { setUsernameStatus('idle'); return; }
+    if (!USERNAME_REGEX.test(value)) { setUsernameStatus('invalid'); return; }
+
+    setUsernameStatus('checking');
+    usernameDebounceRef.current = setTimeout(async () => {
+      try {
+        const result = await authService.checkUsernameAvailability(value);
+        setUsernameStatus(result.available ? 'available' : 'taken');
+      } catch {
+        setUsernameStatus('idle');
+      }
+    }, 500);
+  }, []);
+
+  useEffect(() => {
+    checkUsername(formData.username);
+    return () => { if (usernameDebounceRef.current) clearTimeout(usernameDebounceRef.current); };
+  }, [formData.username, checkUsername]);
+
    const validateField = (name, value) => {
     let newError = '';
     switch (name) {
@@ -100,6 +132,11 @@ const RegisterPage = () => {
       case 'email':
         if (!value.trim()) newError = 'El correo es requerido.';
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) newError = 'Formato de correo no válido.';
+        break;
+      case 'username':
+        if (!value.trim()) newError = 'El nombre de usuario es requerido.';
+        else if (!USERNAME_REGEX.test(value)) newError = '3-30 caracteres, solo letras, números, guiones y guion bajo.';
+        else if (usernameStatus === 'taken') newError = 'Este nombre de usuario ya está en uso.';
         break;
       case 'password':
         // La validación de fortaleza ya se muestra, no necesitamos un error de texto aquí.
@@ -138,6 +175,18 @@ const RegisterPage = () => {
     }
     if (!formData.email.trim()) {
       setError('El correo electrónico es requerido');
+      return false;
+    }
+    if (!formData.username.trim()) {
+      setError('El nombre de usuario es requerido');
+      return false;
+    }
+    if (!USERNAME_REGEX.test(formData.username)) {
+      setError('El nombre de usuario debe tener 3-30 caracteres y solo letras, números, - o _.');
+      return false;
+    }
+    if (usernameStatus === 'taken' || usernameStatus === 'invalid') {
+      setError('El nombre de usuario no está disponible.');
       return false;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -179,6 +228,7 @@ const RegisterPage = () => {
       await register({
         first_name: formData.firstName,
         last_name: formData.lastName,
+        username: formData.username,
         email: formData.email,
         password: formData.password,
         password_confirmation: formData.confirmPassword
@@ -201,10 +251,20 @@ const RegisterPage = () => {
 
       if (backendResponse?.two_factor_required) {
         navigate("/verify-2fa", { state: { email: backendResponse.email } });
+      } else if (backendResponse?.username_required && backendResponse?.setup_token) {
+        navigate(`/auth/complete-profile?setup_token=${encodeURIComponent(backendResponse.setup_token)}`, {
+          state: {
+            setup_token: backendResponse.setup_token,
+            user_preview: backendResponse.user_preview,
+            expires_in_minutes: backendResponse.expires_in_minutes,
+          },
+        });
+      } else if (backendResponse?.needs_username) {
+        navigate('/auth/setup-username');
       } else if (backendResponse?.access_token || backendResponse?.user) {
-        navigate("/client/dashboard");
+        navigate(backendResponse?.redirect_to || "/client/dashboard");
       } else {
-        navigate("/client/dashboard");
+        navigate(backendResponse?.redirect_to || "/client/dashboard");
       }
     } catch (err) {
       setError((err as any)?.message || 'No se pudo completar el registro con Google.');
@@ -413,6 +473,56 @@ const RegisterPage = () => {
                   </motion.p>
                 )}
                 </div>
+              </div>
+
+              {/* Username */}
+              <div className="space-y-1">
+                <label
+                  htmlFor="username"
+                  className="block text-sm font-medium text-black font-semibold"
+                >
+                  Nombre de usuario
+                </label>
+                <div className="relative">
+                  <AtSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black/50" />
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    required
+                    value={formData.username}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className={`w-full pl-10 pr-10 py-3 bg-white border rounded-xl text-[#222222] placeholder-gray-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 ${
+                      formErrors.username
+                        ? "border-red-500 focus:ring-red-500"
+                        : usernameStatus === 'available'
+                        ? "border-emerald-500 focus:ring-emerald-500"
+                        : usernameStatus === 'taken' || usernameStatus === 'invalid'
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-[#222222]"
+                    }`}
+                    placeholder="ej. kmartinez"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {usernameStatus === 'checking' && <Loader2 className="w-4 h-4 animate-spin text-gray-500" />}
+                    {usernameStatus === 'available' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                    {(usernameStatus === 'taken' || usernameStatus === 'invalid') && <AlertCircle className="w-4 h-4 text-red-500" />}
+                  </div>
+                </div>
+                <p className="text-xs text-black/60 pl-1">3-30 caracteres · letras, números, guion y guion bajo.</p>
+                {usernameStatus === 'taken' && <p className="text-xs text-red-600 pl-1">Este nombre de usuario ya está en uso.</p>}
+                {usernameStatus === 'available' && <p className="text-xs text-emerald-600 pl-1">Nombre de usuario disponible.</p>}
+                {usernameStatus === 'invalid' && <p className="text-xs text-red-600 pl-1">Formato inválido.</p>}
+                {formErrors.username && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-xs text-red-600 pl-1 pt-1"
+                  >
+                    {formErrors.username}
+                  </motion.p>
+                )}
               </div>
 
               {/* Email */}
@@ -650,7 +760,10 @@ const RegisterPage = () => {
                 disabled={
                   isLoading ||
                   !passwordStrength.isValid ||
-                  !formData.acceptTerms
+                  !formData.acceptTerms ||
+                  usernameStatus === 'checking' ||
+                  usernameStatus === 'taken' ||
+                  usernameStatus === 'invalid'
                 }
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}

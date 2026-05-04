@@ -94,6 +94,7 @@ type ConfirmAction = {
 
 const detectDirectory = (egg: string) => {
     const e = egg.toLowerCase();
+    console.log("Detecting mod directory for egg:", egg);
     if (e.includes("forge") || e.includes("fabric")) return "/mods";
     if (e.includes("spigot") || e.includes("paper") || e.includes("bukkit"))
         return "/plugins";

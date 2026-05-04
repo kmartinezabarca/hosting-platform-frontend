@@ -2,6 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useSoftwareVersions } from '@/hooks/useSoftwareVersions';
+import { eggNameToIdentifier } from '@/services/softwareVersionService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,7 +33,9 @@ import {
   DollarSign,
   Filter,
   X,
-  Settings2
+  Settings2,
+  Gamepad2,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   useAdminServicePlans,
@@ -63,7 +67,174 @@ const planSchema = z.object({
     key: z.string(),
     value: z.string()
   })).optional(),
+  // ── Pterodactyl fields ────────────────────────────────────────────────────
+  provisioner:             z.string().optional(),
+  pterodactyl_egg:         z.string().optional(),
+  pterodactyl_version:     z.string().optional(),
+  pterodactyl_environment: z.record(z.string()).optional(),
 });
+
+// ── Egg options ───────────────────────────────────────────────────────────────
+
+const EGG_OPTIONS = [
+  // ── PaperMC family ────────────────────────────────────────────────────────
+  { label: 'Paper MC',               value: 'paper mc',                envKey: 'MC_VERSION'              },
+  { label: 'Purpur',                 value: 'purpur',                  envKey: 'MC_VERSION'              },
+  { label: 'Purpur Geyser',          value: 'purpur-geyser',           envKey: 'MC_VERSION'              },
+  { label: 'Folia',                  value: 'folia',                   envKey: 'MC_VERSION'              },
+  // ── Spigot ───────────────────────────────────────────────────────────────
+  { label: 'Spigot',                 value: 'spigot',                  envKey: 'MC_VERSION'              },
+  // ── Modded — Fabric / Quilt ──────────────────────────────────────────────
+  { label: 'Fabric',                 value: 'fabric',                  envKey: 'FABRIC_LOADER_VERSION'   },
+  { label: 'Quilt',                  value: 'quilt',                   envKey: 'QUILT_LOADER_VERSION'    },
+  // ── Modded — Forge / Maven ───────────────────────────────────────────────
+  { label: 'Forge',                  value: 'forge',                   envKey: 'FORGE_VERSION'           },
+  { label: 'NeoForge',               value: 'neoforge',                envKey: 'NEOFORGE_VERSION'        },
+  { label: 'Arclight',               value: 'arclight',                envKey: 'ARCLIGHT_VERSION'        },
+  { label: 'Sponge (SpongeVanilla)', value: 'sponge',                  envKey: 'SPONGE_VERSION'          },
+  // ── Vanilla ──────────────────────────────────────────────────────────────
+  { label: 'Vanilla Java',           value: 'vanilla java',            envKey: 'MC_VERSION'              },
+  { label: 'Vanilla Bedrock',        value: 'vanilla bedrock',         envKey: 'MC_VERSION'              },
+  // ── Bedrock server ───────────────────────────────────────────────────────
+  { label: 'Nukkit (Bedrock)',        value: 'nukkit',                  envKey: 'NUKKIT_VERSION'          },
+  // ── Proxy ─────────────────────────────────────────────────────────────────
+  { label: 'Velocity',               value: 'velocity',                envKey: 'VELOCITY_VERSION'        },
+  { label: 'BungeeCord',             value: 'bungeecord',              envKey: 'BUNGEE_VERSION'          },
+];
+
+// ── PterodactylTab component ──────────────────────────────────────────────────
+
+const PterodactylTab = ({ watch, setValue }: { watch: any; setValue: any }) => {
+  const provisioner   = watch('provisioner')       as string;
+  const selectedEgg   = watch('pterodactyl_egg')   as string;
+  const selectedVer   = watch('pterodactyl_version') as string;
+
+  const identifier    = eggNameToIdentifier(selectedEgg);
+  const { data: versions = [], isLoading: versionsLoading } = useSoftwareVersions(identifier, !!identifier);
+
+  const isPterodactyl = provisioner === 'pterodactyl';
+
+  // When version changes, update pterodactyl_environment too
+  const handleVersionChange = (ver: string) => {
+    setValue('pterodactyl_version', ver);
+    const egg    = EGG_OPTIONS.find(e => e.value === selectedEgg);
+    const envKey = egg?.envKey ?? 'VERSION';
+    setValue('pterodactyl_environment', { [envKey]: ver });
+  };
+
+  // When egg changes, reset version and re-trigger environment
+  const handleEggChange = (egg: string) => {
+    setValue('pterodactyl_egg', egg);
+    setValue('pterodactyl_version', 'latest');
+    const eggOpt = EGG_OPTIONS.find(e => e.value === egg);
+    setValue('pterodactyl_environment', { [eggOpt?.envKey ?? 'VERSION']: 'latest' });
+  };
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <Label className="text-sm font-medium text-foreground">Proveedor de aprovisionamiento</Label>
+        <p className="text-xs text-muted-foreground mt-0.5 mb-2">Selecciona si este plan usa Pterodactyl para servidores de juego.</p>
+        <Select value={provisioner} onValueChange={(v) => setValue('provisioner', v)}>
+          <SelectTrigger className="h-10 bg-background dark:bg-[#0f1115] border-border dark:border-white/10 text-foreground">
+            <SelectValue placeholder="Sin proveedor" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Sin proveedor</SelectItem>
+            <SelectItem value="pterodactyl">
+              <div className="flex items-center gap-2">
+                <Gamepad2 className="h-4 w-4 text-violet-500" />Pterodactyl
+              </div>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {isPterodactyl && (
+        <>
+          {/* Egg selector */}
+          <div>
+            <Label className="text-sm font-medium text-foreground">Tipo de servidor (Egg)</Label>
+            <p className="text-xs text-muted-foreground mt-0.5 mb-2">
+              El egg de Pterodactyl determina qué software se instalará.
+            </p>
+            <Select value={selectedEgg} onValueChange={handleEggChange}>
+              <SelectTrigger className="h-10 bg-background dark:bg-[#0f1115] border-border dark:border-white/10 text-foreground">
+                <SelectValue placeholder="Seleccionar egg…" />
+              </SelectTrigger>
+              <SelectContent>
+                {EGG_OPTIONS.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Version selector */}
+          {selectedEgg && (
+            <div>
+              <Label className="text-sm font-medium text-foreground">Versión del servidor</Label>
+              <p className="text-xs text-muted-foreground mt-0.5 mb-2">
+                Se guarda en la variable de entorno del egg. Selecciona "latest" para siempre la más reciente.
+              </p>
+
+              {versionsLoading ? (
+                <Select disabled>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Cargando versiones…" />
+                  </SelectTrigger>
+                  <SelectContent />
+                </Select>
+              ) : (
+                <>
+                  <Select value={selectedVer} onValueChange={handleVersionChange}>
+                    <SelectTrigger className="h-10 bg-background dark:bg-[#0f1115] border-border dark:border-white/10 text-foreground">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {versions.map(v => (
+                        <SelectItem key={v} value={v}>{v}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {!identifier && (
+                    <div className="flex items-start gap-2 mt-2 p-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs">
+                      <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                      <span>No se pudieron cargar las versiones. Se usará &quot;latest&quot;.</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Environment variables summary */}
+          {selectedEgg && selectedVer && (
+            <div className="rounded-xl border border-border/70 bg-muted/30 p-4 text-xs">
+              <p className="font-medium text-foreground mb-2">Variable de entorno generada:</p>
+              <div className="font-mono text-muted-foreground">
+                <span className="text-blue-500 dark:text-blue-400">
+                  {EGG_OPTIONS.find(e => e.value === selectedEgg)?.envKey ?? 'VERSION'}
+                </span>
+                {' = '}
+                <span className="text-emerald-600 dark:text-emerald-400">{selectedVer}</span>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {!isPterodactyl && (
+        <div className="text-center py-10 text-muted-foreground">
+          <Gamepad2 className="h-10 w-10 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">Selecciona <strong>Pterodactyl</strong> como proveedor para configurar el servidor de juego.</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 const AdminServicePlansPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -95,7 +266,11 @@ const AdminServicePlansPage = () => {
       sort_order: '0',
       features: [],
       pricing: [],
-      specifications: []
+      specifications: [],
+      provisioner: '',
+      pterodactyl_egg: '',
+      pterodactyl_version: 'latest',
+      pterodactyl_environment: {},
     }
   });
 
@@ -215,7 +390,11 @@ const AdminServicePlansPage = () => {
         billing_cycle_id: p.billing_cycle_id,
         price: p.price?.toString() || ''
       })) || [],
-      specifications: Object.entries(plan.specifications || {}).map(([key, value]) => ({ key, value: value as any }))
+      specifications: Object.entries(plan.specifications || {}).map(([key, value]) => ({ key, value: value as any })),
+      provisioner: plan.provisioner || '',
+      pterodactyl_egg: plan.pterodactyl_egg || '',
+      pterodactyl_version: plan.pterodactyl_version || 'latest',
+      pterodactyl_environment: plan.pterodactyl_environment || {},
     });
     setIsSheetOpen(true);
   };
@@ -536,11 +715,14 @@ const AdminServicePlansPage = () => {
             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
               <div className="flex-1 overflow-y-auto px-6 py-4">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-4 mb-4 shrink-0 bg-muted dark:bg-[#1a1a1a]">
-                    <TabsTrigger value="basic">Información</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-5 mb-4 shrink-0 bg-muted dark:bg-[#1a1a1a]">
+                    <TabsTrigger value="basic">Info</TabsTrigger>
                     <TabsTrigger value="features">Características</TabsTrigger>
                     <TabsTrigger value="pricing">Precios</TabsTrigger>
-                    <TabsTrigger value="specs">Especificaciones</TabsTrigger>
+                    <TabsTrigger value="specs">Specs</TabsTrigger>
+                    <TabsTrigger value="pterodactyl" className="flex items-center gap-1">
+                      <Gamepad2 className="h-3.5 w-3.5" />Game
+                    </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="basic" className="space-y-4">
@@ -679,6 +861,10 @@ const AdminServicePlansPage = () => {
                         </div>
                       )}
                     </div>
+                  </TabsContent>
+
+                  <TabsContent value="pterodactyl" className="space-y-5">
+                    <PterodactylTab watch={watch} setValue={setValue} />
                   </TabsContent>
 
                   <TabsContent value="specs" className="space-y-3">

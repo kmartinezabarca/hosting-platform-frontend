@@ -67,7 +67,7 @@ const ContractServicePage = () => {
   const handleProceedToCheckout = () => {
     if (selectedPlan) {
       navigate("/client/checkout", {
-        state: { plan: selectedPlan, billingCycle },
+        state: { plan: selectedPlan, billingCycle, category: selectedCategory },
       });
     }
   };

@@ -56,6 +56,8 @@ export interface GameServerRuntimeConfig {
   startup_command?: string | null;
   nest_id?: number;
   egg_id?: number;
+  /** Java version currently used by the Docker image (e.g. 17, 21, 25) */
+  java_version?: number;
 }
 
 export interface GameServerProperties {
@@ -76,8 +78,14 @@ export interface GameServerProperties {
 export interface GameServerConfiguration {
   runtime: GameServerRuntimeConfig;
   server_properties: GameServerProperties;
+  eula_accepted?: boolean;
+  /** true cuando el docker image actual no coincide con el Java requerido por la versión de MC */
+  java_version_mismatch?: boolean;
+  /** versión de Java que la versión de Minecraft instalada realmente necesita */
+  required_java_version?: number;
   restart_required?: boolean;
   pending_changes_count?: number;
+  reinstall_triggered?: boolean;
 }
 
 export interface UpdateGameServerSoftwarePayload {
@@ -212,6 +220,26 @@ export const servicesService = {
       properties,
     );
     return response.data;
+  },
+
+  async acceptGameServerEula(
+    serviceUuid: string,
+  ): Promise<{ success: boolean; eula_accepted: boolean; message: string }> {
+    const response = await apiClient.post(
+      `/services/${serviceUuid}/game-server/eula/accept`,
+    );
+    return response.data as { success: boolean; eula_accepted: boolean; message: string };
+  },
+
+  async fixGameServerJava(
+    serviceUuid: string,
+    targetJava?: number,
+  ): Promise<{ fixed: boolean; old_java: number; new_java: number; docker_image: string; message: string }> {
+    const response = await apiClient.post(
+      `/services/${serviceUuid}/game-server/fix-java`,
+      targetJava ? { target_java: targetJava } : {},
+    );
+    return response.data as { fixed: boolean; old_java: number; new_java: number; docker_image: string; message: string };
   },
 
   // Get service details
@@ -425,6 +453,15 @@ export const servicesService = {
     const response = await apiClient.post<MessageResponse>(
       `/services/${serviceUuid}/game-server/power`,
       { signal },
+    );
+    return response.data;
+  },
+
+  async getGameServerStartupCommand(
+    serviceUuid: string,
+  ): Promise<ApiResponse<{ startup_command: string; docker_images?: Record<string, string> }>> {
+    const response = await apiClient.get<ApiResponse<{ startup_command: string; docker_images?: Record<string, string> }>>(
+      `/services/${serviceUuid}/game-server/startup`,
     );
     return response.data;
   },

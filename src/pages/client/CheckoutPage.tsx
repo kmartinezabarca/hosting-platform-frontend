@@ -24,6 +24,7 @@ export default function CheckoutPage() {
   const { plan, category, billingCycle } = location.state || {};
   const [step, setStep] = useState(1);
   const payRef = useRef(null);
+  console.log("CheckoutPage initialized with:", { plan, category, billingCycle, user });
 
   const [formData, setFormData] = useState({
     firstName: user?.first_name || "",

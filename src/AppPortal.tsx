@@ -8,6 +8,9 @@ const ClientLayout  = lazy(() => import('./components/ClientLayout'))
 const LoginPage     = lazy(() => import('./pages/LoginPage'))
 const RegisterPage  = lazy(() => import('./pages/RegisterPage'))
 const Verify2FAPage = lazy(() => import('./pages/Verify2FAPage'))
+const CompleteProfilePage = lazy(() => import('./pages/auth/CompleteProfilePage'));
+const SetupUsernamePage   = lazy(() => import('./pages/auth/SetupUsernamePage'));
+const ProfileDemo   = lazy(() => import('./pages/ProfileDemo'));
 const NotFoundPage  = lazy(() => import('./pages/NotFoundPage'))
 
 const PageLoader = () => (
@@ -24,6 +27,9 @@ export default function AppPortal() {
           <Route path="/login"      element={<LoginPage />} />
           <Route path="/register"   element={<RegisterPage />} />
           <Route path="/verify-2fa" element={<Verify2FAPage />} />
+          <Route path="/auth/complete-profile" element={<CompleteProfilePage />} />
+          <Route path="/auth/setup-username"   element={<SetupUsernamePage />} />
+          <Route path="/profile-demo"          element={<ProfileDemo />} />
 
           <Route
             path="/client/*"

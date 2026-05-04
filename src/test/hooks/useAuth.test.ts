@@ -61,6 +61,7 @@ describe('useRegister', () => {
       result.current.mutate({
         first_name: 'Nuevo',
         last_name: 'Usuario',
+        username: 'nuevousuario',
         email: 'nuevo@roke.com',
         password: 'password123',
         password_confirmation: 'password123',

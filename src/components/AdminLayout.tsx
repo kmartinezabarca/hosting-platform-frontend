@@ -40,6 +40,7 @@ const AdminSystemStatusPage   = lazy(() => import('../pages/admin/AdminSystemSta
 const AdminGameServersPage    = lazy(() => import('../pages/admin/AdminGameServersPage'));
 const AdminCfdiPage           = lazy(() => import('../pages/admin/AdminCfdiPage'));
 const AdminQuotationsPage     = lazy(() => import('../pages/admin/AdminQuotationsPage'));
+const AdminQuotationDetailPage = lazy(() => import('../pages/admin/AdminQuotationDetailPage'));
 const NotFoundPage           = lazy(() => import('../pages/NotFoundPage'));
 import logoROKE from "../assets/logo_v4.png";
 
@@ -785,7 +786,8 @@ const AdminLayout = () => {
                 <Route path="system-status"  element={<AdminSystemStatusPage />} />
                 <Route path="game-servers"  element={<AdminGameServersPage />} />
                 <Route path="cfdi"          element={<AdminCfdiPage />} />
-                <Route path="quotations"    element={<AdminQuotationsPage />} />
+                <Route path="quotations"           element={<AdminQuotationsPage />} />
+                <Route path="quotations/:uuid"    element={<AdminQuotationDetailPage />} />
                 <Route path="*"             element={<NotFoundPage />} />
               </Routes>
             </Suspense>
