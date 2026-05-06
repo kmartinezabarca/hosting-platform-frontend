@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { Button } from '@presentation/components/ui/button';
 import { Mail, Trash2, Plus, Loader2 } from 'lucide-react';
 
 export default {

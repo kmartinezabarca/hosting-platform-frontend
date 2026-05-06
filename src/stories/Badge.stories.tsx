@@ -1,4 +1,4 @@
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@presentation/components/ui/badge';
 import { CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 
 export default {
