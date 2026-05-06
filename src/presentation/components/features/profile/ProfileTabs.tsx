@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, Shield, MonitorSmartphone, Receipt } from 'lucide-react';
-import { cn } from '@presentation/components/features/../lib/utils';
+import { cn } from '@shared/utils/utils';
 
 const ProfileTabs = ({ activeTab, onTabChange, children }) => {
   const tabs = [

@@ -1,5 +1,5 @@
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import apiClient from "@infrastructure/services/apiClient";
+import apiClient from "@infrastructure/api/apiClient";
 
 interface RestartState {
   restart_required: boolean;

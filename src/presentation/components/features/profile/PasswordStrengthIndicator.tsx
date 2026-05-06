@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@presentation/components/features/../lib/utils';
+import { cn } from '@shared/utils/utils';
 
 const PasswordStrengthIndicator = ({ password }) => {
   const calculateStrength = (pwd) => {

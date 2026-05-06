@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@presentation/components/features/context/AuthContext';
-import type { User } from '@presentation/components/features/types/models';
+import type { User } from '@core/entities/models';
 
 // Componente de carga
 const LoadingSpinner = (): React.ReactElement => (

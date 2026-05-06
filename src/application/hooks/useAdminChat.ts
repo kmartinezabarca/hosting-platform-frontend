@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import apiClient from "@infrastructure/services/apiClient";
+import apiClient from "@infrastructure/api/apiClient";
 import { getEcho } from '@infrastructure/services/echoService';
 import { useAuth } from "@application/context/AuthContext";
 import type { ChatRoom } from "@core/entities/models";

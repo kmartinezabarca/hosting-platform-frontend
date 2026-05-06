@@ -1,6 +1,6 @@
 import React from 'react';
-import InfoCard from '@presentation/components/features/InfoCard';
-import InfoRow from '@presentation/components/features/InfoRow';
+import InfoCard from '@presentation/components/features/services/details/InfoCard';
+import InfoRow from '@presentation/components/features/services/details/InfoRow';
 
 const SpecificationsCard = ({ specs }) => {
   if (!specs || Object.keys(specs).length === 0) return null;

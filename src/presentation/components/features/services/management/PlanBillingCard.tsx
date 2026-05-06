@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { CheckCircle, Loader2 } from "lucide-react";
-import apiClient from "@infrastructure/services/apiClient"; 
+import apiClient from "@infrastructure/api/apiClient"; 
 
 const PlanBillingCard = ({ service, plan }) => {
   const [autoRenew, setAutoRenew] = useState(!!service?.configuration?.auto_renew);

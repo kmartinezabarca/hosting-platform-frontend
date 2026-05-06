@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
-import { cn } from '@presentation/components/features/../lib/utils';
+import { cn } from '@shared/utils/utils';
 
 const Pagination = ({ currentPage, lastPage, onPageChange, className }: any) => {
   if (lastPage <= 1) {

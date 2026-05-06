@@ -4,7 +4,7 @@ import {
   MonitorSmartphone, Smartphone, Tablet, Monitor,
   MapPin, Clock, LogOut, AlertTriangle, ShieldAlert,
 } from 'lucide-react';
-import { cn } from '@presentation/components/features/../lib/utils';
+import { cn } from '@shared/utils/utils';
 import Pagination from '@presentation/components/features/../components/ui/pagination-v2';
 import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
 

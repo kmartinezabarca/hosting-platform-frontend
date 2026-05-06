@@ -1,13 +1,13 @@
 import React, { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import './App.css'
-import ProtectedRoute from '@presentation/components/features/components/ProtectedRoute'
-import ErrorBoundary from '@presentation/components/features/components/ErrorBoundary'
+import ProtectedRoute from '@presentation/components/features/ProtectedRoute'
+import ErrorBoundary from '@presentation/components/features/ErrorBoundary'
 
-const AdminLayout         = lazy(() => import('./components/AdminLayout'))
-const LoginPage           = lazy(() => import('./pages/LoginPage'))
-const NotFoundPage        = lazy(() => import('./pages/NotFoundPage'))
-const QuotationPublicPage = lazy(() => import('./pages/QuotationPublicPage'))
+const AdminLayout         = lazy(() => import('@presentation/components/features/AdminLayout'))
+const LoginPage           = lazy(() => import('@presentation/pages/LoginPage'))
+const NotFoundPage        = lazy(() => import('@presentation/pages/NotFoundPage'))
+const QuotationPublicPage = lazy(() => import('@presentation/pages/QuotationPublicPage'))
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">

@@ -1,6 +1,6 @@
 import React from 'react';
-import InfoCard from '@presentation/components/features/InfoCard';
-import PaymentHistory from '@presentation/components/features/PaymentHistory'; // Importamos el componente que contiene la lógica
+import InfoCard from '@presentation/components/features/services/details/InfoCard';
+import PaymentHistory from '@presentation/components/features/services/details/PaymentHistory'; // Importamos el componente que contiene la lógica
 
 /**
  * Un componente de tarjeta que muestra el historial de pagos de un servicio.

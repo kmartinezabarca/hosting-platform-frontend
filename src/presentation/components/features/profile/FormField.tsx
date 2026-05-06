@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { cva } from 'class-variance-authority';
-import { cn } from '@presentation/components/features/../lib/utils';
+import { cn } from '@shared/utils/utils';
 
 const inputVariants = cva(
   'w-full rounded-xl border text-foreground placeholder:text-muted-foreground transition-all duration-200 focus:outline-none focus:ring-2 bg-background dark:bg-[#0f1115]',

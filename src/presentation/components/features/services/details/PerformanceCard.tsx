@@ -1,5 +1,5 @@
 import React from 'react';
-import InfoCard from '@presentation/components/features/InfoCard';
+import InfoCard from '@presentation/components/features/services/details/InfoCard';
 
 const PerformanceBar = ({ label, value, barClass, textClass }: any) => {
   const getMetricColors = (v) => {

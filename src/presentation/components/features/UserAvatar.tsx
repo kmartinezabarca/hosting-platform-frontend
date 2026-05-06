@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { User } from '@presentation/components/features/types/models';
+import type { User } from '@core/entities/models';
 
 /* Genera un color de fondo consistente a partir del nombre */
 const PALETTE = [

@@ -1,17 +1,17 @@
 import React, { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import './App.css'
-import ProtectedRoute from '@presentation/components/features/components/ProtectedRoute'
-import ErrorBoundary from '@presentation/components/features/components/ErrorBoundary'
+import ProtectedRoute from '@presentation/components/features/ProtectedRoute'
+import ErrorBoundary from '@presentation/components/features/ErrorBoundary'
 
-const ClientLayout  = lazy(() => import('./components/ClientLayout'))
-const LoginPage     = lazy(() => import('./pages/LoginPage'))
-const RegisterPage  = lazy(() => import('./pages/RegisterPage'))
-const Verify2FAPage = lazy(() => import('./pages/Verify2FAPage'))
+const ClientLayout  = lazy(() => import('@presentation/components/features/ClientLayout'))
+const LoginPage     = lazy(() => import('@presentation/pages/LoginPage'))
+const RegisterPage  = lazy(() => import('@presentation/pages/RegisterPage'))
+const Verify2FAPage = lazy(() => import('@presentation/pages/Verify2FAPage'))
 const CompleteProfilePage = lazy(() => import('./pages/auth/CompleteProfilePage'));
 const SetupUsernamePage   = lazy(() => import('./pages/auth/SetupUsernamePage'));
 const ProfileDemo   = lazy(() => import('./pages/ProfileDemo'));
-const NotFoundPage  = lazy(() => import('./pages/NotFoundPage'))
+const NotFoundPage  = lazy(() => import('@presentation/pages/NotFoundPage'))
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">

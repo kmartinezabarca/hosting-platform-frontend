@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Shield, Lock, KeyRound, CheckCircle2, QrCode, Smartphone, Chrome, AlertTriangle } from 'lucide-react';
 import FormField from '@presentation/components/features/FormField';
 import PasswordStrengthIndicator from '@presentation/components/features/PasswordStrengthIndicator';
-import { cn } from '@presentation/components/features/../lib/utils';
+import { cn } from '@shared/utils/utils';
 
 /* ── Section card wrapper ───────────────────────────────────────────────── */
 const SectionCard = ({ icon: Icon, title, description, badge = null, children }: { icon: any; title: any; description?: any; badge?: any; children: any }) => (

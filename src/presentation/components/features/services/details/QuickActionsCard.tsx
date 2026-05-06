@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import InfoCard from '@presentation/components/features/InfoCard';
+import InfoCard from '@presentation/components/features/services/details/InfoCard';
 import { FileText, Terminal, ExternalLink } from 'lucide-react';
-import LogsModal from '@presentation/components/features/LogsModal';
-import ConsoleModal from '@presentation/components/features/ConsoleModal';
+import LogsModal from '@presentation/components/features/services/details/LogsModal';
+import ConsoleModal from '@presentation/components/features/services/details/ConsoleModal';
 
 const ActionButton = ({ icon: Icon, label, onClick, href, isPrimary = false }: any) => {
   const commonClasses = `flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg border transition-colors hover:shadow-md`;

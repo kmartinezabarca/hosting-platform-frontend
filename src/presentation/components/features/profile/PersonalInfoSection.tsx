@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Save, RotateCcw } from 'lucide-react';
 import CountrySelector from '@presentation/components/features/../components/forms/CountrySelector'; 
 import FormField from '@presentation/components/features/FormField';
-import { cn } from '@presentation/components/features/../lib/utils';
+import { cn } from '@shared/utils/utils';
 
 const PersonalInfoSection = ({ profile, onUpdate, saving }: { profile: any; onUpdate: (data: any) => void; saving?: boolean }) => {
   const [formData, setFormData] = useState<any>(profile);

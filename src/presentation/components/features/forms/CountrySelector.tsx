@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import ReactCountryFlag from 'react-country-flag';
 import { Check, ChevronsUpDown } from 'lucide-react';
-import { cn } from '@presentation/components/features/../lib/utils'; // Asegúrate de que la ruta sea correcta
+import { cn } from '@shared/utils/utils'; // Asegúrate de que la ruta sea correcta
 
 // Lista de países. En una aplicación real, esto podría venir de una API o un archivo JSON.
 const countries = [

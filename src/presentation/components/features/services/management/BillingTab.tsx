@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CheckCircle, Loader2 } from 'lucide-react';
-import apiClient from "@infrastructure/services/apiClient";
+import apiClient from "@infrastructure/api/apiClient";
 
 // Componente de Fila (puedes moverlo a un archivo de componentes comunes)
 const InfoRow = ({ label, value }: any) => (
