@@ -278,7 +278,8 @@ const ServiceCard = ({
 
   const serverIp      = service.connection_details?.server_ip;
   const serverPort    = service.connection_details?.server_port;
-  const connectionStr = serverIp ? `${serverIp}${serverPort ? `:${serverPort}` : ""}` : null;
+  const ipPort        = serverIp ? `${serverIp}${serverPort ? `:${serverPort}` : ""}` : null;
+  const connectionStr = service.connection_details?.display || ipPort;
 
   const specs     = service.specs || {};
   const specPills = buildSpecPills(specs, isGameServer);

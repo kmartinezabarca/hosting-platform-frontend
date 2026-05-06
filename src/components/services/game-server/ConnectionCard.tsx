@@ -24,6 +24,7 @@ function CopyButton({ text }: { text: string }) {
 
 export default function ConnectionCard({ connection, status }) {
   const ipPort = connection ? `${connection.server_ip}:${connection.server_port}` : null;
+  const displayAddress = connection?.display || ipPort;
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
@@ -47,13 +48,24 @@ export default function ConnectionCard({ connection, status }) {
         </div>
       ) : (
         <div className="space-y-2.5">
-          {/* IP:Puerto */}
+          {/* Dirección Profesional (Subdominio) */}
+          <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-violet-500/5 border border-violet-500/10">
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wider font-semibold text-violet-500 mb-0.5">
+                Dirección de Conexión
+              </p>
+              <p className="text-sm font-mono font-semibold text-foreground truncate">{displayAddress}</p>
+            </div>
+            <CopyButton text={displayAddress!} />
+          </div>
+
+          {/* IP:Puerto (Secundario) */}
           <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-muted/50">
             <div className="min-w-0">
               <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">
-                IP : Puerto
+                IP Directa
               </p>
-              <p className="text-sm font-mono font-semibold text-foreground truncate">{ipPort}</p>
+              <p className="text-xs font-mono text-muted-foreground truncate">{ipPort}</p>
             </div>
             <CopyButton text={ipPort!} />
           </div>

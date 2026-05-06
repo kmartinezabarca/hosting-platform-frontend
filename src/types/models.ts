@@ -78,6 +78,15 @@ export interface Service {
   updated_at: string;
   next_billing_date?: string | null;
   price?: number;
+  connection_details?: {
+    server_ip?: string;
+    server_port?: number;
+    hostname?: string | null;
+    display?: string | null;
+    is_java?: boolean;
+    panel_url?: string;
+    region?: string;
+  };
 }
 
 export interface ServicePlan {
