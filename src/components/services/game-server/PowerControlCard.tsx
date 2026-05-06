@@ -220,85 +220,91 @@ export default function PowerControlCard({ serviceUuid, isSuspended }: { service
 
   return (
     <>
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border/60">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border/60 bg-muted/20">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-foreground/5 flex items-center justify-center shrink-0">
-              <Zap className="w-4 h-4 text-foreground" />
+            <div className="w-8 h-8 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
+              <Zap className="w-4 h-4 text-violet-500" />
             </div>
-            <h3 className="text-sm font-semibold text-foreground">Control del Servidor</h3>
+            <h3 className="text-sm font-bold text-foreground tracking-tight">Control Maestro</h3>
           </div>
           {/* Live state pill */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/60 border border-border/60">
-            <span className={cn('w-2 h-2 rounded-full shrink-0', stateInfo.dot)} />
-            <span className={cn('text-xs font-medium', stateInfo.color)}>{stateInfo.label}</span>
+          <div className={cn(
+            "flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all duration-500",
+            state === 'running' ? "bg-emerald-500/10 border-emerald-500/20" : "bg-muted/60 border-border/60"
+          )}>
+            <span className={cn('w-2 h-2 rounded-full shrink-0', stateInfo.dot, state === 'running' && "animate-pulse")} />
+            <span className={cn('text-[10px] font-bold uppercase tracking-wider', stateInfo.color)}>{stateInfo.label}</span>
           </div>
         </div>
 
-        <div className="p-4">
+        <div className="p-5">
           {isSuspended ? (
-            <div className="rounded-xl bg-amber-500/[0.06] border border-amber-500/20 px-4 py-3.5 text-sm text-amber-700 dark:text-amber-400 text-center leading-relaxed">
-              Servidor suspendido.<br />
-              <span className="text-xs opacity-80">Contacta a soporte para reactivarlo.</span>
+            <div className="rounded-xl bg-amber-500/[0.06] border border-amber-500/20 px-4 py-5 text-sm text-amber-700 dark:text-amber-400 text-center leading-relaxed">
+              <AlertTriangle className="w-5 h-5 mx-auto mb-2 opacity-50" />
+              <p className="font-semibold">Servidor Suspendido</p>
+              <p className="text-xs opacity-80 mt-1">Contacta a soporte para reactivarlo.</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {/* Main action buttons */}
               {state === 'offline' && (
                 <button
                   onClick={() => handleAction('start')}
                   disabled={powerMut.isPending || isTransitioning}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-500 active:scale-[0.97] transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {powerMut.isPending
                     ? <Loader2 className="w-4 h-4 animate-spin" />
-                    : <Play className="w-4 h-4 fill-current" />}
-                  Iniciar servidor
+                    : <Play className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" />}
+                  Iniciar Servidor
                 </button>
               )}
 
               {state === 'running' && (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => handleAction('stop')}
                     disabled={powerMut.isPending || isTransitioning}
-                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-rose-500 text-white text-sm font-semibold hover:bg-rose-600 active:scale-[0.98] transition-all shadow-md shadow-rose-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="group flex items-center justify-center gap-2 py-3 rounded-xl bg-rose-600 text-white text-sm font-bold hover:bg-rose-500 active:scale-[0.97] transition-all shadow-md shadow-rose-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {powerMut.isPending
                       ? <Loader2 className="w-4 h-4 animate-spin" />
-                      : <Square className="w-4 h-4 fill-current" />}
+                      : <Square className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" />}
                     Detener
                   </button>
                   <button
                     onClick={() => handleAction('restart')}
                     disabled={powerMut.isPending || isTransitioning}
-                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border bg-muted/50 text-foreground text-sm font-semibold hover:bg-muted transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="group flex items-center justify-center gap-2 py-3 rounded-xl border border-violet-500/20 bg-violet-500/5 text-violet-600 dark:text-violet-400 text-sm font-bold hover:bg-violet-500/10 transition-all active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {powerMut.isPending
                       ? <Loader2 className="w-4 h-4 animate-spin" />
-                      : <RotateCcw className="w-4 h-4" />}
+                      : <RotateCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />}
                     Reiniciar
                   </button>
                 </div>
               )}
 
               {isTransitioning && (
-                <div className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-muted text-muted-foreground text-sm font-medium">
+                <div className="flex items-center justify-center gap-2 py-3 rounded-xl bg-muted/50 text-muted-foreground text-sm font-bold border border-dashed border-border">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  {state === 'starting' ? 'Iniciando servidor…' : 'Deteniendo servidor…'}
+                  {state === 'starting' ? 'Iniciando...' : 'Deteniendo...'}
                 </div>
               )}
 
               {/* Kill switch — always visible but restrained */}
-              <button
-                onClick={() => handleAction('kill')}
-                disabled={powerMut.isPending || isTransitioning || state === 'offline'}
-                className="w-full py-2 rounded-xl border border-dashed border-red-500/30 text-red-500/70 hover:border-red-500/60 hover:text-red-500 hover:bg-red-500/[0.04] text-xs font-medium transition-all disabled:opacity-25 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-              >
-                <Zap className="w-3 h-3" />
-                Forzar apagado — solo emergencias
-              </button>
+              <div className="pt-2">
+                <button
+                  onClick={() => handleAction('kill')}
+                  disabled={powerMut.isPending || isTransitioning || state === 'offline'}
+                  className="w-full py-2 rounded-lg border border-transparent text-muted-foreground/50 hover:text-rose-500 hover:bg-rose-500/5 text-[10px] font-bold uppercase tracking-widest transition-all disabled:opacity-0 disabled:pointer-events-none flex items-center justify-center gap-1.5"
+                >
+                  <Zap className="w-3 h-3" />
+                  Forzar Apagado
+                </button>
+              </div>
             </div>
           )}
         </div>

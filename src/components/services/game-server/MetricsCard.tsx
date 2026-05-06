@@ -55,67 +55,83 @@ export default function MetricsCard({ serviceUuid, planLimits }: any) {
   const diskPct = planDiskBytes > 0 ? (diskBytes / planDiskBytes) * 100 : 0;
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <div className="flex items-center gap-2.5 mb-4">
-        <div className="w-8 h-8 rounded-xl bg-foreground/5 flex items-center justify-center shrink-0">
-          <Activity className="w-4 h-4 text-foreground" />
-        </div>
-        <div>
-          <h3 className="text-sm font-semibold text-foreground">Métricas en Tiempo Real</h3>
-          <p className="text-[10px] text-muted-foreground">Actualiza cada 5 s</p>
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition-all duration-300">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+            <Activity className="w-5 h-5 text-emerald-500" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-foreground tracking-tight">Rendimiento Vital</h3>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+              </span>
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">En Vivo</p>
+            </div>
+          </div>
         </div>
       </div>
 
       {isError ? (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground py-3 justify-center">
-          <AlertCircle className="w-4 h-4" />
-          No se pudo obtener el estado
+        <div className="flex flex-col items-center gap-2 text-sm text-muted-foreground py-8 justify-center bg-muted/20 rounded-xl border border-dashed border-border">
+          <AlertCircle className="w-6 h-6 opacity-20" />
+          <p className="font-medium">Métricas no disponibles</p>
         </div>
       ) : !usage ? (
-        <div className="space-y-4 animate-pulse">
-          {[1, 2, 3].map(i => <div key={i} className="h-7 rounded-lg bg-muted" />)}
+        <div className="space-y-5 animate-pulse">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="space-y-2">
+              <div className="h-3 w-24 bg-muted rounded" />
+              <div className="h-2 w-full bg-muted rounded-full" />
+            </div>
+          ))}
         </div>
       ) : (
-        <div className="space-y-3.5">
+        <div className="space-y-5">
           <ResourceBar
-            label="RAM"
+            label="Memoria RAM"
             value={memPct}
             used={formatBytes((usage as any).memory_bytes)}
             total={planMemMB ? (planMemMB >= 1024 ? `${planMemMB / 1024} GB` : `${planMemMB} MB`) : null}
             color="bg-blue-500"
           />
           <ResourceBar
-            label="CPU"
+            label="Carga de CPU"
             value={(usage as any).cpu ?? 0}
             color="bg-violet-500"
           />
           <ResourceBar
-            label="Disco"
+            label="Almacenamiento"
             value={diskPct}
             used={formatBytes(diskBytes)}
             total={planDiskMB ? formatBytes(planDiskMB * 1_048_576) : null}
-            color="bg-emerald-500"
+            color="bg-amber-500"
           />
 
-          {/* Network + Uptime */}
-          <div className="pt-3 border-t border-border grid grid-cols-3 gap-2 text-xs">
-            <div>
-              <p className="text-muted-foreground mb-0.5">⬇ Entrada</p>
-              <p className="font-semibold text-foreground tabular-nums">
-                {formatBytes((usage as any).network_rx)}/s
-              </p>
+          {/* Network + Uptime Grid */}
+          <div className="pt-5 border-t border-border grid grid-cols-2 gap-4">
+            <div className="p-3 rounded-xl bg-muted/30 border border-border/50">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Wifi className="w-3 h-3 text-emerald-500" />
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Tráfico Red</p>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <p className="text-xs font-bold text-foreground tabular-nums flex items-center justify-between">
+                  <span className="text-muted-foreground font-normal">↓</span> {formatBytes((usage as any).network_rx)}/s
+                </p>
+                <p className="text-xs font-bold text-foreground tabular-nums flex items-center justify-between">
+                  <span className="text-muted-foreground font-normal">↑</span> {formatBytes((usage as any).network_tx)}/s
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-muted-foreground mb-0.5">⬆ Salida</p>
-              <p className="font-semibold text-foreground tabular-nums">
-                {formatBytes((usage as any).network_tx)}/s
-              </p>
-            </div>
-            <div>
-              <p className="text-muted-foreground mb-0.5 flex items-center gap-1">
-                <Clock className="w-3 h-3" /> Uptime
-              </p>
-              <p className="font-semibold text-foreground">
+            <div className="p-3 rounded-xl bg-muted/30 border border-border/50">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Clock className="w-3 h-3 text-blue-500" />
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Tiempo Activo</p>
+              </div>
+              <p className="text-sm font-bold text-foreground mt-1">
                 {formatUptime((usage as any).uptime_ms)}
               </p>
             </div>

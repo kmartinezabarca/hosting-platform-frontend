@@ -31,11 +31,39 @@ export const useUpdateServiceConfig = () => {
       queryClient.invalidateQueries({
         queryKey: ["services", "detail", serviceId],
       });
-      // Aquí podrías mostrar una notificación de éxito (toast)
     },
     onError: (error) => {
       console.error("Error al actualizar la configuración:", error);
     },
+  });
+};
+
+export const useServiceBackups = (serviceId) => {
+  return useQuery({
+    queryKey: ["services", "backups", serviceId],
+    queryFn: () => servicesService.getServiceBackups(serviceId),
+    enabled: !!serviceId,
+    select: (data) => data.data,
+  });
+};
+
+export const useCreateBackup = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ serviceId, name }: { serviceId: any; name: string }) =>
+      servicesService.createServiceBackup(serviceId, name),
+    onSuccess: (_, { serviceId }) => {
+      queryClient.invalidateQueries({
+        queryKey: ["services", "backups", serviceId],
+      });
+    },
+  });
+};
+
+export const useRestoreBackup = () => {
+  return useMutation({
+    mutationFn: ({ serviceId, backupId }: { serviceId: any; backupId: any }) =>
+      servicesService.restoreServiceBackup(serviceId, backupId),
   });
 };
 

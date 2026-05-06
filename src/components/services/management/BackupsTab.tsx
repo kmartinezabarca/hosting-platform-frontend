@@ -1,192 +1,143 @@
 import React from 'react';
-import { HardDrive, CloudUpload, Clock, History, RefreshCw } from 'lucide-react';
+import { HardDrive, Clock, RefreshCw, Database, Zap, History } from 'lucide-react';
+import { useServiceBackups, useCreateBackup, useRestoreBackup } from '@/hooks/useServices';
+import { toast } from 'react-hot-toast';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 const BackupsTab = ({ service }) => {
-  const lastBackup = service?.backups?.last_run
-    ? new Date(service.backups.last_run).toLocaleString('es-ES')
-    : 'No disponible';
+  const { data: backups, isLoading } = useServiceBackups(service.uuid);
+  const createBackup = useCreateBackup();
+  const restoreBackup = useRestoreBackup();
 
-  const schedule = service?.backups?.schedule || 'No configurado';
-  const retention = service?.backups?.retention ?? '—';
-  const usedGb = Number(service?.backups?.used_gb ?? 0);
-  const quotaGb = Number(service?.backups?.quota_gb ?? 0);
-  const pct = quotaGb > 0 ? Math.min(100, Math.round((usedGb / quotaGb) * 100)) : 0;
+  const handleCreateBackup = () => {
+    const name = `Backup ${format(new Date(), 'dd/MM/yyyy HH:mm')}`;
+    toast.promise(
+      createBackup.mutateAsync({ serviceId: service.uuid, name }),
+      {
+        loading: 'Creando backup...',
+        success: 'Backup creado exitosamente',
+        error: 'Error al crear el backup',
+      }
+    );
+  };
+
+  const handleRestore = (backupId) => {
+    if (!window.confirm('¿Estás seguro de restaurar este backup? El estado actual del servidor se perderá.')) return;
+    
+    toast.promise(
+      restoreBackup.mutateAsync({ serviceId: service.uuid, backupId }),
+      {
+        loading: 'Restaurando backup...',
+        success: 'Restauración iniciada',
+        error: 'Error al restaurar el backup',
+      }
+    );
+  };
+
+  const usedBytes = backups?.reduce((acc, b) => acc + (b.bytes || 0), 0) || 0;
+  const usedGb = usedBytes / (1024 ** 3);
+  const quotaGb = service.plan?.limits?.backups || 3;
+  const pct = Math.min(100, (usedGb / quotaGb) * 100);
 
   return (
-    <div
-      className="
-        group rounded-2xl border border-border/60 bg-card/80
-        shadow-sm hover:shadow-lg hover:-translate-y-0.5
-        transition-all duration-300 will-change-transform
-        ring-1 ring-black/5 dark:ring-white/5
-      "
-      role="region"
-      aria-label="Copias de Seguridad"
-    >
-      {/* Header */}
-      <div className="p-6 border-b border-border/60 flex items-start justify-between">
-        <div>
-          <h3 className="text-xl font-bold text-foreground">Copias de Seguridad</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Crea, gestiona y restaura backups de tu servicio.
-          </p>
+    <div className="space-y-6">
+      <div className="group rounded-2xl border border-border/60 bg-card/80 shadow-sm p-6 ring-1 ring-black/5 dark:ring-white/5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h3 className="text-xl font-bold text-foreground">Copias de Seguridad</h3>
+            <p className="text-muted-foreground mt-1">Administra tus puntos de restauración y protege tus datos.</p>
+          </div>
+          <button
+            onClick={handleCreateBackup}
+            disabled={createBackup.isPending || (backups?.length >= quotaGb)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-bold text-sm hover:opacity-90 transition-all disabled:opacity-50"
+          >
+            <Zap className="w-4 h-4" />
+            Crear Backup Ahora
+          </button>
         </div>
 
-        {/* Estado general */}
-        <span
-          className="
-            shrink-0 inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-xs font-medium
-            ring-1 ring-black/10 dark:ring-white/10
-            bg-accent text-foreground
-          "
-        >
-          <History className="w-3.5 h-3.5 text-primary" />
-          Último: {lastBackup}
-        </span>
-      </div>
-
-      {/* Contenido */}
-      <div className="p-6 space-y-4">
-        {/* Bloque: Backup rápido */}
-        <section
-          className="
-            rounded-xl border border-border p-4
-            bg-gradient-to-br
-              from-[hsl(var(--color-pure-white)/0.04)]
-              via-[hsl(var(--color-pure-white)/0.02)]
-              to-[hsl(var(--color-dark-charcoal)/0.00)]
-            dark:from-[hsl(var(--color-pure-white)/0.06)]
-            dark:via-[hsl(var(--color-pure-white)/0.03)]
-            dark:to-[hsl(var(--color-pure-white)/0.00)]
-            hover:border-primary/30 transition-colors
-          "
-        >
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center justify-center rounded-lg p-2.5 bg-secondary">
-              <CloudUpload className="w-5 h-5 text-primary" />
-            </span>
-            <div className="min-w-0">
-              <h5 className="font-medium text-foreground">Backup rápido</h5>
-              <p className="text-sm text-muted-foreground">
-                Genera una copia bajo demanda del estado actual.
-              </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="p-4 rounded-xl border border-border bg-muted/30">
+            <div className="flex items-center gap-3 mb-2">
+              <HardDrive className="w-4 h-4 text-primary" />
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Almacenamiento</span>
+            </div>
+            <div className="flex items-end gap-2">
+              <span className="text-2xl font-bold">{usedGb.toFixed(2)} GB</span>
+              <span className="text-xs text-muted-foreground mb-1">de {quotaGb} GB</span>
+            </div>
+            <div className="mt-3 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div className="h-full bg-primary transition-all duration-500" style={{ width: `${pct}%` }} />
             </div>
           </div>
 
-          <div className="mt-4 flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Estado: Próximamente</span>
-            <button
-              type="button"
-              disabled
-              className="text-xs px-3 py-1.5 rounded-md bg-muted text-foreground/70 cursor-not-allowed"
-            >
-              Próximamente
-            </button>
-          </div>
-        </section>
-
-        {/* Bloque: Programación y retención */}
-        <section
-          className="
-            rounded-xl border border-border p-4
-            bg-gradient-to-br
-              from-[hsl(var(--color-pure-white)/0.04)]
-              via-[hsl(var(--color-pure-white)/0.02)]
-              to-[hsl(var(--color-dark-charcoal)/0.00)]
-            dark:from-[hsl(var(--color-pure-white)/0.06)]
-            dark:via-[hsl(var(--color-pure-white)/0.03)]
-            dark:to-[hsl(var(--color-pure-white)/0.00)]
-            hover:border-primary/30 transition-colors
-          "
-        >
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center justify-center rounded-lg p-2.5 bg-secondary">
-              <Clock className="w-5 h-5 text-primary" />
-            </span>
-            <div className="min-w-0">
-              <h5 className="font-medium text-foreground">Programación y retención</h5>
-              <p className="text-sm text-muted-foreground">
-                {`Horario: ${schedule} · Retención: ${retention}`}
-              </p>
+          <div className="p-4 rounded-xl border border-border bg-muted/30">
+            <div className="flex items-center gap-3 mb-2">
+              <Database className="w-4 h-4 text-primary" />
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Backups</span>
             </div>
+            <span className="text-2xl font-bold">{backups?.length || 0}</span>
+            <span className="text-xs text-muted-foreground ml-2">archivos</span>
           </div>
 
-          <div className="mt-4 flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Configura frecuencia y número de copias.</span>
-            <button
-              type="button"
-              disabled
-              className="text-xs px-3 py-1.5 rounded-md bg-muted text-foreground/70 cursor-not-allowed"
-            >
-              Próximamente
-            </button>
-          </div>
-        </section>
-
-        {/* Bloque: Almacenamiento usado */}
-        <section className="rounded-xl border border-border p-4 bg-background/60">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center justify-center rounded-lg p-2.5 bg-secondary">
-              <HardDrive className="w-5 h-5 text-primary" />
-            </span>
-            <div className="min-w-0 w-full">
-              <h5 className="font-medium text-foreground">Almacenamiento de backups</h5>
-              <p className="text-sm text-muted-foreground">
-                {quotaGb > 0 ? `${usedGb} GB de ${quotaGb} GB` : `${usedGb} GB usados`}
-              </p>
-
-              {/* Barra de progreso */}
-              <div className="mt-3 h-2 w-full rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full bg-primary"
-                  style={{ width: `${pct}%` }}
-                  aria-valuenow={pct}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  role="progressbar"
-                />
-              </div>
+          <div className="p-4 rounded-xl border border-border bg-muted/30">
+            <div className="flex items-center gap-3 mb-2">
+              <Clock className="w-4 h-4 text-primary" />
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Retención</span>
             </div>
+            <span className="text-2xl font-bold">7 Días</span>
+            <span className="text-xs text-muted-foreground ml-2">automática</span>
           </div>
-        </section>
+        </div>
 
-        {/* Bloque: Restaurar */}
-        <section
-          className="
-            rounded-xl border border-border p-4
-            bg-gradient-to-br
-              from-[hsl(var(--color-pure-white)/0.04)]
-              via-[hsl(var(--color-pure-white)/0.02)]
-              to-[hsl(var(--color-dark-charcoal)/0.00)]
-            dark:from-[hsl(var(--color-pure-white)/0.06)]
-            dark:via-[hsl(var(--color-pure-white)/0.03)]
-            dark:to-[hsl(var(--color-pure-white)/0.00)]
-            hover:border-primary/30 transition-colors
-          "
-        >
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center justify-center rounded-lg p-2.5 bg-secondary">
-              <RefreshCw className="w-5 h-5 text-primary" />
-            </span>
-            <div className="min-w-0">
-              <h5 className="font-medium text-foreground">Restaurar desde backup</h5>
-              <p className="text-sm text-muted-foreground">
-                Selecciona un punto de restauración para volver atrás de forma segura.
-              </p>
+        <div className="space-y-3">
+          <h4 className="text-sm font-bold text-foreground px-1">Backups Recientes</h4>
+          {isLoading ? (
+            <div className="py-10 text-center text-muted-foreground animate-pulse">Cargando backups...</div>
+          ) : backups?.length === 0 ? (
+            <div className="py-10 text-center border-2 border-dashed border-border rounded-xl text-muted-foreground">
+              No hay backups disponibles todavía.
             </div>
-          </div>
-
-          <div className="mt-4 flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Estado: Próximamente</span>
-            <button
-              type="button"
-              disabled
-              className="text-xs px-3 py-1.5 rounded-md bg-muted text-foreground/70 cursor-not-allowed"
-            >
-              Próximamente
-            </button>
-          </div>
-        </section>
+          ) : (
+            <div className="overflow-hidden rounded-xl border border-border">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/50 text-muted-foreground font-bold uppercase text-[10px] tracking-widest">
+                  <tr>
+                    <th className="px-4 py-3">Nombre / Fecha</th>
+                    <th className="px-4 py-3">Tamaño</th>
+                    <th className="px-4 py-3 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {backups.map((backup) => (
+                    <tr key={backup.uuid} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-4">
+                        <div className="font-bold text-foreground">{backup.name}</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {format(new Date(backup.created_at), "PPP 'a las' p", { locale: es })}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 font-mono text-xs">
+                        {(backup.bytes / (1024 ** 2)).toFixed(2)} MB
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <button
+                          onClick={() => handleRestore(backup.uuid)}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground transition-all text-xs font-bold"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          Restaurar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

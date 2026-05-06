@@ -51,48 +51,48 @@ export function GameServerConsole({
   // ── Dark/light mode ──────────────────────────────────────
   const [isDark, setIsDark] = useState(false);
 
-  // Paleta dinámica
+  // Paleta dinámica Premium
   const theme = isDark ? {
-    wrap:       "bg-[#0d1117] border-white/[0.08]",
-    header:     "bg-[#161b22] border-white/[0.08]",
-    toolbar:    "bg-[#0d1117] border-white/[0.05]",
-    logs:       "bg-[#0d1117]",
-    input:      "bg-[#161b22] border-white/[0.08]",
-    inputText:  "text-white placeholder-neutral-500",
-    prompt:     "text-emerald-500",
-    btnText:    "text-neutral-500 hover:text-neutral-300",
-    btnDanger:  "hover:text-rose-400",
-    btnInfo:    "hover:text-sky-400",
-    searchBg:   "bg-white/[0.05] border-white/10 text-white placeholder-neutral-400 focus:border-emerald-500/50",
-    statusBg:   "bg-white/[0.03] border-white/5",
-    statusDot:  (c: boolean) => c ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-rose-500",
-    footerText: "text-neutral-300",
+    wrap:       "bg-[#0a0a0a] border-white/[0.08] shadow-[0_0_40px_rgba(0,0,0,0.5)]",
+    header:     "bg-[#111111] border-white/[0.08]",
+    toolbar:    "bg-[#0a0a0a] border-white/[0.05]",
+    logs:       "bg-[#0a0a0a] relative before:absolute before:inset-0 before:bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] before:opacity-[0.03] before:pointer-events-none",
+    input:      "bg-[#111111] border-white/[0.08]",
+    inputText:  "text-emerald-50 placeholder-neutral-600",
+    prompt:     "text-emerald-500 drop-shadow-[0_0_5px_rgba(16,185,129,0.3)]",
+    btnText:    "text-neutral-500 hover:text-neutral-200",
+    btnDanger:  "hover:text-rose-400 hover:bg-rose-400/10",
+    btnInfo:    "hover:text-sky-400 hover:bg-sky-400/10",
+    searchBg:   "bg-white/[0.03] border-white/10 text-white placeholder-neutral-500 focus:border-emerald-500/40 focus:bg-white/[0.05]",
+    statusBg:   "bg-emerald-500/5 border-emerald-500/20",
+    statusDot:  (c: boolean) => c ? "bg-emerald-500 shadow-[0_0_10px_#10b981] animate-pulse" : "bg-rose-500 shadow-[0_0_10px_#f43f5e]",
+    footerText: "text-neutral-500 font-mono",
     scrollbars: `
-      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar { width: 8px; }
       ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 10px; }
-      ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+      ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 20px; border: 2px solid transparent; background-clip: content-box; }
+      ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); border: 2px solid transparent; background-clip: content-box; }
     `,
   } : {
-    wrap:       "bg-[#f8f9fa] border-neutral-200",
-    header:     "bg-white border-neutral-200",
-    toolbar:    "bg-[#f8f9fa] border-neutral-100",
-    logs:       "bg-[#f8f9fa]",
-    input:      "bg-white border-neutral-200",
+    wrap:       "bg-white border-neutral-200 shadow-xl",
+    header:     "bg-neutral-50 border-neutral-200",
+    toolbar:    "bg-white border-neutral-100",
+    logs:       "bg-white",
+    input:      "bg-neutral-50 border-neutral-200",
     inputText:  "text-neutral-900 placeholder-neutral-400",
     prompt:     "text-emerald-600",
-    btnText:    "text-neutral-400 hover:text-neutral-700",
-    btnDanger:  "hover:text-rose-500",
-    btnInfo:    "hover:text-sky-600",
-    searchBg:   "bg-neutral-100 border-neutral-200 text-neutral-900 placeholder-neutral-400 focus:border-emerald-400",
+    btnText:    "text-neutral-400 hover:text-neutral-800",
+    btnDanger:  "hover:text-rose-600 hover:bg-rose-50",
+    btnInfo:    "hover:text-sky-600 hover:bg-sky-50",
+    searchBg:   "bg-neutral-100 border-neutral-200 text-neutral-900 placeholder-neutral-400 focus:border-emerald-400 focus:bg-white",
     statusBg:   "bg-neutral-100 border-neutral-200",
     statusDot:  (c: boolean) => c ? "bg-emerald-500" : "bg-rose-500",
-    footerText: "text-neutral-400",
+    footerText: "text-neutral-400 font-mono",
     scrollbars: `
-      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar { width: 8px; }
       ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 10px; }
-      ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.22); }
+      ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 20px; border: 2px solid transparent; background-clip: content-box; }
+      ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.15); border: 2px solid transparent; background-clip: content-box; }
     `,
   };
 

@@ -81,62 +81,81 @@ function PageHeader({ service, eggName, currentVersion }: {
   const [copied, setCopied] = useState(false);
   const status = (service.status as ServiceStatus) ?? "active";
   const sm = STATUS_MAP[status] ?? STATUS_MAP.active;
-  const ipPort = service.connection
-    ? `${service.connection.server_ip}:${service.connection.server_port}`
-    : null;
+  
+  // Prioritize professional display address
+  const connection = service.connection;
+  const displayAddr = connection?.display || (connection ? `${connection.server_ip}:${connection.server_port}` : null);
+  const rawIp = connection ? `${connection.server_ip}:${connection.server_port}` : null;
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-6 p-1">
       {/* Left: identity */}
-      <div className="flex items-center gap-3 flex-1 min-w-0">
+      <div className="flex items-center gap-4 flex-1 min-w-0">
         <div className="relative shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-primary/[0.07] border border-primary/[0.12] flex items-center justify-center">
-            <Gamepad2 className="w-4.5 h-4.5 text-primary" />
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center shadow-inner">
+            <Gamepad2 className="w-7 h-7 text-primary drop-shadow-sm" />
           </div>
           <span className={cn(
-            "absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-[1.5px] border-background",
+            "absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-background shadow-sm",
             sm.dotClass,
+            status === 'active' && "animate-pulse"
           )} />
         </div>
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-base font-semibold text-foreground truncate leading-tight">
+        <div className="min-w-0 space-y-1">
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-xl font-bold text-foreground tracking-tight truncate">
               {service.name}
             </h1>
             <span className={cn(
-              "inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border font-medium",
+              "inline-flex items-center gap-1.5 text-[10px] px-2.5 py-0.5 rounded-lg border font-bold uppercase tracking-wider shadow-sm",
               sm.badgeClass,
             )}>
               {sm.label}
             </span>
           </div>
           {/* Meta strip */}
-          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap text-xs text-muted-foreground">
-            {service.plan?.name && <span>{service.plan.name}</span>}
-            {eggName && <><span className="opacity-40">·</span><span className="capitalize">{eggName}</span></>}
+          <div className="flex items-center gap-2 flex-wrap text-xs font-medium text-muted-foreground">
+            <span className="bg-muted/50 px-2 py-0.5 rounded-md border border-border/50">{service.plan?.name || 'Plan Estándar'}</span>
+            <span className="w-1 h-1 rounded-full bg-border" />
+            <span className="capitalize text-foreground/80">{eggName}</span>
             {currentVersion && (
-              <><span className="opacity-40">·</span>
-                <code className="bg-muted px-1.5 py-px rounded font-mono text-[10px]">v{currentVersion}</code></>
+              <>
+                <span className="w-1 h-1 rounded-full bg-border" />
+                <code className="text-primary font-mono text-[11px]">v{currentVersion}</code>
+              </>
             )}
           </div>
         </div>
       </div>
 
-      {/* Right: IP copy pill */}
-      {ipPort && (
-        <button
-          onClick={() => {
-            navigator.clipboard.writeText(ipPort);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-          }}
-          className="self-start sm:self-center flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-muted/40 hover:bg-muted transition-colors text-xs font-mono text-muted-foreground hover:text-foreground shrink-0"
-        >
-          {copied
-            ? <Check className="w-3 h-3 text-emerald-500" />
-            : <Copy className="w-3 h-3" />}
-          {ipPort}
-        </button>
+      {/* Right: Professional Connection Pill */}
+      {displayAddr && (
+        <div className="flex flex-col gap-2 sm:items-end">
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(displayAddr);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+              toast.success("Dirección copiada al portapapeles");
+            }}
+            className="flex items-center gap-3 pl-4 pr-2 py-2 rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all group relative overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="flex flex-col items-start relative z-10">
+              <span className="text-[9px] text-primary font-bold uppercase tracking-[0.2em]">Conexión Directa</span>
+              <span className="text-sm font-mono font-bold text-foreground tracking-tight">{displayAddr}</span>
+            </div>
+            <div className="w-9 h-9 rounded-xl bg-muted/50 border border-border flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all relative z-10">
+              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            </div>
+          </button>
+          
+          {displayAddr !== rawIp && rawIp && (
+            <p className="text-[10px] text-muted-foreground font-medium px-1">
+              IP Numérica: <span className="font-mono opacity-70">{rawIp}</span>
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
