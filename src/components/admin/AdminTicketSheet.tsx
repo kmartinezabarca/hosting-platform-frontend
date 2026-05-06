@@ -3,12 +3,12 @@
 // Incluye: historial de mensajes, adjuntos/imágenes, cambio de estado/prioridad,
 // composer con archivos y suscripción Reverb en tiempo real.
 
-import React, { useMemo, useEffect, useCallback } from "react";
+import React, { useMemo, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, User, Clock, Loader2, RefreshCw,
-  ChevronDown, AlertTriangle, CheckCircle2, Circle,
+  ChevronDown, AlertTriangle,
   ZapIcon, ArrowUpIcon, MinusIcon, ArrowDownIcon,
   ImageOff,
 } from "lucide-react";

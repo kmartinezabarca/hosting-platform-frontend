@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient, UseQueryResult, UseMutationResult } from '@tanstack/react-query';
+import type { UseQueryResult, UseMutationResult } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import adminGameServerService from '@/services/adminGameServerService';
 import type { GameServer } from '@/types/models';
 

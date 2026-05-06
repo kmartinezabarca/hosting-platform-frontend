@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, ExternalLink, Network, Loader2 } from 'lucide-react';
+import { Copy, Check, Network, Loader2 } from 'lucide-react';
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);

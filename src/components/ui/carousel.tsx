@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-type CarouselContextType = {
+interface CarouselContextType {
   carouselRef: any;
   api: any;
   opts: any;
@@ -15,7 +15,7 @@ type CarouselContextType = {
   scrollNext: () => void;
   canScrollPrev: boolean;
   canScrollNext: boolean;
-};
+}
 const CarouselContext = React.createContext<CarouselContextType | null>(null)
 
 function useCarousel(): CarouselContextType {

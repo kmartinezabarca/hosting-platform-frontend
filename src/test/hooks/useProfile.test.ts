@@ -1,7 +1,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { http, HttpResponse } from 'msw';
-import { useProfile, useUpdateProfile, useUploadAvatar, useSecurity, useUpdatePassword } from '../../hooks/useProfile';
+import { useProfile, useUpdateProfile, useSecurity, useUpdatePassword } from '../../hooks/useProfile';
 import { queryWrapper, createTestQueryClient } from '../utils';
 import { server } from '../mocks/server';
 

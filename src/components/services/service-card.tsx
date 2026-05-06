@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import clsx from "clsx";
 import { motion } from "framer-motion";
 import {
-  Copy, Check, PowerOff, RotateCcw, Power,
-  Eye, Settings, Loader2, Wifi, Globe, Calendar,
+  Copy, Check, PowerOff, RotateCcw, Power, Settings, Loader2, Wifi, Globe, Calendar,
   AlertTriangle, Cpu, HardDrive, Users, HeartPulse,
   ExternalLink, MessageSquare, MapPin, Clock,
   Activity, Network,

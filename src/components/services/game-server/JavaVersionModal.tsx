@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Cpu, AlertTriangle, Loader2, X, ArrowRight, RefreshCw } from 'lucide-react';
+import React from 'react';
+import { Cpu, Loader2, X, ArrowRight, RefreshCw } from 'lucide-react';
 import {
   Dialog,
   DialogContent,

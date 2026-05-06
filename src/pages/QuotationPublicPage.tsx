@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { usePublicQuotation } from '@/hooks/useQuotations';
 import quotationService from '@/services/quotationService';
-import { Loader2, Download, CheckCircle, XCircle, Clock, AlertTriangle, Printer, Mail } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Clock, AlertTriangle, Printer, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import logoROKE from '../assets/logo_v4.png';

@@ -3,7 +3,7 @@ import {
   ArrowLeft, Gamepad2, AlertTriangle, Loader2,
   Cpu, HardDrive, MemoryStick, Database, Archive,
   Settings2, Package, Coffee, CheckCircle2,
-  Copy, Check, Network, BarChart2, Terminal,
+  Copy, Check, Terminal,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";

@@ -173,17 +173,17 @@ const NewDashboard = () => {
       <div className="space-y-8 p-6">
         {/* Header skeleton */}
         <div className="space-y-4">
-          <div className="h-8 w-64 bg-muted animate-pulse rounded-md"></div>
-          <div className="h-4 w-96 bg-muted animate-pulse rounded-md"></div>
+          <div className="h-8 w-64 bg-muted animate-pulse rounded-md" />
+          <div className="h-4 w-96 bg-muted animate-pulse rounded-md" />
         </div>
 
         {/* Stats cards skeleton */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="bg-card border border-border rounded-xl p-6">
-              <div className="h-12 w-12 bg-muted animate-pulse rounded-xl mb-4"></div>
-              <div className="h-6 w-24 bg-muted animate-pulse rounded-md mb-2"></div>
-              <div className="h-4 w-16 bg-muted animate-pulse rounded-md"></div>
+              <div className="h-12 w-12 bg-muted animate-pulse rounded-xl mb-4" />
+              <div className="h-6 w-24 bg-muted animate-pulse rounded-md mb-2" />
+              <div className="h-4 w-16 bg-muted animate-pulse rounded-md" />
             </div>
           ))}
         </div>
@@ -191,24 +191,24 @@ const NewDashboard = () => {
         {/* Content skeleton */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-card border border-border rounded-xl p-6">
-            <div className="h-6 w-32 bg-muted animate-pulse rounded-md mb-4"></div>
+            <div className="h-6 w-32 bg-muted animate-pulse rounded-md mb-4" />
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
                 <div
                   key={i}
                   className="h-16 w-full bg-muted animate-pulse rounded-xl"
-                ></div>
+                 />
               ))}
             </div>
           </div>
           <div className="bg-card border border-border rounded-xl p-6">
-            <div className="h-6 w-32 bg-muted animate-pulse rounded-md mb-4"></div>
+            <div className="h-6 w-32 bg-muted animate-pulse rounded-md mb-4" />
             <div className="space-y-3">
               {[...Array(4)].map((_, i) => (
                 <div
                   key={i}
                   className="h-12 w-full bg-muted animate-pulse rounded-lg"
-                ></div>
+                 />
               ))}
             </div>
           </div>
@@ -327,9 +327,9 @@ const NewDashboard = () => {
           </div>
         </div>
 
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5"></div>
-        <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl bg-black/5 dark:bg-white/10"></div>
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 rounded-full blur-3xl bg-black/5 dark:bg-white/10"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5" />
+        <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl bg-black/5 dark:bg-white/10" />
+        <div className="absolute -bottom-24 -left-24 w-48 h-48 rounded-full blur-3xl bg-black/5 dark:bg-white/10" />
       </motion.div>
 
       {/* Estadísticas principales */}

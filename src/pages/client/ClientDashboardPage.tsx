@@ -5,7 +5,7 @@ import {
   Server, Globe, CreditCard, MessageSquare, Activity,
   TrendingUp, TrendingDown, Minus, AlertTriangle, RefreshCw,
   Plus, ArrowRight, Gamepad2, Database, Clock, CheckCircle,
-  XCircle, Loader2,
+  XCircle,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/context/AuthContext';

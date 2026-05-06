@@ -17,7 +17,7 @@ import ConfirmationModal from '@/components/modals/ConfirmationModal';
 import { AdminTicketSheet } from '@/components/admin/AdminTicketSheet';
 import {
   Plus, Edit, Trash2, Search, HelpCircle, CheckCircle, Clock, AlertTriangle, XCircle,
-  MessageSquare, Send, ArrowUp, ArrowDown, Minus, RefreshCw, Ticket, Zap, Filter, X, Loader2, User
+  MessageSquare, ArrowUp, ArrowDown, Minus, RefreshCw, Ticket, Zap, Filter, X, Loader2, User
 } from 'lucide-react';
 import adminTicketsService from '../../services/adminTicketsService';
 import { toast } from 'sonner';

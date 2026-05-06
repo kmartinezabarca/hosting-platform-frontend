@@ -1,12 +1,11 @@
-import { useQuery, useMutation, useQueryClient, UseQueryResult, UseMutationResult } from '@tanstack/react-query';
+import type { UseQueryResult, UseMutationResult } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import _adminDashboardService from '../services/adminDashboardService';
 // Cast to any since adminDashboardService types may not match expected methods
 const adminDashboardService = _adminDashboardService as any;
 import { toast } from 'sonner';
 
-interface AdminParams {
-  [key: string]: unknown;
-}
+type AdminParams = Record<string, unknown>;
 
 interface UpdateUserVars {
   userId: number | string;

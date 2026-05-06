@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Phone, Globe, MapPin, Save, RotateCcw } from 'lucide-react';
+import { Mail, Phone, MapPin, Save, RotateCcw } from 'lucide-react';
 import CountrySelector from '../../components/forms/CountrySelector'; 
 import FormField from './FormField';
 import { cn } from '../../lib/utils';

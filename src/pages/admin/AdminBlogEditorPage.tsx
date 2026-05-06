@@ -5,17 +5,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { 
   ArrowLeft, Save, Eye, Image as ImageIcon, 
-  Loader2, AlertCircle, CheckCircle, Trash2, 
-  Clock, User, Tag, Layout, FileText, Calendar, Upload, X
+  Loader2, Trash2, 
+  Clock, User, Layout, FileText, Calendar, Upload, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
-  Card, CardContent, CardHeader, CardTitle, CardDescription 
+  Card, CardContent, CardHeader, CardTitle 
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import BlogService from '@/services/blogService';

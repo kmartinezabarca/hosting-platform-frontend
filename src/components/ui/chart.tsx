@@ -9,7 +9,7 @@ const THEMES = {
   dark: ".dark"
 }
 
-type ChartContextType = { config: any };
+interface ChartContextType { config: any }
 const ChartContext = React.createContext<ChartContextType | null>(null)
 
 function useChart(): ChartContextType {

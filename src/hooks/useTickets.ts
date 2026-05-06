@@ -2,12 +2,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ticketsService } from '../services/ticketService';
 
-type TicketOptions = {
+interface TicketOptions {
   enabled?: boolean;
   onSuccess?: (...args: any[]) => void;
   onError?: (...args: any[]) => void;
   [key: string]: any;
-};
+}
 
 /** Query Keys normalizados */
 export const ticketsKeys = {

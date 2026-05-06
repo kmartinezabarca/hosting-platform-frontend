@@ -3,7 +3,6 @@ import { paymentService } from './paymentService'; // 2. Importamos paymentServi
 import type { ApiResponse, PaginatedResponse } from '@/types/api';
 import type { Invoice, InvoiceStats, Transaction, PaymentMethod } from '@/types/models';
 import type {
-  PaymentIntentData,
   PaymentMethodData,
   PaymentProcessData,
   PaymentStats,
@@ -88,7 +87,7 @@ class InvoicesService {
     }
   }
 
-  async getRecentTransactions(limit: number = 10): Promise<ApiResponse<Transaction[]>> {
+  async getRecentTransactions(limit = 10): Promise<ApiResponse<Transaction[]>> {
     try {
       const response = await apiClient.get<ApiResponse<Transaction[]>>('/transactions/recent', { params: { limit } });
       return response.data;

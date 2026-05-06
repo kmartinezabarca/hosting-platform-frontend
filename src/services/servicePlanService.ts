@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import type { ApiResponse, PaginatedResponse, MessageResponse } from '@/types/api';
+import type { ApiResponse, MessageResponse } from '@/types/api';
 import type { ServicePlan } from '@/types/models';
 
 export interface Category {

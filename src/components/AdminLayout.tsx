@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef, useMemo, lazy, Suspense, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, Server, FileText, HelpCircle,
-  Settings, Package, LogOut, Menu, X, Search,
-  ChevronDown, Sun, Moon, Shield, Zap, Tag, Book, Code,
-  AlertCircle, Plus, Ticket, CreditCard, Sparkles,
-  Layers, Database, Gamepad2, Globe, Bug, Clock,
-  ChevronLeft, ChevronRight, LayoutGrid, Bell,
+  Settings, Package, LogOut, Menu, Search,
+  ChevronDown, Sun, Moon, Tag, Book, Code,
+  AlertCircle, Ticket, CreditCard, Sparkles,
+  Layers, Gamepad2,
+  ChevronLeft, ChevronRight, LayoutGrid,
   Loader2, ExternalLink, Receipt
 } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';
@@ -394,7 +394,7 @@ const AdminLayout = () => {
                 </AnimatePresence>
               </button>
 
-              <NotificationDropdown isAdmin={true} />
+              <NotificationDropdown isAdmin />
 
               <div className="relative" ref={profileRef}>
                 {(isLoading || meLoading || meFetching) ? (

@@ -180,7 +180,7 @@ export default function ReviewAndPay({
         amount={totals.total}
         currency="mxn"
         payRef={payRef}
-        showPayButton={true}
+        showPayButton
         paymentMethodId={selectedPaymentMethodId}
         serviceData={{
           plan_id: plan.id,

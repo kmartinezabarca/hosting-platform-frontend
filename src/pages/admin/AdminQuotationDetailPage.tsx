@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import {
   ArrowLeft, Edit, Trash2, Send, RefreshCw, Copy, ExternalLink,
   CheckCircle, XCircle, Clock, Link2, AlertCircle, Loader2,
-  User, Mail, Phone, Building2, Receipt, Eye
+  User, Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';

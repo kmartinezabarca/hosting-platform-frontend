@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -6,15 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import ConfirmationModal from '@/components/modals/ConfirmationModal';
 import { toast } from 'sonner';
 import { 
@@ -29,19 +28,14 @@ import {
   XCircle,
   RefreshCw,
   Download,
-  Check,
   ChevronUp,
   ChevronDown,
   Filter,
   X,
   Loader2,
   Receipt,
-  Send,
   DollarSign,
-  User,
-  Package,
   PlusCircle,
-  MinusCircle,
   Calculator
 } from 'lucide-react';
 import { useAdminInvoices, useCreateAdminInvoice, useUpdateAdminInvoice, useDeleteAdminInvoice, useMarkInvoiceAsPaid } from '@/hooks/useAdminInvoices';
@@ -160,7 +154,7 @@ const AdminInvoicesPage = () => {
   };
 
   const sortedInvoices = useMemo(() => {
-    let sorted = [...invoices];
+    const sorted = [...invoices];
     
     sorted.sort((a, b) => {
       const aAny = a as any;

@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient, UseQueryResult, UseMutationResult } from '@tanstack/react-query';
+import type { UseQueryResult, UseMutationResult } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import adminInvoicesService from '../services/adminInvoicesService';
 import { queryConfigs } from '../config/queryConfig';
 import type { Invoice } from '@/types/models';

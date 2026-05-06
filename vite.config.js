@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
+import checker from 'vite-plugin-checker';
 
 export default defineConfig(({ mode }) => {
   const isAdmin   = mode === 'admin' || mode === 'admin-staging';
@@ -15,6 +16,13 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
+      checker({
+        typescript: true,
+        eslint: {
+          lintCommand: 'eslint "./src/**/*.{ts,tsx}"',
+          useFlatConfig: true,
+        },
+      }),
       isProd && env.SENTRY_AUTH_TOKEN && sentryVitePlugin({
         org:        env.SENTRY_ORG,
         project:    env.SENTRY_PROJECT,

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Server, FileText, MessageSquare, User,
   LogOut, Menu, X, Search, Settings, ChevronDown,
-  Sun, Moon, Zap, Shield, Plus, ArrowRight, Command,
+  Sun, Moon, ArrowRight, Command,
   ShoppingCart, Sparkles
 } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';

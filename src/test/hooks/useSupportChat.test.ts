@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { useSupportChat, useUnreadChatCount } from '../../hooks/useSupportChat';
 import { queryWrapper } from '../utils';

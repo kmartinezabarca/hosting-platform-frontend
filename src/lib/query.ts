@@ -4,7 +4,7 @@ type QueryParamValue =
   | boolean
   | null
   | undefined
-  | Array<string | number | boolean>;
+  | (string | number | boolean)[];
 
 type QueryParams = Record<string, QueryParamValue>;
 

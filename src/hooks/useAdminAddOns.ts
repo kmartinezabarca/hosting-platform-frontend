@@ -1,5 +1,6 @@
 // src/hooks/admin/useAdminAddOns.ts
-import { useQuery, useMutation, useQueryClient, UseQueryResult, UseMutationResult } from '@tanstack/react-query';
+import type { UseQueryResult, UseMutationResult } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import addOnsService from '@/services/addOnsService';
 
 interface AddOn {
@@ -23,9 +24,7 @@ interface NormalizedPage<T = unknown> {
   raw: unknown;
 }
 
-interface AddOnPayload {
-  [key: string]: unknown;
-}
+type AddOnPayload = Record<string, unknown>;
 
 interface UpdateAddOnVars {
   uuid: string;

@@ -12,7 +12,6 @@ import {
   User,
   FileText,
   Calendar,
-  Tag,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';

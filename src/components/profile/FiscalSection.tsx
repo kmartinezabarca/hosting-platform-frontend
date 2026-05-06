@@ -3,7 +3,7 @@
 // Permite crear, editar, eliminar y establecer como predeterminado
 // los datos fiscales (RFC, régimen, uso CFDI, etc.).
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Receipt, Plus, Pencil, Trash2, Star, StarOff,

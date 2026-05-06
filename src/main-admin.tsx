@@ -1,10 +1,10 @@
 import '@/lib/i18n';
 
-import { StrictMode, Suspense } from 'react'
+import { Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import AppAdmin from './AppAdmin'
-import { initSentry } from '@/lib/sentry';
+import { initSentry  } from '@/lib/sentry';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from '@/lib/react-query';
@@ -16,7 +16,6 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
 import { NotificationProvider } from '@/context/NotificationContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { initSentry as initSentryAdmin } from '@/lib/sentry';
 import { initWebVitals } from '@/lib/webVitals';
 
 initSentry();

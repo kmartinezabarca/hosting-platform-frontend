@@ -5,7 +5,7 @@ import adminNotificationsService from '@/services/adminNotificationsService';
 import { getEcho } from '@/services/echoService';
 import { useAuth } from '@/context/AuthContext';
 
-type HookOptions = { onSuccess?: (...args: any[]) => void; [key: string]: any };
+interface HookOptions { onSuccess?: (...args: any[]) => void; [key: string]: any }
 
 // Query Keys (params como string estable)
 const QK = {

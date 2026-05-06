@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { PaymentMethodLogo } from "../invoices/PaymentMethodLogos";
 /**
  * methods: [{

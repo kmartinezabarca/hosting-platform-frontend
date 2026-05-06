@@ -20,7 +20,6 @@ import {
     Star,
     TrendingUp,
     ExternalLink,
-    ChevronLeft,
     Power,
     ServerCrash,
 } from "lucide-react";

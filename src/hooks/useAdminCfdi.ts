@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient, UseQueryResult, UseMutationResult } from '@tanstack/react-query';
+import type { UseQueryResult, UseMutationResult } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import adminCfdiService from '@/services/adminCfdiService';
 
 interface CfdiItem {
@@ -12,9 +13,7 @@ interface CfdiListResult {
   meta: unknown | null;
 }
 
-interface CfdiStats {
-  [key: string]: unknown;
-}
+type CfdiStats = Record<string, unknown>;
 
 interface CancelCfdiVars {
   id: number | string;

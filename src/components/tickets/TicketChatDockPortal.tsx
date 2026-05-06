@@ -86,7 +86,7 @@ function ClientDock() {
   if (ticketOpen && ticketCtx?.ticket) {
     return (
       <TicketChatDock
-        open={true}
+        open
         onClose={() => { ticketCtx.closeChat(); setMinimized(true); }}
         ticket={ticketCtx.ticket}
         messages={ticketCtx.messages ?? []}
@@ -103,7 +103,7 @@ function ClientDock() {
   // open={true} siempre → la burbuja nunca desaparece
   return (
     <TicketChatDock
-      open={true}
+      open
       onClose={() => setMinimized(true)}
       ticket={supportRoom}
       messages={roomMessages ?? []}

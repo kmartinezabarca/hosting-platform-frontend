@@ -1,5 +1,5 @@
 import React from 'react';
-import { HardDrive, Clock, RefreshCw, Database, Zap, History } from 'lucide-react';
+import { HardDrive, Clock, RefreshCw, Database, Zap } from 'lucide-react';
 import { useServiceBackups, useCreateBackup, useRestoreBackup } from '@/hooks/useServices';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';

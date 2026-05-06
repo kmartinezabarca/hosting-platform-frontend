@@ -87,7 +87,7 @@ const usersService = {
   },
 
   // Obtener actividad reciente de usuarios
-  getRecentActivity: async (limit: number = 10): Promise<ApiResponse<ActivityItem[]>> => {
+  getRecentActivity: async (limit = 10): Promise<ApiResponse<ActivityItem[]>> => {
     const response = await apiClient.get<ApiResponse<ActivityItem[]>>(`/admin/users/recent-activity?limit=${limit}`);
     return response.data;
   }

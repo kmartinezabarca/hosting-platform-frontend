@@ -5,8 +5,6 @@ import {
   Gamepad2,
   Cloud,
   Database,
-  Star,
-  Check,
   ArrowRight,
   Loader2,
 } from "lucide-react";

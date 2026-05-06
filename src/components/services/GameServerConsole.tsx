@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import clsx from "clsx";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { 
-  Loader2, Send, Terminal, AlertTriangle, 
-  RotateCcw, Trash2, Download, Search, Clock,
+  Loader2, Send, Terminal, Trash2, Download, Search, Clock,
   ChevronDown, Sun, Moon
 } from "lucide-react";
 import { useGameServerWebSocket } from "@/hooks/useGameServerHooks";

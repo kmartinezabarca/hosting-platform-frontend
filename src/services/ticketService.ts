@@ -1,7 +1,7 @@
 // src/services/ticketsService.ts
 import apiClient from './apiClient';
-import type { ApiResponse, PaginatedResponse, FilterParams } from '@/types/api';
-import type { Ticket, TicketMessage, TicketStatus, TicketPriority } from '@/types/models';
+import type { ApiResponse, PaginatedResponse } from '@/types/api';
+import type { Ticket, TicketMessage, TicketPriority } from '@/types/models';
 
 export interface TicketListParams {
   status?: string;

@@ -26,7 +26,7 @@ export default function AppAdmin() {
           <Route
             path="/admin/*"
             element={
-              <ProtectedRoute requireAdmin={true}>
+              <ProtectedRoute requireAdmin>
                 <AdminLayout />
               </ProtectedRoute>
             }

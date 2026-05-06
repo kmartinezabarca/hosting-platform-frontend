@@ -126,7 +126,7 @@ const ServiceFilters = ({
             transition"
         />
       </div>
-      <div className="hidden lg:block lg:col-span-1"></div>
+      <div className="hidden lg:block lg:col-span-1" />
       {/* --- Filtros Desplegables Premium --- */}
       <div className="md:col-span-1 lg:col-span-1">
         <FilterDropdown

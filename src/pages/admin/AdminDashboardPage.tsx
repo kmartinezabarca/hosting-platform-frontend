@@ -24,10 +24,7 @@ import {
   Ticket,
   Receipt,
   Cloud,
-  Calendar,
-  Eye,
   ArrowUpRight,
-  ArrowDownRight,
   Plus
 } from 'lucide-react';
 import { useAdminStats } from '../../hooks/useAdminDashboard';

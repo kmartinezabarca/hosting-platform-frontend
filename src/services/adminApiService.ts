@@ -1,6 +1,5 @@
 // Admin API service for communicating with the backend
 import ApiService from './apiClient';
-import type { AxiosInstance } from 'axios';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 

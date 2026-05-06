@@ -16,9 +16,7 @@ export interface ServiceContractData {
   [key: string]: unknown;
 }
 
-export interface ServiceConfigData {
-  [key: string]: unknown;
-}
+export type ServiceConfigData = Record<string, unknown>;
 
 export interface ServiceBackup {
   id: number;
