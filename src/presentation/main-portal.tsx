@@ -9,8 +9,8 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from '@shared/utils/react-query';
 import { ThemeProvider } from '@presentation/components/features/context/ThemeContext'
-import { TicketChatProvider } from "./context/TicketChatContext";
-import TicketChatDockPortal from "./components/tickets/TicketChatDockPortal";
+import { TicketChatProvider } from '@application/context/TicketChatContext';
+import TicketChatDockPortal from '@presentation/components/features/tickets/TicketChatDockPortal';
 import { ToastProvider } from "@presentation/components/features/ToastProvider";
 import { initializeCsrf } from '@presentation/components/features/lib/bootstrap';
 import { GoogleOAuthProvider } from '@react-oauth/google';

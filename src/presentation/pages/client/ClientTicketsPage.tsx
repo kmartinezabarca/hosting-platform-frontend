@@ -10,7 +10,7 @@ import {
   useCreateTicket,
 } from "@application/hooks/useTickets";
 import { useQueryClient } from "@tanstack/react-query";
-import { ticketsKeys } from "../../hooks/useTickets";
+import { ticketsKeys } from '@application/hooks/useTickets';
 
 // Map de categoría (UI) -> department (API)
 const categoryToDepartment = {

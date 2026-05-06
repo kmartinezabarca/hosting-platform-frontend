@@ -19,7 +19,7 @@ import {
   Plus, Edit, Trash2, Search, HelpCircle, CheckCircle, Clock, AlertTriangle, XCircle,
   MessageSquare, ArrowUp, ArrowDown, Minus, RefreshCw, Ticket, Zap, Filter, X, Loader2, User
 } from 'lucide-react';
-import adminTicketsService from '@presentation/components/features/../services/adminTicketsService';
+import adminTicketsService from '@infrastructure/services/adminTicketsService';
 import { toast } from 'sonner';
 
 const ticketSchema = z.object({

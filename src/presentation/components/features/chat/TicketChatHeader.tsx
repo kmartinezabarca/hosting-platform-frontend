@@ -1,7 +1,7 @@
 // /components/chat/TicketChatHeader.jsx
 import React from "react";
 import { X, Minus, Headphones, SquarePen } from "lucide-react";
-import { getStatusBadge } from "../../lib/chatUtils";
+import { getStatusBadge } from '@shared/utils/chatUtils';
 
 export const TicketChatHeader = ({
   ticket,

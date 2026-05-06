@@ -9,10 +9,10 @@ import { MessageList } from "../chat/MessageList";
 import { ChatComposer } from "../chat/ChatComposer";
 import { Lightbox } from "../chat/Lightbox";
 import { NewTicketForm } from "../chat/NewTicketForm";
-import { useFileHandling } from "../../hooks/useFileHandling";
-import { useChatInteractions } from "../../hooks/useChatInteractions";
-import { useAuth } from "../../context/AuthContext";
-import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_MB, MAX_FILES_PER_MESSAGE, isImageMime } from "../../lib/chatUtils";
+import { useFileHandling } from '@application/hooks/useFileHandling';
+import { useChatInteractions } from '@application/hooks/useChatInteractions';
+import { useAuth } from "@application/context/AuthContext";
+import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_MB, MAX_FILES_PER_MESSAGE, isImageMime } from '@shared/utils/chatUtils';
 
 /**
  * props:

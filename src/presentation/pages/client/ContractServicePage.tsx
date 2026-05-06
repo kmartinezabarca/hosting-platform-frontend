@@ -9,11 +9,11 @@ import {
   Loader2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import BillingCycleSwitch from "../../components/pricing/billing-cycle-switch";
-import PricingCard from "../../components/pricing/pricing-card";
-import { useCategories } from "../../hooks/useCategories";
-import { useBillingCycles } from "../../hooks/useBillingCycles";
-import { useServicePlans } from "../../hooks/useServicePlans";
+import BillingCycleSwitch from '@presentation/components/features/pricing/billing-cycle-switch';
+import PricingCard from '@presentation/components/features/pricing/pricing-card';
+import { useCategories } from '@application/hooks/useCategories';
+import { useBillingCycles } from '@application/hooks/useBillingCycles';
+import { useServicePlans } from '@application/hooks/useServicePlans';
 
 const ContractServicePage = () => {
   const navigate = useNavigate();

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { servicesService } from "../services/serviceService";
+import { servicesService } from '@infrastructure/services/serviceService';
 
 // Hook para obtener los detalles de UN solo servicio
 export const useServiceDetails = (serviceId) => {

@@ -8,7 +8,7 @@ import {
   getStatusText,
   formatCurrency,
   formatDate,
-} from "../../lib/invoiceUtils";
+} from '@shared/utils/invoiceUtils';
 
 // Opciones visibles en el filtro (puedes ajustarlas a tu negocio)
 const STATUS_OPTIONS = [

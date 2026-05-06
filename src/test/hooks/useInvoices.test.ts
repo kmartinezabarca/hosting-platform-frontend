@@ -9,7 +9,7 @@ import {
   useSetDefaultPaymentMethod,
   useDeletePaymentMethod,
   useUpdateInvoiceFiscalData,
-} from '../../hooks/useInvoices';
+} from '@application/hooks/useInvoices';
 import { queryWrapper, createTestQueryClient } from '../utils';
 import { server } from '../mocks/server';
 

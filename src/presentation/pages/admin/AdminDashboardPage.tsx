@@ -27,7 +27,7 @@ import {
   ArrowUpRight,
   Plus
 } from 'lucide-react';
-import { useAdminStats } from '@presentation/components/features/../hooks/useAdminDashboard';
+import { useAdminStats } from '@application/hooks/useAdminDashboard';
 import { useNavigate } from 'react-router-dom';
 
 const SimpleLineChart = ({ data, color = 'hsl(221.2 83.2% 53.3%)', height = 120 }) => {

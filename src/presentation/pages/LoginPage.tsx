@@ -14,8 +14,8 @@ import {
   Zap,
   Globe,
 } from "lucide-react";
-import { useLogin, useLoginWithGoogle } from "../hooks/useAuth";
-import { useAuth } from "../context/AuthContext";
+import { useLogin, useLoginWithGoogle } from '@application/hooks/useAuth';
+import { useAuth } from '@application/context/AuthContext';
 import logoROKE from "../assets/ROKEIndustriesFusionLogo.png";
 
 const LoginPage = () => {

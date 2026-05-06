@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useServiceDetails } from '@presentation/components/features/../hooks/useServices';
+import { useServiceDetails } from '@application/hooks/useServices';
 import { Skeleton } from '@presentation/components/features/../components/ui/skeleton';
 import { AlertTriangle, ArrowLeft } from 'lucide-react';
 

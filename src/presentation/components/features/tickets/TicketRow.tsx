@@ -2,7 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import clsx from "clsx";
 import { ChevronRight, MessageSquare, User } from "lucide-react";
-import { priorityText, categoryText, fmtDate } from "../../lib/tickets-ui";
+import { priorityText, categoryText, fmtDate } from '@shared/utils/tickets-ui';
 
 const cx = (...classes) => classes.filter(Boolean).join(" ");
 

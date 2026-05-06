@@ -18,17 +18,17 @@ import {
   CreditCard,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import StatCard from "../../components/dashboard/stat-card";
-import DashboardCard from "../../components/dashboard/dashboard-card";
-import DetailsModal from "../../components/dashboard/DetailsModal";
+import { useAuth } from "@application/context/AuthContext";
+import StatCard from '@presentation/components/features/dashboard/stat-card';
+import DashboardCard from '@presentation/components/features/dashboard/dashboard-card';
+import DetailsModal from '@presentation/components/features/dashboard/DetailsModal';
 import ActionCard from '@presentation/components/features/../components/dashboard/ActionCard';
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useDashboardStats,
   useDashboardServices,
   useDashboardActivity,
-} from "../../hooks/useDashboard";
+} from '@application/hooks/useDashboard';
 import { formatCurrency } from "@shared/utils/formatters";
 
 const NewDashboard = () => {

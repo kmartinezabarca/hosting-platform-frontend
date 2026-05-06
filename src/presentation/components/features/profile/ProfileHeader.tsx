@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Camera, CheckCircle, AlertTriangle } from 'lucide-react';
 import ReactCountryFlag from "react-country-flag";
-import { countryName } from "../../lib/geo";
+import { countryName } from '@shared/utils/geo';
 import { cn } from '@presentation/components/features/../lib/utils';
 import AvatarUploader from '@presentation/components/features/AvatarUploader';
 

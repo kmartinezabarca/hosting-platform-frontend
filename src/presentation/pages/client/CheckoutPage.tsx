@@ -2,18 +2,18 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { emailRx, phoneRx, domainRx } from "../../lib/validation";
-import { rfcMxRx, toBase64 } from "../../lib/cfdi";
+import { useAuth } from "@application/context/AuthContext";
+import { emailRx, phoneRx, domainRx } from "@shared/utils/validation";
+import { rfcMxRx, toBase64 } from "@shared/utils/cfdi";
 
-import Stepper from "../../components/checkout/Stepper";
-import ServiceFields from "../../components/checkout/ServiceFields";
-import Addons from "../../components/checkout/Addons";
-import InvoiceFields from "../../components/checkout/InvoiceFields";
-import ReviewAndPay from "../../components/checkout/ReviewAndPay";
-import OrderSummary from "../../components/checkout/OrderSummary";
-import { usePlanAddons, usePaymentMethods } from "../../hooks/useCheckout";
-import AddPaymentMethodModal from "../../components/invoices/AddPaymentMethodModal";
+import Stepper from "@presentation/components/features/checkout/Stepper";
+import ServiceFields from "@presentation/components/features/checkout/ServiceFields";
+import Addons from "@presentation/components/features/checkout/Addons";
+import InvoiceFields from "@presentation/components/features/checkout/InvoiceFields";
+import ReviewAndPay from "@presentation/components/features/checkout/ReviewAndPay";
+import OrderSummary from "@presentation/components/features/checkout/OrderSummary";
+import { usePlanAddons, usePaymentMethods } from "@application/hooks/useCheckout";
+import AddPaymentMethodModal from "@presentation/components/features/invoices/AddPaymentMethodModal";
 import { queryClient } from "@shared/utils/react-query";
 
 export default function CheckoutPage() {

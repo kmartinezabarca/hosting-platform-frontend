@@ -2,8 +2,8 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, AlertCircle, ChevronDown } from "lucide-react";
-import { useCreateTicket } from "../../hooks/useTickets";
-import { cn } from "../../lib/utils";
+import { useCreateTicket } from '@application/hooks/useTickets';
+import { cn } from '@shared/utils/utils';
 
 const PRIORITIES = [
   { value: "low",    label: "Baja",    dot: "bg-slate-400" },

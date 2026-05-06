@@ -8,8 +8,8 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
-import { paymentService } from "../services/paymentService";
-import { servicesService } from "../services/serviceService";
+import { paymentService } from '@infrastructure/services/paymentService';
+import { servicesService } from '@infrastructure/services/serviceService';
 
 // Initialize Stripe (Sin cambios, esto está perfecto)
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string);

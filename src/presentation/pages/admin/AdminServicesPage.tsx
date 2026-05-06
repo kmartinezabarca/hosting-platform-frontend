@@ -20,7 +20,7 @@ import {
   Filter, X, Loader2, User, DollarSign, Settings2, Cpu, Code2, Shield, Headphones,
   Database, Gamepad2, Globe, AlertTriangle,
 } from 'lucide-react';
-import usersService from '@presentation/components/features/../services/userService';
+import usersService from '@infrastructure/services/userService';
 import {
   useAdminServices,
   useCreateAdminService,
@@ -28,8 +28,8 @@ import {
   useDeleteAdminService,
   useSuspendAdminService,
   useReactivateAdminService,
-} from '@presentation/components/features/../hooks/useAdminServices';
-import { useServicePlans } from '@presentation/components/features/../hooks/useServicePlans';
+} from '@application/hooks/useAdminServices';
+import { useServicePlans } from '@application/hooks/useServicePlans';
 import { toast } from 'sonner';
 
 const serviceSchema = z.object({

@@ -44,7 +44,7 @@ import {
   useCreateAdminServicePlan,
   useUpdateAdminServicePlan,
   useDeleteAdminServicePlan,
-} from '@presentation/components/features/../hooks/useAdminServicePlans';
+} from '@application/hooks/useAdminServicePlans';
 import { toast } from 'sonner';
 
 const planSchema = z.object({

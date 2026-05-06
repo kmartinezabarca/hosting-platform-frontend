@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useSessions, useLogoutSession, useLogoutOtherSessions } from '@presentation/components/features/../hooks/useSessions';
+import { useSessions, useLogoutSession, useLogoutOtherSessions } from '@application/hooks/useSessions';
 import {
   MonitorSmartphone, Smartphone, Tablet, Monitor,
   MapPin, Clock, LogOut, AlertTriangle, ShieldAlert,

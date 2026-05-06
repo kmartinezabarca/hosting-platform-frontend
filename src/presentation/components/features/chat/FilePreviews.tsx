@@ -1,7 +1,7 @@
 // /components/chat/FilePreviews.jsx
 import React from "react";
 import { X, Paperclip } from "lucide-react";
-import { isImageMime, fmtBytes } from "../../lib/chatUtils";
+import { isImageMime, fmtBytes } from '@shared/utils/chatUtils';
 
 export const FilePreviews = ({ files, onRemove, disabled }) => {
   if (files.length === 0) return null;

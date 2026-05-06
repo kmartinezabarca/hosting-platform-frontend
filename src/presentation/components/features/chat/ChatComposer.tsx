@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Send, Paperclip } from "lucide-react";
 import { FilePreviews } from "./FilePreviews";
-import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_MB, MAX_FILES_PER_MESSAGE } from "../../lib/chatUtils";
+import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_MB, MAX_FILES_PER_MESSAGE } from '@shared/utils/chatUtils';
 
 export const ChatComposer = ({
   onSubmit,

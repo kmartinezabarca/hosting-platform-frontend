@@ -8,24 +8,24 @@ import {
   useUploadAvatar, 
   useSecurity, 
   useUpdatePassword 
-} from "../../hooks/useProfile";
+} from '@application/hooks/useProfile';
 import { 
   useGenerate2FA, 
   useEnable2FA, 
   useDisable2FA 
-} from "../../hooks/useTwoFactor";
+} from '@application/hooks/useTwoFactor';
 import { 
   useSessions, 
   useLogoutSession 
-} from "../../hooks/useSessions";
+} from '@application/hooks/useSessions';
 
 // Componentes del perfil
-import ProfileHeader from "../../components/profile/ProfileHeader";
-import ProfileTabs from "../../components/profile/ProfileTabs";
-import PersonalInfoSection from "../../components/profile/PersonalInfoSection";
-import SecuritySection from "../../components/profile/SecuritySection";
-import DevicesSection from "../../components/profile/DevicesSection";
-import FiscalSection from "../../components/profile/FiscalSection";
+import ProfileHeader from '@presentation/components/features/profile/ProfileHeader';
+import ProfileTabs from '@presentation/components/features/profile/ProfileTabs';
+import PersonalInfoSection from '@presentation/components/features/profile/PersonalInfoSection';
+import SecuritySection from '@presentation/components/features/profile/SecuritySection';
+import DevicesSection from '@presentation/components/features/profile/DevicesSection';
+import FiscalSection from '@presentation/components/features/profile/FiscalSection';
 
 const ClientProfilePage = () => {
   const [activeTab, setActiveTab] = useState("profile");

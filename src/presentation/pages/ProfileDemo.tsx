@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { toast } from "sonner";
 
 // Componentes del perfil
-import ProfileHeader from "../components/profile/ProfileHeader";
-import ProfileTabs from "../components/profile/ProfileTabs";
-import PersonalInfoSection from "../components/profile/PersonalInfoSection";
-import SecuritySection from "../components/profile/SecuritySection";
-import DevicesSection from "../components/profile/DevicesSection";
+import ProfileHeader from '@presentation/components/features/profile/ProfileHeader';
+import ProfileTabs from '@presentation/components/features/profile/ProfileTabs';
+import PersonalInfoSection from '@presentation/components/features/profile/PersonalInfoSection';
+import SecuritySection from '@presentation/components/features/profile/SecuritySection';
+import DevicesSection from '@presentation/components/features/profile/DevicesSection';
 
 const ProfileDemo = () => {
   const [activeTab, setActiveTab] = useState("profile");

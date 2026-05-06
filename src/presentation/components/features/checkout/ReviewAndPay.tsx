@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
-import StripeCheckout from "../../components/StripeCheckout";
-import PaymentMethodSelector from "../../components/payments/PaymentMethodSelector";
+import StripeCheckout from '@presentation/components/features/StripeCheckout';
+import PaymentMethodSelector from '@presentation/components/features/payments/PaymentMethodSelector';
 import { useFiscalRegimes, useCfdiUses } from "@application/hooks/useFiscal";
 import { Plus, CheckCircle2, User, Package, CreditCard, FileText } from "lucide-react";
 

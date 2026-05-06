@@ -1,6 +1,6 @@
 // /hooks/useFileHandling.ts
 import { useState, useEffect, useRef, useCallback } from "react";
-import { fmtBytes, isImageMime } from "../lib/chatUtils";
+import { fmtBytes, isImageMime } from '@shared/utils/chatUtils';
 
 interface FileEntry {
   file: File;

@@ -2,7 +2,7 @@ import React from 'react';
 import InfoCard from '@presentation/components/features/InfoCard';
 import InfoRow from '@presentation/components/features/InfoRow';
 import StatusIndicator from '@presentation/components/features/StatusIndicator';
-import AutoRenewToggle from '@presentation/components/features/../services/details/AutoRenewToggle'; // Asumimos que ya existe
+import AutoRenewToggle from '@infrastructure/services/details/AutoRenewToggle'; // Asumimos que ya existe
 import { translateBillingCycle } from '@presentation/components/features/../../lib/translations'; // Asumimos que ya existe
 
 const GeneralInfoCard = ({ service }) => {

@@ -1,7 +1,7 @@
 // /components/chat/MessageBubble.jsx
 import React from "react";
 import { Paperclip, Download } from "lucide-react";
-import { fmtDate, fmtBytes, isImageMime } from "../../lib/chatUtils";
+import { fmtDate, fmtBytes, isImageMime } from '@shared/utils/chatUtils';
 
 export const MessageBubble = ({ message, onImageClick, currentUserId }) => {
   // Determinar si el mensaje es del usuario actual comparando por ID

@@ -16,17 +16,17 @@ import {
   useProcessPayment,
   useSetDefaultPaymentMethod,
   useDeletePaymentMethod,
-} from "../../hooks/useInvoices";
+} from '@application/hooks/useInvoices';
 
 // --- Componentes de UI ---
-import StatsCards from "../../components/invoices/StatsCards";
-import InvoicesList from "../../components/invoices/InvoicesList";
-import PaymentMethods from "../../components/invoices/PaymentMethods";
-import Transactions from "../../components/invoices/Transactions";
-import PaymentModal from "../../components/invoices/PaymentModal";
-import InvoiceDetailModal from "../../components/invoices/InvoiceDetailModal";
-import AddPaymentMethodModal from "../../components/invoices/AddPaymentMethodModal";
-import ConfirmationModal from "../../components/modals/ConfirmationModal";
+import StatsCards from "@presentation/components/features/invoices/StatsCards";
+import InvoicesList from "@presentation/components/features/invoices/InvoicesList";
+import PaymentMethods from "@presentation/components/features/invoices/PaymentMethods";
+import Transactions from "@presentation/components/features/invoices/Transactions";
+import PaymentModal from "@presentation/components/features/invoices/PaymentModal";
+import InvoiceDetailModal from "@presentation/components/features/invoices/InvoiceDetailModal";
+import AddPaymentMethodModal from "@presentation/components/features/invoices/AddPaymentMethodModal";
+import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
 import { toast } from "sonner";
 
 // --- Componentes Internos para Estados de Carga y Error ---

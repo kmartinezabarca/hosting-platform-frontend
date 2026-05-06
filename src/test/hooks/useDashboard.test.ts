@@ -5,7 +5,7 @@ import {
   useDashboardStats,
   useDashboardServices,
   useDashboardActivity,
-} from '../../hooks/useDashboard';
+} from '@application/hooks/useDashboard';
 import { queryWrapper } from '../utils';
 import { server } from '../mocks/server';
 

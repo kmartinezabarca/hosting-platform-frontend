@@ -15,7 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import documentationRequestAdminService from '@presentation/components/features/../services/admin/documentationRequestAdminService';
+import documentationRequestAdminService from '@infrastructure/services/documentationRequestAdminService';
 import ConfirmationModal from '@presentation/components/features/../components/modals/ConfirmationModal';
 
 const AdminDocumentationRequestsPage = () => {

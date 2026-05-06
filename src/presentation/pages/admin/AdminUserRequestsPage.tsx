@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { AlertCircle, Loader2, Trash2, CheckCircle, Eye, Filter } from "lucide-react";
 import { toast } from "sonner";
-import userRequestAdminService from "@infrastructure/services/admin/userRequestAdminService";
+import userRequestAdminService from "@infrastructure/services/userRequestAdminService";
 import ConfirmationModal from "@presentation/components/features/modals/ConfirmationModal";
 
 const AdminUserRequestsPage = () => {

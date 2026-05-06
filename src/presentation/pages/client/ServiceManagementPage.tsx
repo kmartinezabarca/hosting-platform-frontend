@@ -9,17 +9,17 @@ import {
   CircleDollarSign,
   AlertTriangle,
 } from "lucide-react";
-import { useServiceDetails } from "../../hooks/useServices";
+import { useServiceDetails } from '@application/hooks/useServices';
 
 // Componentes de las pestañas
-import GeneralSettingsTab from "../../components/services/management/GeneralSettingsTab";
-import NetworkTab from "../../components/services/management/NetworkTab";
-import SecurityTab from "../../components/services/management/SecurityTab";
-import BackupsTab from "../../components/services/management/BackupsTab";
-import DangerZoneTab from "../../components/services/management/DangerZoneTab";
-import ServiceManagementHeader from "../../components/services/management/ServiceManagementHeader";
+import GeneralSettingsTab from '@presentation/components/features/services/management/GeneralSettingsTab';
+import NetworkTab from '@presentation/components/features/services/management/NetworkTab';
+import SecurityTab from '@presentation/components/features/services/management/SecurityTab';
+import BackupsTab from '@presentation/components/features/services/management/BackupsTab';
+import DangerZoneTab from '@presentation/components/features/services/management/DangerZoneTab';
+import ServiceManagementHeader from '@presentation/components/features/services/management/ServiceManagementHeader';
 import PlanBillingCard from '@presentation/components/features/../components/services/management/PlanBillingCard';
-import SkeletonServiceManagement from "../../components/skeletons/SkeletonServiceManagement";
+import SkeletonServiceManagement from '@presentation/components/features/skeletons/SkeletonServiceManagement';
 import ErrorState from "@presentation/components/ui/ErrorState";
 
 const ServiceManagementPage = () => {

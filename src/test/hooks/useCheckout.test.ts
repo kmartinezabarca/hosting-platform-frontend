@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { http, HttpResponse } from 'msw';
-import { usePaymentMethods } from '../../hooks/useCheckout';
+import { usePaymentMethods } from '@application/hooks/useCheckout';
 import { queryWrapper } from '../utils';
 import { server } from '../mocks/server';
 

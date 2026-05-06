@@ -1,7 +1,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { http, HttpResponse } from 'msw';
-import { useLogin, useLogout, useRegister, useVerify2FA } from '../../hooks/useAuth';
+import { useLogin, useLogout, useRegister, useVerify2FA } from '@application/hooks/useAuth';
 import { queryWrapper, createTestQueryClient } from '../utils';
 import { server } from '../mocks/server';
 
