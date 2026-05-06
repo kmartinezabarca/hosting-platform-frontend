@@ -27,7 +27,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, X, CheckCircle, Trash2, AlertCircle, Info, DollarSign, Package, Wrench, ArrowRight } from 'lucide-react';
 import { useClientNotifications, useUnreadNotificationCount } from '@presentation/components/features/hooks/useClientNotifications';
 import { useAdminNotificationsHub } from '@presentation/components/features/hooks/useAdminNotifications';
-import { Skeleton } from '@presentation/components/features/ui/skeleton';
+import { Skeleton } from '@presentation/components/ui/skeleton';
 import { useAuth } from '@presentation/components/features/context/AuthContext';
 
 
