@@ -33,7 +33,7 @@ export default function CheckoutSuccessPage() {
   const shouldFetchService = Boolean(serviceId);
   const { data: serviceResponse, isLoading: isLoadingService } = useServiceDetails(serviceId);
 
-  const liveService = serviceResponse?.service || serviceResponse || service;
+  const liveService = (serviceResponse as any)?.service || serviceResponse || service;
   const liveStatus = (liveService?.status || service?.status || "pending").toLowerCase();
 
   const isProvisioning = ["pending", "provisioning", "creating", "processing"].includes(liveStatus);

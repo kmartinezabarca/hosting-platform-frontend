@@ -225,10 +225,10 @@ export const useAdminAttachAddOnToPlan = (
   return useMutation({
     mutationFn: ({ addOnUuid, payload }: AttachDetachVars) =>
       addOnsService.attachAddOnToPlan(addOnUuid, payload),
-    onSuccess: (...args) => {
+    onSuccess: (data, variables, context) => {
       qc.invalidateQueries({ queryKey: ['admin', 'addOns'] });
       qc.invalidateQueries({ queryKey: ['admin', 'servicePlans'] });
-      options.onSuccess?.(...args);
+      options.onSuccess?.(data, variables, context);
     },
     ...options,
   });
@@ -241,10 +241,10 @@ export const useAdminDetachAddOnFromPlan = (
   return useMutation({
     mutationFn: ({ addOnUuid, payload }: AttachDetachVars) =>
       addOnsService.detachAddOnFromPlan(addOnUuid, payload),
-    onSuccess: (...args) => {
+    onSuccess: (data, variables, context) => {
       qc.invalidateQueries({ queryKey: ['admin', 'addOns'] });
       qc.invalidateQueries({ queryKey: ['admin', 'servicePlans'] });
-      options.onSuccess?.(...args);
+      options.onSuccess?.(data, variables, context);
     },
     ...options,
   });

@@ -35,7 +35,7 @@ const BackupsTab = ({ service }) => {
     );
   };
 
-  const usedBytes = backups?.reduce((acc, b) => acc + (b.bytes || 0), 0) || 0;
+  const usedBytes = (backups || []).reduce((acc, b) => acc + (b.size || b.bytes || 0), 0);
   const usedGb = usedBytes / (1024 ** 3);
   const quotaGb = service.plan?.limits?.backups || 3;
   const pct = Math.min(100, (usedGb / quotaGb) * 100);
@@ -50,7 +50,7 @@ const BackupsTab = ({ service }) => {
           </div>
           <button
             onClick={handleCreateBackup}
-            disabled={createBackup.isPending || (backups?.length >= quotaGb)}
+            disabled={createBackup.isPending || ((backups?.length || 0) >= quotaGb)}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground font-bold text-sm hover:opacity-90 transition-all disabled:opacity-50"
           >
             <Zap className="w-4 h-4" />
@@ -111,7 +111,7 @@ const BackupsTab = ({ service }) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {backups.map((backup) => (
+                  {(backups || []).map((backup) => (
                     <tr key={backup.uuid} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-4">
                         <div className="font-bold text-foreground">{backup.name}</div>
@@ -120,7 +120,7 @@ const BackupsTab = ({ service }) => {
                         </div>
                       </td>
                       <td className="px-4 py-4 font-mono text-xs">
-                        {(backup.bytes / (1024 ** 2)).toFixed(2)} MB
+                        {((backup.size || backup.bytes || 0) / (1024 ** 2)).toFixed(2)} MB
                       </td>
                       <td className="px-4 py-4 text-right">
                         <button
