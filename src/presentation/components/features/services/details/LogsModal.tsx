@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download } from 'lucide-react'; // ¡Importamos el icono de descarga!
-import { downloadAsTxt } from '@presentation/components/features/../../lib/fileUtils'; // ¡Importamos nuestra nueva función helper!
+import { X, Download } from 'lucide-react';
+import { downloadAsTxt } from '@shared/utils/fileUtils';
 
-const LogsModal = ({ serviceId, onClose }: any) => { // Pasamos el serviceId para el nombre del archivo
-  // Hook para cerrar el modal con la tecla 'Escape'
+const LogsModal = ({ serviceId, onClose }: any) => {
+ 
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
@@ -15,7 +15,7 @@ const LogsModal = ({ serviceId, onClose }: any) => { // Pasamos el serviceId par
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  // Datos de logs simulados (listos para ser reemplazados por datos de una API)
+  
   const logs = [
     { level: 'INFO', message: 'Servidor iniciado en el puerto 25565.', timestamp: '2025-09-03 18:30:01' },
     { level: 'INFO', message: 'Cargando mundo "world"...', timestamp: '2025-09-03 18:30:05' },
@@ -35,13 +35,12 @@ const LogsModal = ({ serviceId, onClose }: any) => { // Pasamos el serviceId par
     // 1. Formatear el array de objetos de logs a un string de texto plano.
     const logContent = logs
       .map(log => `${log.timestamp} [${log.level.padEnd(5)}] ${log.message}`)
-      .join('\n'); // Unimos cada línea con un salto de línea.
+      .join('\n');
 
-    // 2. Generar un nombre de archivo dinámico.
-    const date = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    
+    const date = new Date().toISOString().split('T')[0];
     const filename = `logs-${serviceId}-${date}.txt`;
 
-    // 3. Llamar a nuestra función helper para iniciar la descarga.
     downloadAsTxt(logContent, filename);
   };
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   formatCurrency,
-} from '@presentation/components/features/../lib/invoiceUtils';
+} from '@shared/utils/invoiceUtils';
 
 /**
  * Modal for processing a payment on an invoice. Presents invoice total and

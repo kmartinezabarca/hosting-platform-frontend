@@ -1,4 +1,4 @@
-import apiClient from '@presentation/components/features/apiClient';
+import apiClient from '@infrastructure/api/apiClient';
 
 const adminGameServerService = {
   /** Lista paginada de game servers */

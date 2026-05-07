@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Receipt, CheckCircle, Clock, CreditCard } from 'lucide-react';
-import { formatCurrency } from '@presentation/components/features/../lib/invoiceUtils'; // Asumo que esta función existe
+import { formatCurrency } from '@shared/utils/invoiceUtils';
 
 /**
  * Un componente de tarjeta de estadística individual, rediseñado para ser minimalista.

@@ -1,4 +1,4 @@
-import apiClient from '@presentation/components/features/apiClient';
+import apiClient from '@infrastructure/api/apiClient';
 
 /**
  * Servicio para operaciones de autenticación de dos factores (2FA)

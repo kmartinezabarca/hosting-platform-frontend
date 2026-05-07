@@ -1,4 +1,4 @@
-import apiClient from "./apiClient";
+import apiClient from "@infrastructure/api/apiClient";
 
 /**
  * Servicio centralizado para gestionar la Documentación de API en el panel administrativo

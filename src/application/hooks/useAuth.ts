@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import authService from '@presentation/components/features/services/authService';
+import authService from '@infrastructure/services/authService';
 
 /**
  * Hook para iniciar sesión

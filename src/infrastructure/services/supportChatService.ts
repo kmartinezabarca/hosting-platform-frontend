@@ -1,5 +1,5 @@
 // src/services/supportChatService.js
-import apiClient from '@presentation/components/features/apiClient';
+import apiClient from '@infrastructure/api/apiClient';
 
 const supportChatService = {
   // Sala de soporte (crea/recupera la sala activa del usuario)

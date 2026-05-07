@@ -40,8 +40,15 @@ export default defineConfig(({ mode }) => {
     ].filter(Boolean),
 
     resolve: {
-      alias: { '@': path.resolve(__dirname, './src') },
-    },
+  alias: {
+    '@': path.resolve(__dirname, './src'),
+    '@core': path.resolve(__dirname, './src/core'),
+    '@application': path.resolve(__dirname, './src/application'),
+    '@infrastructure': path.resolve(__dirname, './src/infrastructure'),
+    '@presentation': path.resolve(__dirname, './src/presentation'),
+    '@shared': path.resolve(__dirname, './src/shared'),
+  },
+},
 
     server: {
       host:       true,

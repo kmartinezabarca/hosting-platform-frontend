@@ -13,14 +13,14 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useDownloadCfdi } from '@application/hooks/useInvoices';
-import UpdateFiscalDataModal from '@presentation/components/features/UpdateFiscalDataModal';
+import UpdateFiscalDataModal from '@presentation/components/features/invoices/UpdateFiscalDataModal';
 import {
   getStatusColor,
   getStatusIcon,
   getStatusText,
   formatCurrency,
   formatDate,
-} from '@presentation/components/features/../lib/invoiceUtils';
+} from '@shared/utils/invoiceUtils';
 
 /**
  * Renders the Invoices tab. This component is responsible for searching

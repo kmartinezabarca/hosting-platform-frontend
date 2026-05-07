@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import billingCyclesService from '@presentation/components/features/services/billingCyclesService';
-import { queryConfigs } from '@presentation/components/features/config/queryConfig';
+import billingCyclesService from  '@infrastructure/services/billingCyclesService';
+import { queryConfigs } from '@shared/constants/queryConfig';
 
 /**
  * Hook para obtener ciclos de facturación

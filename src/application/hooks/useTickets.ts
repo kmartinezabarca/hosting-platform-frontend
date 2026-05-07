@@ -1,6 +1,6 @@
 // src/hooks/useTickets.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ticketsService } from '@presentation/components/features/services/ticketService';
+import { ticketsService } from '@infrastructure/services/ticketService';
 
 interface TicketOptions {
   enabled?: boolean;

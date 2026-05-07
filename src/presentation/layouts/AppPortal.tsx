@@ -1,6 +1,6 @@
 import React, { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
-import './App.css'
+import '@presentation/styles/App.css'
 import ProtectedRoute from '@presentation/components/features/ProtectedRoute'
 import ErrorBoundary from '@presentation/components/features/ErrorBoundary'
 
@@ -8,9 +8,9 @@ const ClientLayout  = lazy(() => import('@presentation/components/features/Clien
 const LoginPage     = lazy(() => import('@presentation/pages/LoginPage'))
 const RegisterPage  = lazy(() => import('@presentation/pages/RegisterPage'))
 const Verify2FAPage = lazy(() => import('@presentation/pages/Verify2FAPage'))
-const CompleteProfilePage = lazy(() => import('./pages/auth/CompleteProfilePage'));
-const SetupUsernamePage   = lazy(() => import('./pages/auth/SetupUsernamePage'));
-const ProfileDemo   = lazy(() => import('./pages/ProfileDemo'));
+const CompleteProfilePage = lazy(() => import('@presentation/pages/CompleteProfilePage'))
+const SetupUsernamePage   = lazy(() => import('@presentation/pages/SetupUsernamePage'))
+const ProfileDemo   = lazy(() => import('@presentation/pages/ProfileDemo'))
 const NotFoundPage  = lazy(() => import('@presentation/pages/NotFoundPage'))
 
 const PageLoader = () => (

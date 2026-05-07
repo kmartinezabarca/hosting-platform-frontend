@@ -1,4 +1,4 @@
-import apiClient from "./apiClient";
+import apiClient from "@infrastructure/api/apiClient";
 import paymentService from "./paymentService";
 import type {
   ApiResponse,

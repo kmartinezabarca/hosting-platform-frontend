@@ -1,4 +1,4 @@
-import ApiService from '@presentation/components/features/apiClient';
+import ApiService from '@infrastructure/api/apiClient';
 import type { Ticket, TicketStatus, TicketPriority, TicketMessage } from '@core/entities/models';
 import type { ApiResponse, PaginatedResponse } from '@core/entities/api';
 

@@ -3,14 +3,14 @@ import '@shared/utils/i18n';
 import { Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import AppAdmin from '@presentation/components/features/AppAdmin'
+import AppAdmin from '@presentation/layouts/AppAdmin'
 import { initSentry  } from '@shared/utils/sentry';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from '@shared/utils/react-query';
-import { ThemeProvider } from '@presentation/components/features/context/ThemeContext'
+import { ThemeProvider } from '@application/context/ThemeContext';
 import { ToastProvider } from "@presentation/components/features/ToastProvider";
-import { initializeCsrf } from '@presentation/components/features/lib/bootstrap';
+import { initializeCsrf } from '@shared/utils/bootstrap';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider } from '@application/context/AuthContext';

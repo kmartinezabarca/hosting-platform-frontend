@@ -7,7 +7,7 @@ import {
   getStatusText,
   formatCurrency,
   formatDate,
-} from '@presentation/components/features/../lib/invoiceUtils';
+} from '@shared/utils/invoiceUtils';
 
 /**
  * Modal to display full details of an invoice. Shows header information,

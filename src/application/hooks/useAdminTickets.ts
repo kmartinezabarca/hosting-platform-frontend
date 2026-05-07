@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import adminTicketsService from '@presentation/components/features/services/adminTicketsService';
-import { queryConfigs } from '@presentation/components/features/config/queryConfig';
+import adminTicketsService from '@infrastructure/services/adminTicketsService';
+import { queryConfigs } from '@shared/constants/queryConfig';
 
 // Query keys para tickets de administración
 export const adminTicketsKeys = {

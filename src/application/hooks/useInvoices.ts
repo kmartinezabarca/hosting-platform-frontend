@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import invoicesService from '@presentation/components/features/services/invoiceService';
+import invoicesService from '@infrastructure/services/invoiceService';
 import type { Invoice, InvoiceStats, Transaction, PaymentMethod } from '@core/entities/models';
 import type { FiscalDataPayload } from '@infrastructure/services/invoiceService';
 

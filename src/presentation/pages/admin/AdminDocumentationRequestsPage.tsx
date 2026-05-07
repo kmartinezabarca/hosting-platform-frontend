@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import documentationRequestAdminService from '@infrastructure/services/documentationRequestAdminService';
-import ConfirmationModal from '@presentation/components/features/../components/modals/ConfirmationModal';
+import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
 
 const AdminDocumentationRequestsPage = () => {
   const [requests, setRequests] = useState<any[]>([]);

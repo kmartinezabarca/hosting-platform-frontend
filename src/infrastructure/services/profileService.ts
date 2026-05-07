@@ -1,4 +1,4 @@
-import ApiService from '@presentation/components/features/apiClient';
+import ApiService from '@infrastructure/api/apiClient';
 import type { ApiResponse } from '@core/entities/api';
 import type { User, SecurityInfo } from '@core/entities/models';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@presentation/components/features/context/AuthContext';
+import { useAuth } from '@application/context/AuthContext';
 import type { User } from '@core/entities/models';
 
 // Componente de carga

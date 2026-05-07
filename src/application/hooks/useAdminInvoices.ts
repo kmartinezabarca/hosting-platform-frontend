@@ -1,7 +1,7 @@
 import type { UseQueryResult, UseMutationResult } from '@tanstack/react-query';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import adminInvoicesService from '@presentation/components/features/services/adminInvoicesService';
-import { queryConfigs } from '@presentation/components/features/config/queryConfig';
+import adminInvoicesService from '@infrastructure/services/adminInvoicesService';
+import { queryConfigs } from '@shared/constants/queryConfig';
 import type { Invoice } from '@core/entities/models';
 
 interface PaginationMeta {

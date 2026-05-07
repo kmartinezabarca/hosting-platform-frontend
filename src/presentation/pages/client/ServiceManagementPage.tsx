@@ -18,7 +18,7 @@ import SecurityTab from '@presentation/components/features/services/management/S
 import BackupsTab from '@presentation/components/features/services/management/BackupsTab';
 import DangerZoneTab from '@presentation/components/features/services/management/DangerZoneTab';
 import ServiceManagementHeader from '@presentation/components/features/services/management/ServiceManagementHeader';
-import PlanBillingCard from '@presentation/components/features/../components/services/management/PlanBillingCard';
+import PlanBillingCard from '@presentation/components/features/services/management/PlanBillingCard';
 import SkeletonServiceManagement from '@presentation/components/features/skeletons/SkeletonServiceManagement';
 import ErrorState from "@presentation/components/ui/ErrorState";
 

@@ -1,4 +1,4 @@
-import apiClient from "./apiClient";
+import apiClient from "@infrastructure/api/apiClient";
 import type { ApiResponse } from "@core/entities/api";
 
 export interface FileItem {

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import adminServicePlansService from '@presentation/components/features/services/adminServicePlansService';
-import { queryConfigs } from '@presentation/components/features/config/queryConfig';
+import adminServicePlansService from '@infrastructure/services/adminServicePlansService';
+import { queryConfigs } from '@shared/constants/queryConfig';
 
 // Query keys para planes de servicio de administración
 export const adminServicePlansKeys = {

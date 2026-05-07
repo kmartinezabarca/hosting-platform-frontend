@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'react-router-dom';
-import authService from '@presentation/components/features/services/authService';
+import authService from '@infrastructure/services/authService';
 import { setSentryUser } from '@shared/utils/sentry';
 import {
   useLogin,
@@ -9,7 +9,7 @@ import {
   useRegister,
   useLoginWithGoogle,
   useVerify2FA,
-} from '@presentation/components/features/hooks/useAuth';
+} from '@application/hooks/useAuth';
 import type { User } from '@core/entities/models';
 
 // ─── Tipos del contexto ────────────────────────────────────────────────────

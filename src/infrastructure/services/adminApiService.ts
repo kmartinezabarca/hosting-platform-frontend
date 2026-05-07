@@ -1,5 +1,5 @@
 // Admin API service for communicating with the backend
-import ApiService from '@presentation/components/features/apiClient';
+import ApiService from '@infrastructure/api/apiClient';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 

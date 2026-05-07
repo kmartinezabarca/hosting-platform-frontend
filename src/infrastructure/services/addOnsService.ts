@@ -1,6 +1,6 @@
 // src/services/addOnsService.js
-import apiClient from '@presentation/components/features/apiClient';
-import { buildQuery } from '@presentation/components/features/lib/query'; 
+import apiClient from '@infrastructure/api/apiClient';
+import { buildQuery } from '@shared/utils/query'; 
 
 const addOnsService = {
   /* ----------- Públicos ----------- */

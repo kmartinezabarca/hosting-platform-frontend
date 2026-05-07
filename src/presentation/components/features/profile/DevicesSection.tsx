@@ -5,7 +5,7 @@ import {
   MapPin, Clock, LogOut, AlertTriangle, ShieldAlert,
 } from 'lucide-react';
 import { cn } from '@shared/utils/utils';
-import Pagination from '@presentation/components/features/../components/ui/pagination-v2';
+import Pagination from '@presentation/components/ui/pagination-v2';
 import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
 
 /* ── Device card ────────────────────────────────────────────────────────── */

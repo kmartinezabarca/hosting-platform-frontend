@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
-import { useAuth } from '@presentation/components/features/AuthContext';
-import ticketsService from '@presentation/components/features/services/ticketService';
+import { useAuth } from '@application/context/AuthContext';
+import ticketsService from '@infrastructure/services/ticketService';
 import type { Ticket, TicketMessage, Attachment } from '@core/entities/models';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────

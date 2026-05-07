@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import categoriesService from '@presentation/components/features/services/categoriesService';
-import { queryConfigs } from '@presentation/components/features/config/queryConfig';
+import categoriesService from '@infrastructure/services/categoriesService';
+import { queryConfigs } from '@shared/constants/queryConfig';
 
 /**
  * Hook para obtener todas las categorías

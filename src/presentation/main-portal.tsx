@@ -1,18 +1,17 @@
 import '@shared/utils/i18n';
-
 import { Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
-import './index.css'
-import AppPortal from '@presentation/components/features/AppPortal'
+import '@presentation/styles/index.css'
+import AppPortal from '@presentation/layouts/AppPortal'
 import { initSentry } from '@shared/utils/sentry';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from '@shared/utils/react-query';
-import { ThemeProvider } from '@presentation/components/features/context/ThemeContext'
+import { ThemeProvider } from '@application/context/ThemeContext'
 import { TicketChatProvider } from '@application/context/TicketChatContext';
 import TicketChatDockPortal from '@presentation/components/features/tickets/TicketChatDockPortal';
 import { ToastProvider } from "@presentation/components/features/ToastProvider";
-import { initializeCsrf } from '@presentation/components/features/lib/bootstrap';
+import { initializeCsrf } from '@shared/utils/bootstrap';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider } from '@application/context/AuthContext';

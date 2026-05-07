@@ -6,8 +6,8 @@ import {
   Eye, EyeOff, Mail, Lock, User, ArrowRight, AtSign,
   Shield, Zap, Globe, X, AlertCircle, CheckCircle2, Loader2
 } from 'lucide-react';
-import { useRegister, useLoginWithGoogle } from '@presentation/components/features/hooks/useAuth';
-import authService from '@presentation/components/features/services/authService';
+import { useRegister, useLoginWithGoogle } from '@application/hooks/useAuth';
+import authService from '@infrastructure/services/authService';
 import logoROKE from "../assets/ROKEIndustriesFusionLogo.png";
 
 type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid';

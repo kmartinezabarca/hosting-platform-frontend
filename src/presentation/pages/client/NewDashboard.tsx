@@ -22,7 +22,7 @@ import { useAuth } from "@application/context/AuthContext";
 import StatCard from '@presentation/components/features/dashboard/stat-card';
 import DashboardCard from '@presentation/components/features/dashboard/dashboard-card';
 import DetailsModal from '@presentation/components/features/dashboard/DetailsModal';
-import ActionCard from '@presentation/components/features/../components/dashboard/ActionCard';
+import ActionCard from '@presentation/components/features/dashboard/ActionCard';
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useDashboardStats,

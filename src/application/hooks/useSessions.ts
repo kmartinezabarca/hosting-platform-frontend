@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import sessionsService from '@presentation/components/features/services/sessionsService';
+import sessionsService from '@infrastructure/services/sessionsService';
 
 /**
  * Hook para obtener sesiones/dispositivos activos

@@ -3,7 +3,7 @@ import { Camera, CheckCircle, AlertTriangle } from 'lucide-react';
 import ReactCountryFlag from "react-country-flag";
 import { countryName } from '@shared/utils/geo';
 import { cn } from '@shared/utils/utils';
-import AvatarUploader from '@presentation/components/features/AvatarUploader';
+import AvatarUploader from '@presentation/components/features/profile/AvatarUploader';
 
 const PALETTE = [
   ['from-slate-500 to-slate-600', 'text-white'],

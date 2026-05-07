@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CreditCard, Plus, MoreVertical, Trash2, Check, CheckCircle } from 'lucide-react';
-import { PaymentMethodLogo } from '@presentation/components/features/PaymentMethodLogos'; // Importa el nuevo componente de logos
+import { PaymentMethodLogo } from '@presentation/components/features/invoices/PaymentMethodLogos';
 
 // --- Funciones de Ayuda ---
 const formatExpiry = (m, y) => (m && y) ? `${String(m).padStart(2, '0')}/${String(y).slice(-2)}` : '';

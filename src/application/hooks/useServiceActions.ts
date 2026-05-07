@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import servicesService from '@presentation/components/features/services/serviceService';
+import servicesService from '@infrastructure/services/serviceService';
 import { useToast } from '@presentation/components/features/ToastProvider';
 
 const generateMockMetrics = (status) => {

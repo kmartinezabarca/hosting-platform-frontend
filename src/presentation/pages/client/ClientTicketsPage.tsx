@@ -77,7 +77,7 @@ const ClientTicketsPage = () => {
       }
       const detail = await qc.fetchQuery({
         queryKey: ticketsKeys.detail(uuid),
-        queryFn: () => import('../../services/ticketService').then(m => m.default.getTicket(uuid)),
+        queryFn: () => import('../../../infrastructure/services/ticketService').then(m => m.default.getTicket(uuid)),
         staleTime: 0,
       });
       const full = detail?.data ?? detail;

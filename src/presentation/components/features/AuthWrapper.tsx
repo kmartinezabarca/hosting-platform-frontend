@@ -1,6 +1,6 @@
 import React, { createContext, useContext } from 'react';
 import { useLocation } from 'react-router-dom';
-import { AuthProvider } from '@presentation/components/features/context/AuthContext';
+import { AuthProvider } from '@application/context/AuthContext';
 
 // Contexto simple para indicar si estamos en ruta pública
 const RouteContext = createContext({ isPublicRoute: false });

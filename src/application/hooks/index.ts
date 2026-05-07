@@ -1,38 +1,38 @@
 // Hooks de autenticación
-export * from '@presentation/components/features/useAuth';
+export * from '@application/hooks/useAuth';
 
 // Hooks de perfil
-export * from '@presentation/components/features/useProfile';
+export * from '@application/hooks/useProfile';
 
 // Hooks de sesiones
-export * from '@presentation/components/features/useSessions';
+export * from '@application/hooks/useSessions';
 
 // Hooks de 2FA
-export * from '@presentation/components/features/useTwoFactor';
+export * from '@application/hooks/useTwoFactor';
 
 // Hooks de categorías
-export * from '@presentation/components/features/useCategories';
+export * from '@application/hooks/useCategories';
 
 // Hooks de planes de servicio
-export * from '@presentation/components/features/useServicePlans';
+export * from '@application/hooks/useServicePlans';
 
 // Hooks de ciclos de facturación
-export * from '@presentation/components/features/useBillingCycles';
+export * from '@application/hooks/useBillingCycles';
 
 // Hooks de dashboard
-export * from '@presentation/components/features/useDashboard';
+export * from '@application/hooks/useDashboard';
 
 // Hooks de dashboard de administración (selective to avoid duplicate exports)
-export { adminQueryKeys, useAdminStats, useAdminUsers, useAdminInvoices, useAdminTickets, useTicketCategories, useSupportAgents, useUpdateUserStatus, useUpdateServiceStatus, useCreateInvoice, useUpdateInvoiceStatus, useMarkInvoiceAsPaid, useUpdateTicketStatus, useAssignTicket, useAddTicketReply } from '@presentation/components/features/useAdminDashboard';
+export { adminQueryKeys, useAdminStats, useAdminUsers, useAdminInvoices, useAdminTickets, useTicketCategories, useSupportAgents, useUpdateUserStatus, useUpdateServiceStatus, useCreateInvoice, useUpdateInvoiceStatus, useMarkInvoiceAsPaid, useUpdateTicketStatus, useAssignTicket, useAddTicketReply } from '@application/hooks/useAdminDashboard';
 
 // Hooks de servicios
-export * from '@presentation/components/features/useServices';
+export * from '@application/hooks/useServices';
 
 // Hooks de usuarios
-export * from '@presentation/components/features/useUsers';
+export * from '@application/hooks/useUsers';
 
 // Hooks de servicios de administración
-export * from '@presentation/components/features/useAdminServices';
+export * from '@application/hooks/useAdminServices';
 
 // Hooks de planes de servicio de administración
-export * from '@presentation/components/features/useAdminServicePlans';
+export * from '@application/hooks/useAdminServicePlans';

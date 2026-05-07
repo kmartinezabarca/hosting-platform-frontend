@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { queryConfigs } from '@presentation/components/features/config/queryConfig';
-import servicesService from '@presentation/components/features/services/serviceService';
-import invoicesService from '@presentation/components/features/services/invoiceService';
+import { queryConfigs } from '@shared/constants/queryConfig';
+import servicesService from '@infrastructure/services/serviceService';
+import invoicesService from '@infrastructure/services/invoiceService';
 
 /**
  * Hook para obtener los add-ons de un plan específico.

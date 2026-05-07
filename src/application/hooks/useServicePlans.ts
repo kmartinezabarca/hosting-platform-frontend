@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import servicePlansService from '@presentation/components/features/services/servicePlansService';
-import { queryConfigs } from '@presentation/components/features/config/queryConfig';
+import servicePlansService from '@infrastructure/services/servicePlansService';
+import { queryConfigs } from '@shared/constants/queryConfig';
 
 /**
  * Hook para obtener planes de servicio

@@ -1,20 +1,20 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useServiceDetails } from '@application/hooks/useServices';
-import { Skeleton } from '@presentation/components/features/../components/ui/skeleton';
+import { Skeleton } from '@presentation/components/ui/skeleton';
 import { AlertTriangle, ArrowLeft } from 'lucide-react';
 
 // --- Importamos todos nuestros nuevos componentes ---
-import ServiceDetailHeader from '@presentation/components/features/../components/services/details/ServiceDetailHeader';
-import GeneralInfoCard from '@presentation/components/features/../components/services/details/GeneralInfoCard';
-import SpecificationsCard from '@presentation/components/features/../components/services/details/SpecificationsCard';
-import PerformanceCard from '@presentation/components/features/../components/services/details/PerformanceCard';
-import QuickActionsCard from '@presentation/components/features/../components/services/details/QuickActionsCard';
-import PaymentHistory from '@presentation/components/features/../components/services/details/PaymentHistory'; // Asumimos que este ya existe
-import InfoCard from '@presentation/components/features/../components/services/details/InfoCard';
+import ServiceDetailHeader from '@presentation/components/features/services/details/ServiceDetailHeader';
+import GeneralInfoCard from '@presentation/components/features/services/details/GeneralInfoCard';
+import SpecificationsCard from '@presentation/components/features/services/details/SpecificationsCard';
+import PerformanceCard from '@presentation/components/features/services/details/PerformanceCard';
+import QuickActionsCard from '@presentation/components/features/services/details/QuickActionsCard';
+import PaymentHistory from '@presentation/components/features/services/details/PaymentHistory'; // Asumimos que este ya existe
+import InfoCard from '@presentation/components/features/services/details/InfoCard';
 
 // --- Game server UI especializada ---
-import GameServerDetail from '@presentation/components/features/../components/services/game-server/GameServerDetail';
+import GameServerDetail from '@presentation/components/features/services/game-server/GameServerDetail';
 
 const ServiceDetailPage = () => {
   const { serviceId } = useParams();

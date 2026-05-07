@@ -1,4 +1,4 @@
-import apiClient from '@presentation/components/features/apiClient';
+import apiClient from '@infrastructure/api/apiClient';
 import type { ApiResponse, PaginatedResponse, MessageResponse } from '@core/entities/api';
 import type { PaymentMethod, Transaction } from '@core/entities/models';
 

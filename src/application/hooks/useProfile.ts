@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import profileService from '@presentation/components/features/services/profileService';
-import { queryConfigs } from '@presentation/components/features/config/queryConfig';
+import profileService from '@infrastructure/services/profileService';
+import { queryConfigs } from '@shared/constants/queryConfig';
 
 /**
  * Hook para obtener información del perfil del usuario

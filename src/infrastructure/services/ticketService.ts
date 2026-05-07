@@ -1,5 +1,5 @@
 // src/services/ticketsService.ts
-import apiClient from '@presentation/components/features/apiClient';
+import apiClient from '@infrastructure/api/apiClient';
 import type { ApiResponse, PaginatedResponse } from '@core/entities/api';
 import type { Ticket, TicketMessage, TicketPriority } from '@core/entities/models';
 

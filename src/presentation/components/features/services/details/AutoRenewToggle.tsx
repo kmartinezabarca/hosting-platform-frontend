@@ -1,6 +1,6 @@
 import React from 'react';
-import { useUpdateServiceConfig } from '@presentation/components/features/../../hooks/useServices';
-import { Switch } from '@presentation/components/features/../ui/switch'; // Asumo que usas el Switch de ShadCN/UI
+import { useUpdateServiceConfig } from '@application/hooks/useServices';
+import { Switch } from '@presentation/components/ui/switch';
 
 const AutoRenewToggle = ({ service }) => {
   const updateConfigMutation = useUpdateServiceConfig();

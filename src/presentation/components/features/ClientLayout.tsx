@@ -10,25 +10,25 @@ import {
   ShoppingCart, Sparkles
 } from 'lucide-react';
 import NotificationDropdown from '@presentation/components/features/NotificationDropdown';
-import { useTheme } from '@presentation/components/features/context/ThemeContext';
-import { useAuth } from '@presentation/components/features/context/AuthContext';
+import { useTheme } from '@application/context/ThemeContext';
+import { useAuth } from '@application/context/AuthContext';
 import { useCurrentUser } from '@application/hooks/useCurrentUser';
-import UserAvatar from '@presentation/components/features/components/UserAvatar';
-import { Skeleton } from '@presentation/components/features/components/ui/skeleton';
-import logoROKE from "../assets/logo_v4.png";
+import UserAvatar from '@presentation/components/features/UserAvatar';
+import { Skeleton } from '@presentation/components/ui/skeleton';
+import logoROKE from "@presentation/assets/logo_v4.png"
 
 /* ── Lazy pages ─────────────────────────────────────────────────────────── */
-const NewDashboard          = lazy(() => import('../pages/client/NewDashboard'));
-const ClientServicesPage    = lazy(() => import('../pages/client/ClientServicesPage'));
-const ClientInvoicesPage    = lazy(() => import('../pages/client/ClientInvoicesPage'));
-const ClientTicketsPage     = lazy(() => import('../pages/client/ClientTicketsPage'));
-const ClientProfilePage     = lazy(() => import('../pages/client/ClientProfilePage'));
-const ContractServicePage   = lazy(() => import('../pages/client/ContractServicePage'));
-const CheckoutPage          = lazy(() => import('../pages/client/CheckoutPage'));
-const CheckoutSuccessPage   = lazy(() => import('../pages/client/CheckoutSuccessPage'));
-const ServiceManagementPage = lazy(() => import('../pages/client/ServiceManagementPage'));
-const ServiceDetailPage     = lazy(() => import('../pages/client/ServiceDetailPage'));
-const NotFoundPage          = lazy(() => import('../pages/NotFoundPage'));
+const NewDashboard          = lazy(() => import('@presentation/pages/client/NewDashboard'));
+const ClientServicesPage    = lazy(() => import('@presentation/pages/client/ClientServicesPage'));
+const ClientInvoicesPage    = lazy(() => import('@presentation/pages/client/ClientInvoicesPage'));
+const ClientTicketsPage     = lazy(() => import('@presentation/pages/client/ClientTicketsPage'));
+const ClientProfilePage     = lazy(() => import('@presentation/pages/client/ClientProfilePage'));
+const ContractServicePage   = lazy(() => import('@presentation/pages/client/ContractServicePage'));
+const CheckoutPage          = lazy(() => import('@presentation/pages/client/CheckoutPage'));
+const CheckoutSuccessPage   = lazy(() => import('@presentation/pages/client/CheckoutSuccessPage'));
+const ServiceManagementPage = lazy(() => import('@presentation/pages/client/ServiceManagementPage'));
+const ServiceDetailPage     = lazy(() => import('@presentation/pages/client/ServiceDetailPage'));
+const NotFoundPage          = lazy(() => import('@presentation/pages/NotFoundPage'));
 
 /* ── Nav + search index ─────────────────────────────────────────────────── */
 const navigation = [

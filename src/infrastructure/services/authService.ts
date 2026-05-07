@@ -1,4 +1,4 @@
-import ApiService from '@presentation/components/features/apiClient';
+import ApiService from '@infrastructure/api/apiClient';
 import type { User } from '@core/entities/models';
 // Rollback: token handling moved back to cookies ( Sanctum )
 

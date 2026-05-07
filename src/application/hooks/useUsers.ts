@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import usersService from '@presentation/components/features/services/userService';
+import usersService from '@infrastructure/services/userService';
 
 export const useUsers = (params = {}) => {
   return useQuery({

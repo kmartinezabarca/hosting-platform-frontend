@@ -1,6 +1,6 @@
-import apiClient from '@presentation/components/features/apiClient';
-import categoriesService from '@presentation/components/features/categoriesService';
-import billingCyclesService from '@presentation/components/features/billingCyclesService';
+import apiClient from '@infrastructure/api/apiClient';
+import categoriesService from '@infrastructure/services/categoriesService';
+import billingCyclesService from '@infrastructure/services/billingCyclesService';
 
 const adminServicePlansService = {
   // Obtener todos los planes de servicio (admin)

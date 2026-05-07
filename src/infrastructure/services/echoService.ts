@@ -1,6 +1,6 @@
 import Echo from "laravel-echo";
 import Pusher from "pusher-js";
-import apiClient from "./apiClient";
+import apiClient from "@infrastructure/api/apiClient";
 
 (window as any).Pusher = Pusher;
 

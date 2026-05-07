@@ -1,5 +1,5 @@
-import apiClient from '@presentation/components/features/apiClient'; // 1. Importamos el cliente de API centralizado.
-import { paymentService } from '@presentation/components/features/paymentService'; // 2. Importamos paymentService con desestructuración.
+import apiClient from '@infrastructure/api/apiClient';
+import { paymentService } from '@infrastructure/services/paymentService';
 import type { ApiResponse, PaginatedResponse } from '@core/entities/api';
 import type { Invoice, InvoiceStats, Transaction, PaymentMethod } from '@core/entities/models';
 import type {
@@ -7,7 +7,7 @@ import type {
   PaymentProcessData,
   PaymentStats,
   StripeSetupIntent,
-} from '@presentation/components/features/paymentService';
+} from '@infrastructure/services/paymentService';
 
 // 3. Eliminamos la dependencia de authService y la lógica de tokens.
 

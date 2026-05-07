@@ -15,7 +15,7 @@ import {
   useSendQuotation, useRegenerateQuotationLink,
 } from '@application/hooks/useQuotations';
 import type { Quotation, QuotationStatus } from '@infrastructure/services/quotationService';
-import { QuotationSheet, LinkDialog, StatusBadge, fmt, fmtDateTime } from '@presentation/components/features/AdminQuotationsPage';
+import { QuotationSheet, LinkDialog, StatusBadge, fmt, fmtDateTime } from '@presentation/pages/admin/AdminQuotationsPage';
 
 // ── Info row ──────────────────────────────────────────────────────────────────
 

@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 // Asegúrate de que el nombre del servicio importado sea el correcto.
 // Si tu servicio se llama dashboardService, úsalo.
-import { dashboardService } from '@presentation/components/features/services/dashboardService'; 
+import { dashboardService } from '@infrastructure/services/dashboardService'; 
 
 /**
  * Hook para obtener estadísticas del dashboard.

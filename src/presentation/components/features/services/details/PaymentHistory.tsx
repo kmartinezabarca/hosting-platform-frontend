@@ -1,5 +1,4 @@
-import React from 'react';
-import { useServiceInvoices } from '@presentation/components/features/../../hooks/useServices';
+import { useServiceInvoices } from '@application/hooks/useServices';
 import { Skeleton } from '@presentation/components/features/../ui/skeleton';
 import { FileText, CheckCircle, Clock } from 'lucide-react';
 

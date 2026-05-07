@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
-import { useAuth } from '@presentation/components/features/AuthContext';
+import { useAuth } from '@application/context/AuthContext';
 import { getEcho } from '@infrastructure/services/echoService';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Shield, Lock, KeyRound, CheckCircle2, QrCode, Smartphone, Chrome, AlertTriangle } from 'lucide-react';
-import FormField from '@presentation/components/features/FormField';
-import PasswordStrengthIndicator from '@presentation/components/features/PasswordStrengthIndicator';
+import FormField from '@presentation/components/features/profile/FormField';
+import PasswordStrengthIndicator from '@presentation/components/features/profile/PasswordStrengthIndicator';
 import { cn } from '@shared/utils/utils';
 
 /* ── Section card wrapper ───────────────────────────────────────────────── */

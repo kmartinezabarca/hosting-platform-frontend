@@ -1,4 +1,4 @@
-import apiClient from '@presentation/components/features/apiClient';
+import apiClient from '@infrastructure/api/apiClient';
 import type { AxiosResponse } from 'axios';
 import type { PaginatedResponse, ApiResponse, MessageResponse, FilterParams } from '@core/entities/api';
 

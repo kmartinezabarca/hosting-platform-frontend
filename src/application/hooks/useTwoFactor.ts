@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import twoFactorService from '@presentation/components/features/services/twoFactorService';
+import twoFactorService from '@infrastructure/services/twoFactorService';
 
 /**
  * Hook para generar código QR y secreto de 2FA
