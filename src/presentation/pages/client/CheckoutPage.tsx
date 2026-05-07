@@ -7,12 +7,13 @@ import { emailRx, phoneRx, domainRx } from "@shared/utils/validation";
 import { rfcMxRx, toBase64 } from "@shared/utils/cfdi";
 
 import Stepper from "@presentation/components/features/checkout/Stepper";
+import GameSelector from "@presentation/components/features/checkout/GameSelector";
 import ServiceFields from "@presentation/components/features/checkout/ServiceFields";
 import Addons from "@presentation/components/features/checkout/Addons";
 import InvoiceFields from "@presentation/components/features/checkout/InvoiceFields";
 import ReviewAndPay from "@presentation/components/features/checkout/ReviewAndPay";
 import OrderSummary from "@presentation/components/features/checkout/OrderSummary";
-import { usePlanAddons, usePaymentMethods } from "@application/hooks/useCheckout";
+import { usePlanAddons, usePaymentMethods, useGameEggs } from "@application/hooks/useCheckout";
 import AddPaymentMethodModal from "@presentation/components/features/invoices/AddPaymentMethodModal";
 import { queryClient } from "@shared/utils/react-query";
 
@@ -32,7 +33,9 @@ export default function CheckoutPage() {
     email: user?.email || "",
     phone: user?.phone || "",
     serviceName: "",
+    selectedEggId: null,
     domain: "",
+    game: "",
     autoRenew: true,
     requireInvoice: false,
     invoiceProfileUuid: "",   // UUID del perfil fiscal guardado seleccionado
@@ -58,6 +61,12 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (!plan) navigate("/client/contract-service");
   }, [plan, navigate]);
+
+  const isGameServer = category === "game_server" || category === "gameserver";
+  const { data: gameNests = [], isLoading: gameEggsLoading } = useGameEggs(
+    plan?.uuid || plan?.id,
+    !!plan && isGameServer
+  );
 
   const { data: fetchedAddons = [] } = usePlanAddons(plan?.id, !!plan);
   const { data: fetchedPaymentMethods = [] } = usePaymentMethods();
@@ -338,7 +347,7 @@ export default function CheckoutPage() {
             )}
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Paso {step} de 2 · Finaliza tu contratación
+            Paso {step} de {isGameServer ? 3 : 2} · Finaliza tu contratación
           </p>
         </div>
       </motion.div>

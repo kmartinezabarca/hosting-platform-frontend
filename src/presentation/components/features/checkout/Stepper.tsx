@@ -1,14 +1,15 @@
 import React from "react";
-import { Check, ClipboardList, CreditCard } from "lucide-react";
+import { Check, Gamepad2, ClipboardList, CreditCard } from "lucide-react";
 
 export default function Stepper({ step, showInvoice }) {
   const steps = [
-    { n: 1, Icon: ClipboardList, label: "Información", sub: "Datos del servicio" },
-    { n: 2, Icon: CreditCard, label: showInvoice ? "Revisión y Pago" : "Pago", sub: "Confirma y paga" },
+    { n: 1, Icon: Gamepad2, label: "Selecciona Juego", sub: "Elige tu juego favorito" },
+    { n: 2, Icon: ClipboardList, label: "Información", sub: "Datos del servicio" },
+    { n: 3, Icon: CreditCard, label: showInvoice ? "Revisión y Pago" : "Pago", sub: "Confirma y paga" },
   ];
 
   return (
-    <div className="flex items-start w-full max-w-sm mx-auto">
+    <div className="flex items-start w-full max-w-2xl mx-auto">
       {steps.map((s, i) => {
         const done = step > s.n;
         const active = step === s.n;
@@ -40,7 +41,7 @@ export default function Stepper({ step, showInvoice }) {
                 <div className="h-px w-full bg-black/10 dark:bg-white/10 relative rounded-full overflow-hidden">
                   <div
                     className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out ${
-                      step > 1 ? "w-full bg-emerald-500" : "w-0"
+                      step > s.n ? "w-full bg-emerald-500" : "w-0"
                     }`}
                   />
                 </div>
