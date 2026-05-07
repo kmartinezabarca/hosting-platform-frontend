@@ -482,7 +482,7 @@ export const servicesService = {
   async getGameEggs(planUuid: string | number): Promise<ApiResponse<GameNest[]>> {
     try {
       const response = await apiClient.get<ApiResponse<GameNest[]>>(
-        `/api/game-eggs?plan_uuid=${planUuid}`,
+        `/game-eggs?id=${planUuid}`,
       );
       return response.data;
     } catch (error) {
