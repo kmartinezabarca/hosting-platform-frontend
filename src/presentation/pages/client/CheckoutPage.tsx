@@ -126,6 +126,9 @@ export default function CheckoutPage() {
   const validateField = (name, raw) => {
     const v = (raw ?? "").toString().trim();
 
+    if (name === "selectedEggId" && isGameServer) {
+      if (!v) return "Debes seleccionar un juego";
+    }
     if (name === "firstName") {
       if (!v) return "Nombre es requerido";
       if (v.length < 2) return "Escribe al menos 2 caracteres";
@@ -368,7 +371,26 @@ export default function CheckoutPage() {
             animate={{ opacity: 1, x: 0 }}
             className="rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0f1115] p-8"
           >
-            {step === 1 ? (
+            {step === 1 && isGameServer ? (
+              <div className="space-y-8">
+                <GameSelector
+                  gameNests={gameNests}
+                  selectedEggId={formData.selectedEggId}
+                  onSelectEgg={(eggId: any) => {
+                    setFormData((p: any) => ({ ...p, selectedEggId: eggId }));
+                    if ((touched as any).selectedEggId) {
+                      const msg = validateField("selectedEggId", eggId);
+                      setErrors((prev: any) => ({ ...prev, selectedEggId: msg }));
+                    }
+                  }}
+                  isLoading={gameEggsLoading}
+                  error={gameNests.length === 0 && !gameEggsLoading ? "No hay juegos disponibles para este plan" : null}
+                />
+                {(touched as any).selectedEggId && (errors as any).selectedEggId && (
+                  <p className="text-sm text-red-500 font-medium">{(errors as any).selectedEggId}</p>
+                )}
+              </div>
+            ) : step === (isGameServer ? 2 : 1) ? (
               <div className="space-y-8">
                 <ServiceFields
                   formData={formData}
