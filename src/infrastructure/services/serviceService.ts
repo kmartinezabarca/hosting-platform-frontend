@@ -24,6 +24,7 @@ export interface ServiceBackup {
   name: string;
   created_at: string;
   size?: number;
+  bytes?: number;
 }
 
 export interface ServiceUsage {
