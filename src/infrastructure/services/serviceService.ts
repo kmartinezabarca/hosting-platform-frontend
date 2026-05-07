@@ -102,8 +102,19 @@ export interface AddOn {
 
 export interface Egg {  
   id: number;
+  uuid?: string;
   name: string;
   description: string;
+  icon?: string;
+  category?: string;
+  [key: string]: unknown;
+}
+
+export interface GameNest {
+  id: number;
+  uuid?: string;
+  name: string;
+  eggs: Egg[];
   [key: string]: unknown;
 }
 
@@ -464,6 +475,20 @@ export const servicesService = {
     );
     return response.data;
   },
+  /**
+   * Obtiene los juegos (eggs) disponibles para un plan específico.
+   * Agrupa los eggs por nido (nest) para una mejor presentación.
+   */
+  async getGameEggs(planUuid: string | number): Promise<ApiResponse<GameNest[]>> {
+    try {
+      const response = await apiClient.get<ApiResponse<GameNest[]>>(
+        `/api/game-eggs?plan_uuid=${planUuid}`,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching game eggs:", error);
+      throw error;
+    }
+  },
 };
-
 export default servicesService;

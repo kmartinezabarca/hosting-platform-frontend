@@ -27,3 +27,16 @@ export const usePaymentMethods = () => {
     ...queryConfigs.dynamic,
   });
 };
+/**
+ * Hook para obtener los juegos (eggs) disponibles para un plan específico.
+ * Agrupa los eggs por nido (nest) para una mejor presentación.
+ */
+export const useGameEggs = (planUuid: any, enabled: boolean) => {
+  return useQuery({
+    queryKey: ['gameEggs', planUuid],
+    queryFn: () => (servicesService as any).getGameEggs(planUuid),
+    select: (data: any) => data.data || [],
+    enabled: enabled && !!planUuid,
+    ...queryConfigs.dynamic,
+  });
+};
