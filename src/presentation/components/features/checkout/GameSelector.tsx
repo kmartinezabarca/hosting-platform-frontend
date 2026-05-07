@@ -2,21 +2,20 @@ import React from "react";
 import { Gamepad2, ChevronDown } from "lucide-react";
 import { cn } from "@shared/utils/utils";
 
-interface Egg {
+interface Game {
   id: number;
-  uuid?: string;
   name: string;
   description: string;
-  icon?: string;
-  category?: string;
+  nest: string;
+  nest_id: number;
+  icon_url?: string | null;
   [key: string]: unknown;
 }
 
 interface GameNest {
-  id: number;
-  uuid?: string;
-  name: string;
-  eggs: Egg[];
+  nest_id: number;
+  nest: string;
+  games: Game[];
   [key: string]: unknown;
 }
 
@@ -39,7 +38,7 @@ export default function GameSelector({
 
   React.useEffect(() => {
     if (gameNests.length > 0 && expandedNest === null) {
-      setExpandedNest(gameNests[0].id);
+      setExpandedNest(gameNests[0].nest_id);
     }
   }, [gameNests.length]);
 
@@ -74,79 +73,81 @@ export default function GameSelector({
       </label>
 
       <div className="space-y-2">
-        {gameNests.filter((nest) => nest.eggs && nest.eggs.length > 0).map((nest) => (
-          <div key={nest.id} className="border border-black/10 dark:border-white/10 rounded-xl overflow-hidden">
-            {/* Nest Header */}
-            <button
-              type="button"
-              onClick={() =>
-                setExpandedNest(expandedNest === nest.id ? null : nest.id)
-              }
-              className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <Gamepad2 className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold text-foreground">
-                  {nest.name}
-                </span>
-              </div>
-              <ChevronDown
-                className={cn(
-                  "w-4 h-4 text-muted-foreground transition-transform",
-                  expandedNest === nest.id && "rotate-180"
-                )}
-              />
-            </button>
+        {gameNests
+          .filter((nest) => nest.games && nest.games.length > 0)
+          .map((nest) => (
+            <div key={nest.nest_id} className="border border-black/10 dark:border-white/10 rounded-xl overflow-hidden">
+              {/* Nest Header */}
+              <button
+                type="button"
+                onClick={() =>
+                  setExpandedNest(expandedNest === nest.nest_id ? null : nest.nest_id)
+                }
+                className="w-full flex items-center justify-between gap-3 px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Gamepad2 className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-semibold text-foreground">
+                    {nest.nest}
+                  </span>
+                </div>
+                <ChevronDown
+                  className={cn(
+                    "w-4 h-4 text-muted-foreground transition-transform",
+                    expandedNest === nest.nest_id && "rotate-180"
+                  )}
+                />
+              </button>
 
-            {/* Nest Content - Eggs */}
-            {expandedNest === nest.id && nest.eggs && nest.eggs.length > 0 && (
-              <div className="divide-y divide-black/5 dark:divide-white/5">
-                {nest.eggs.map((egg) => {
-                  const isSelected = selectedEggId === egg.id || selectedEggId === egg.uuid;
-                  return (
-                    <button
-                      key={egg.id}
-                      type="button"
-                      onClick={() => onSelectEgg(egg.id, egg.name)}
-                      className={cn(
-                        "w-full flex items-start gap-3 px-4 py-3 text-left transition-colors",
-                        isSelected
-                          ? "bg-primary/10 dark:bg-primary/15"
-                          : "hover:bg-muted/30"
-                      )}
-                    >
-                      {/* Radio Button */}
-                      <div
+              {/* Nest Content - Games */}
+              {expandedNest === nest.nest_id && nest.games && nest.games.length > 0 && (
+                <div className="divide-y divide-black/5 dark:divide-white/5">
+                  {nest.games.map((game) => {
+                    const isSelected = selectedEggId === game.id;
+                    return (
+                      <button
+                        key={game.id}
+                        type="button"
+                        onClick={() => onSelectEgg(game.id, game.name)}
                         className={cn(
-                          "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5",
+                          "w-full flex items-start gap-3 px-4 py-3 text-left transition-colors",
                           isSelected
-                            ? "border-primary bg-primary"
-                            : "border-black/20 dark:border-white/20"
+                            ? "bg-primary/10 dark:bg-primary/15"
+                            : "hover:bg-muted/30"
                         )}
                       >
-                        {isSelected && (
-                          <div className="w-2 h-2 rounded-full bg-white" />
-                        )}
-                      </div>
+                        {/* Radio Button */}
+                        <div
+                          className={cn(
+                            "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5",
+                            isSelected
+                              ? "border-primary bg-primary"
+                              : "border-black/20 dark:border-white/20"
+                          )}
+                        >
+                          {isSelected && (
+                            <div className="w-2 h-2 rounded-full bg-white" />
+                          )}
+                        </div>
 
-                      {/* Egg Info */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground">
-                          {egg.name}
-                        </p>
-                        {egg.description && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {egg.description}
+                        {/* Game Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground">
+                            {game.name}
                           </p>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        ))}
+                          {game.description && (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {game.description}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ))}
       </div>
     </div>
   );
