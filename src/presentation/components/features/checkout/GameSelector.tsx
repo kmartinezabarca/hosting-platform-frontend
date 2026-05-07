@@ -74,7 +74,7 @@ export default function GameSelector({
       </label>
 
       <div className="space-y-2">
-        {gameNests.map((nest) => (
+        {gameNests.filter((nest) => nest.eggs && nest.eggs.length > 0).map((nest) => (
           <div key={nest.id} className="border border-black/10 dark:border-white/10 rounded-xl overflow-hidden">
             {/* Nest Header */}
             <button
@@ -99,7 +99,7 @@ export default function GameSelector({
             </button>
 
             {/* Nest Content - Eggs */}
-            {expandedNest === nest.id && (
+            {expandedNest === nest.id && nest.eggs && nest.eggs.length > 0 && (
               <div className="divide-y divide-black/5 dark:divide-white/5">
                 {nest.eggs.map((egg) => {
                   const isSelected = selectedEggId === egg.id || selectedEggId === egg.uuid;
