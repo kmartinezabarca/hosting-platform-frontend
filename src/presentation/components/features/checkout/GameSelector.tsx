@@ -35,9 +35,13 @@ export default function GameSelector({
   isLoading = false,
   error = null,
 }: GameSelectorProps) {
-  const [expandedNest, setExpandedNest] = React.useState<number | null>(
-    gameNests.length > 0 ? gameNests[0].id : null
-  );
+  const [expandedNest, setExpandedNest] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    if (gameNests.length > 0 && expandedNest === null) {
+      setExpandedNest(gameNests[0].id);
+    }
+  }, [gameNests.length]);
 
   if (isLoading) {
     return (
@@ -56,7 +60,11 @@ export default function GameSelector({
   }
 
   if (!gameNests || gameNests.length === 0) {
-    return null;
+    return (
+      <div className="p-4 rounded-xl border border-black/10 dark:border-white/10 bg-muted/30">
+        <p className="text-sm text-muted-foreground">Cargando juegos disponibles...</p>
+      </div>
+    );
   }
 
   return (
