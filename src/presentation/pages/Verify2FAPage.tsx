@@ -3,7 +3,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { useVerify2FA } from '@application/hooks/useAuth';
-import logoROKE from '@presentation/components/features/assets/ROKEIndustriesFusionLogo.png';
+import logoROKE from '@presentation/assets/ROKEIndustriesFusionLogo.png';
 
 const Verify2FAPage = () => {
   const [code, setCode] = useState('');
