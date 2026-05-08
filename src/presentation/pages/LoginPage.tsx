@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useLogin, useLoginWithGoogle } from '@application/hooks/useAuth';
 import { useAuth } from '@application/context/AuthContext';
-import logoROKE from "../assets/ROKEIndustriesFusionLogo.png";
+import logoROKE from "@presentation/assets/ROKEIndustriesFusionLogo.png";
 
 const LoginPage = () => {
   const { t } = useTranslation();

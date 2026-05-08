@@ -2,7 +2,7 @@ import '@shared/utils/i18n';
 
 import { Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
-import './index.css'
+import '@presentation/styles/index.css'
 import AppAdmin from '@presentation/layouts/AppAdmin'
 import { initSentry  } from '@shared/utils/sentry';
 import { QueryClientProvider } from '@tanstack/react-query';

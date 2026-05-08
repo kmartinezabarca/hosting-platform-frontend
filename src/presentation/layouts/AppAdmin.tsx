@@ -1,11 +1,11 @@
 import React, { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
-import './App.css'
+import '@presentation/styles/App.css'
 import ProtectedRoute from '@presentation/components/features/ProtectedRoute'
 import ErrorBoundary from '@presentation/components/features/ErrorBoundary'
 
 const AdminLayout         = lazy(() => import('@presentation/components/features/AdminLayout'))
-const LoginPage           = lazy(() => import('@presentation/pages/LoginPage'))
+const AdminLoginPage      = lazy(() => import('@presentation/pages/auth/AdminLoginPage'))
 const NotFoundPage        = lazy(() => import('@presentation/pages/NotFoundPage'))
 const QuotationPublicPage = lazy(() => import('@presentation/pages/QuotationPublicPage'))
 
@@ -21,7 +21,7 @@ export default function AppAdmin() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Admin tiene su propio login */}
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/login" element={<AdminLoginPage />} />
 
           <Route
             path="/admin/*"
@@ -35,7 +35,7 @@ export default function AppAdmin() {
           {/* Public quotation page — no auth required */}
           <Route path="/cotizacion/:token" element={<QuotationPublicPage />} />
 
-          <Route path="/"  element={<LoginPage />} />
+          <Route path="/"  element={<AdminLoginPage/>} />
           <Route path="*"  element={<NotFoundPage />} />
         </Routes>
       </Suspense>
