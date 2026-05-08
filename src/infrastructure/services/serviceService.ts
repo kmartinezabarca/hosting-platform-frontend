@@ -100,21 +100,20 @@ export interface AddOn {
   [key: string]: unknown;
 }
 
-export interface Egg {  
+export interface Game {
   id: number;
-  uuid?: string;
   name: string;
   description: string;
-  icon?: string;
-  category?: string;
+  nest: string;
+  nest_id: number;
+  icon_url?: string | null;
   [key: string]: unknown;
 }
 
 export interface GameNest {
-  id: number;
-  uuid?: string;
-  name: string;
-  eggs: Egg[];
+  nest_id: number;
+  nest: string;
+  games: Game[];
   [key: string]: unknown;
 }
 
@@ -268,9 +267,9 @@ export const servicesService = {
   },
 
   // Get list nest eggs
-  async getNestEggs(nestID: number): Promise<ApiResponse<Egg[]>> {
+  async getNestEggs(nestID: number): Promise<ApiResponse<Game[]>> {
     try {
-      const response = await apiClient.get<ApiResponse<Egg[]>>(
+      const response = await apiClient.get<ApiResponse<Game[]>>(
         `/services/game-servers/${nestID}/eggs`,
       );
       return response.data;
