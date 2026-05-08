@@ -35,7 +35,20 @@ export const useGameEggs = (planUuid: any, enabled: boolean) => {
   return useQuery({
     queryKey: ['gameEggs', planUuid],
     queryFn: () => (servicesService as any).getGameEggs(planUuid),
-    select: (data: any) => data.data || [],
+    select: (data: any) => {
+      const raw = data.data || [];
+      // Transformar al formato que espera GameSelector
+      return raw.map((nest: any) => ({
+        id: nest.nest_id,
+        name: nest.nest,
+        eggs: (nest.games || []).map((game: any) => ({
+          id: game.id,
+          uuid: game.id,
+          name: game.name,
+          description: game.description,
+        })),
+      }));
+    },
     enabled: enabled && !!planUuid,
     ...queryConfigs.dynamic,
   });

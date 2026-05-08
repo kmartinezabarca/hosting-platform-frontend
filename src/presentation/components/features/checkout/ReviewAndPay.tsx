@@ -191,6 +191,7 @@ export default function ReviewAndPay({
           lastName: formData.lastName,
           email: formData.email,
           phone: formData.phone,
+          egg_id: formData.selectedEggId ?? null,
           requireInvoice: formData.requireInvoice,
           invoice: (formData.requireInvoice
             ? formData.invoiceProfileUuid

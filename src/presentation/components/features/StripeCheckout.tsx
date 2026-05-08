@@ -28,6 +28,7 @@ interface ServiceData {
   lastName?: string;
   email?: string;
   phone?: string;
+  egg_id?: string | number | null;
   plan_id?: string | number;
   billingCycle?: string;
   domain?: string;
@@ -164,6 +165,7 @@ const CheckoutForm = ({
           domain: serviceData.domain,
           service_name: serviceData.serviceName,
           payment_method_id: paymentMethodId,
+          egg_id: serviceData.egg_id ?? undefined,
           add_ons: addOns as any,
           additional_options: { auto_renew: !!serviceData.autoRenew },
           invoice: buildInvoice(),
@@ -231,6 +233,7 @@ const CheckoutForm = ({
           service_name: serviceData.serviceName,
           payment_intent_id: result.paymentIntent?.id,
           payment_method_id: finalPaymentMethodId,
+          egg_id: serviceData.egg_id ?? undefined,
           add_ons: addOns as any,
           additional_options: { auto_renew: !!serviceData.autoRenew },
           invoice: buildInvoice(),

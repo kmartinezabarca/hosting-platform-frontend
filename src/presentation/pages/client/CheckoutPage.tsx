@@ -296,9 +296,23 @@ export default function CheckoutPage() {
     }));
 
   const onNext = () => {
-    if (step === 1 && validateStep1()) setStep(2);
+    // Paso 1 game server → solo validar egg seleccionado
+    if (step === 1 && isGameServer) {
+      if (!formData.selectedEggId) {
+        setErrors(prev => ({ ...prev, selectedEggId: "Debes seleccionar un juego" }));
+        setTouched(prev => ({ ...prev, selectedEggId: true }));
+        return;
+      }
+      setStep(2);
+      return;
+    }
+
+    // Paso 1 no-game (o paso 2 game) → validar campos de servicio/contacto
+    if (validateStep1()) {
+      setStep(prev => prev + 1);
+    }
   };
-  const onBack = () => setStep(1);
+  const onBack = () => setStep(prev => prev - 1);
 
   const handlePaymentSuccess = (result) => {
     navigate("/client/checkout/success", {
@@ -453,6 +467,7 @@ export default function CheckoutPage() {
               payRef={payRef}
               selectedAddOns={selectedAddOns}
               addons={addons}
+              isGameServer={isGameServer}
             />
           </motion.div>
         </div>

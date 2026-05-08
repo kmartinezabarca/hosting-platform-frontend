@@ -21,6 +21,7 @@ interface OrderSummaryProps {
   payRef: React.RefObject<any>;
   selectedAddOns?: (string | number)[];
   addons?: any[];
+  isGameServer?: boolean;
 }
 
 export default function OrderSummary({
@@ -36,6 +37,7 @@ export default function OrderSummary({
   payRef,
   selectedAddOns = [],
   addons = [],
+  isGameServer = false,
 }: OrderSummaryProps) {
   const items: { key: string; name: string; price: any }[] = [];
   if (plan) {
@@ -178,25 +180,25 @@ export default function OrderSummary({
         )}
 
         {/* CTA buttons */}
-        {step === 1 ? (
-          <button
-            type="button"
-            onClick={onNext}
-            className="w-full mt-1 rounded-xl px-5 py-3 bg-foreground text-background font-semibold hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2"
-          >
-            Continuar al Pago
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onBack}
-            className="w-full mt-1 rounded-xl px-5 py-3 border border-black/10 dark:border-white/10 text-foreground hover:bg-black/5 dark:hover:bg-white/8 transition font-medium inline-flex items-center justify-center gap-2"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Volver
-          </button>
-        )}
+        {step < (isGameServer ? 3 : 2) ? (
+  <button
+    type="button"
+    onClick={onNext}
+    className="w-full mt-1 rounded-xl px-5 py-3 bg-foreground text-background font-semibold hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2"
+  >
+    {step === (isGameServer ? 2 : 1) ? "Continuar al Pago" : "Continuar"}
+    <ArrowRight className="w-4 h-4" />
+  </button>
+) : (
+  <button
+    type="button"
+    onClick={onBack}
+    className="w-full mt-1 rounded-xl px-5 py-3 border border-black/10 dark:border-white/10 text-foreground hover:bg-black/5 dark:hover:bg-white/8 transition font-medium inline-flex items-center justify-center gap-2"
+  >
+    <ChevronLeft className="w-4 h-4" />
+    Volver
+  </button>
+)}
       </div>
     </aside>
   );
