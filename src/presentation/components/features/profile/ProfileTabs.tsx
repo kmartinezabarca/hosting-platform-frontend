@@ -11,46 +11,50 @@ const ProfileTabs = ({ activeTab, onTabChange, children }) => {
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Tab navigation */}
-      <div className="bg-card border border-border/60 rounded-2xl p-1.5 shadow-sm">
-        <div className="flex items-center gap-1.5 overflow-x-auto">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.id;
-            const Icon = tab.icon;
+    <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
+      {/* Sidebar Navigation */}
+      <aside className="space-y-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#101820]">
+          <div className="mb-4 px-1">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Configuración</p>
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">Tu Cuenta</h2>
+          </div>
+          <div className="space-y-1.5">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              const Icon = tab.icon;
 
-            return (
-              <button
-                key={tab.id}
-                onClick={() => onTabChange(tab.id)}
-                className={cn(
-                  'relative flex items-center justify-center gap-2.5 px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-200 whitespace-nowrap flex-shrink-0',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-card focus-visible:ring-primary/80',
-                  isActive
-                    ? 'bg-gradient-to-r from-emerald-500/10 to-teal-500/10 text-foreground border border-emerald-500/20 shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                )}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                <Icon
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onTabChange(tab.id)}
                   className={cn(
-                    'w-5 h-5 flex-shrink-0 transition-colors',
-                    isActive 
-                      ? 'text-emerald-600 dark:text-emerald-400' 
-                      : 'text-muted-foreground group-hover:text-foreground'
+                    'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all duration-200',
+                    isActive
+                      ? 'bg-[#222] text-white shadow-sm dark:bg-white dark:text-[#101214]'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-white'
                   )}
-                />
-                <span className="hidden sm:inline">{tab.label}</span>
-              </button>
-            );
-          })}
+                >
+                  <Icon className={cn('w-4 h-4', isActive ? 'text-current' : 'text-slate-400')} />
+                  <span className="text-sm font-semibold">{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Tab content */}
-      <div className="animate-in fade-in duration-200">
+        {/* Info Box */}
+        <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-white/5 dark:bg-white/[0.02]">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+            Administra tu información personal, métodos de pago y la seguridad de tu cuenta desde este panel.
+          </p>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="animate-in fade-in slide-in-from-bottom-2 duration-300">
         {children}
-      </div>
+      </main>
     </div>
   );
 };
