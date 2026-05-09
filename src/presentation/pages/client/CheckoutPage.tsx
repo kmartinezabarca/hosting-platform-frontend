@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@application/context/AuthContext";
 import { emailRx, phoneRx, domainRx } from "@shared/utils/validation";
 import { rfcMxRx, toBase64 } from "@shared/utils/cfdi";
+import { toast } from "@presentation/components/features/ToastProvider";
 
 import Stepper from "@presentation/components/features/checkout/Stepper";
 import GameSelector from "@presentation/components/features/checkout/GameSelector";
@@ -214,6 +215,7 @@ export default function CheckoutPage() {
     markTouched(targets);
     if (Object.keys(newErrors).length) {
       focusFirstError(newErrors);
+      toast.error("Por favor, revisa los errores en el formulario");
       return false;
     }
     return true;
@@ -232,6 +234,7 @@ export default function CheckoutPage() {
         invoiceConstanciaMime: f.type,
         invoiceConstanciaB64: b64,
       }));
+      toast.success("Constancia cargada correctamente");
       return;
     }
 
@@ -286,13 +289,15 @@ export default function CheckoutPage() {
     setErrors((prev) => ({ ...prev, [name]: msg }));
   };
 
-  const clearConstancia = () =>
+  const clearConstancia = () => {
     setFormData((p) => ({
       ...p,
       invoiceConstanciaName: "",
       invoiceConstanciaMime: "",
       invoiceConstanciaB64: "",
     }));
+    toast.info("Constancia eliminada");
+  };
 
   const onNext = () => {
     // Paso 1 game server → solo validar egg seleccionado
@@ -300,116 +305,92 @@ export default function CheckoutPage() {
       if (!formData.selectedEggId) {
         setErrors(prev => ({ ...prev, selectedEggId: "Debes seleccionar un juego" }));
         setTouched(prev => ({ ...prev, selectedEggId: true }));
+        toast.warning("Debes seleccionar un juego para continuar");
         return;
       }
       setStep(2);
       return;
     }
 
-    // Paso 1 no-game (o paso 2 game) → validar campos de servicio/contacto
-    if (validateStep1()) {
-      setStep(prev => prev + 1);
+    // Paso 1 no-game (o paso 2 game) → validar campos de servicio
+    const isInfoStep = (!isGameServer && step === 1) || (isGameServer && step === 2);
+    if (isInfoStep) {
+      if (validateStep1()) {
+        setStep(step + 1);
+      }
+      return;
     }
-  };
-  const onBack = () => setStep(prev => prev - 1);
 
-  const handlePaymentSuccess = (result) => {
-    navigate("/client/checkout/success", {
-      state: {
-        plan,
-        category,
-        billingCycle,
-        total: totals.total,
-        serviceName: formData.serviceName,
-        paymentIntent: result.paymentIntent,
-        service: result.service,
-      },
-    });
-  };
-  const handlePaymentError = (error) => {
-    console.error("Payment error:", error);
-    alert(`Error en el pago: ${error}`);
+    setStep(step + 1);
   };
 
-  if (!plan) return null;
+  const onBack = () => {
+    if (step > 1) setStep(step - 1);
+    else navigate(-1);
+  };
+
+  const handleSuccess = (res: any) => {
+    console.log("Checkout success:", res);
+    queryClient.invalidateQueries({ queryKey: ["services"] });
+    toast.success("¡Servicio contratado con éxito!", "Estamos configurando tu instancia.");
+    navigate("/client/services", { replace: true });
+  };
+
+  const handleError = (msg: string) => {
+    console.error("Checkout error:", msg);
+    toast.error("Error al procesar el pago", msg);
+  };
+
+  const handleAddMethodSuccess = () => {
+    setShowAddMethodModal(false);
+    queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
+    toast.success("Método de pago agregado correctamente");
+  };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-[#f8fafc] to-[#f1f5f9] dark:from-[#0b0f14] dark:to-[#111827]">
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-5 flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-white/10 lg:flex-row lg:items-end lg:justify-between"
-        >
-          <div className="flex items-start gap-4">
-            <button
-              onClick={() => navigate("/client/contract-service")}
-              className="mt-1 rounded-xl border border-slate-200 bg-white p-2 shadow-sm transition hover:bg-slate-50 dark:border-white/10 dark:bg-[#101820] dark:hover:bg-white/10"
-              aria-label="Volver"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Finalizar contratación</p>
-              <div className="mt-1 flex items-center gap-2 flex-wrap">
-                <h1 className="text-2xl font-bold text-foreground">Checkout</h1>
-                {plan?.name && (
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-200 text-slate-700 dark:bg-white/10 dark:text-slate-200">
-                    {plan.name}
-                  </span>
-                )}
-                {billingCycle && billingCycles[billingCycle] && (
-                  <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-white text-slate-600 ring-1 ring-slate-200 dark:bg-white/10 dark:text-slate-300 dark:ring-white/10">
-                    {billingCycles[billingCycle].name}
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
-                Paso {step} de {isGameServer ? 3 : 2}. Completa los datos necesarios y confirma tu pago.
-              </p>
-            </div>
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0b0f14]">
+      {/* Header / Stepper */}
+      <header className="sticky top-0 z-30 bg-white/80 dark:bg-[#101820]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10">
+        <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between gap-8">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden sm:inline">Volver</span>
+          </button>
+
+          <div className="flex-1 flex justify-center overflow-x-auto no-scrollbar">
+            <Stepper step={step} showInvoice={formData.requireInvoice} />
           </div>
 
-          {/* Stepper */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="overflow-x-auto rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-white/10 dark:bg-[#101820]"
-          >
-            <Stepper step={step} showInvoice={formData.requireInvoice} />
-          </motion.div>
-        </motion.div>
+          <div className="w-20 hidden sm:block" />
+        </div>
+      </header>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-          {/* Main */}
-          <div>
-            <motion.div
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#101820] lg:p-7"
-            >
-            {step === 1 && isGameServer ? (
-              <div className="space-y-8">
+      <main className="max-w-7xl mx-auto px-4 py-8 lg:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 lg:gap-12 items-start">
+          {/* Left Column: Forms */}
+          <div className="space-y-8">
+            {/* Step 1: Game Selection (Only for Game Servers) */}
+            {step === 1 && isGameServer && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                 <GameSelector
                   gameNests={gameNests}
                   selectedEggId={formData.selectedEggId}
-                  onSelectEgg={(eggId: any) => {
-                    setFormData((p: any) => ({ ...p, selectedEggId: eggId }));
-                    if ((touched as any).selectedEggId) {
-                      const msg = validateField("selectedEggId", eggId);
-                      setErrors((prev: any) => ({ ...prev, selectedEggId: msg }));
-                    }
+                  onSelect={(id) => {
+                    setFormData(p => ({ ...p, selectedEggId: id }));
+                    setErrors(prev => ({ ...prev, selectedEggId: "" }));
                   }}
-                  isLoading={gameEggsLoading}
-                  error={gameNests.length === 0 && !gameEggsLoading ? "No hay juegos disponibles para este plan" : null}
+                  loading={gameEggsLoading}
+                  error={errors["selectedEggId"]}
                 />
-                {(touched as any).selectedEggId && (errors as any).selectedEggId && (
-                  <p className="text-sm text-red-500 font-medium">{(errors as any).selectedEggId}</p>
-                )}
-              </div>
-            ) : step === (isGameServer ? 2 : 1) ? (
-              <div className="space-y-8">
+              </motion.div>
+            )}
+
+            {/* Step 1 (Non-Game) or Step 2 (Game): Service Info */}
+            {((!isGameServer && step === 1) || (isGameServer && step === 2)) && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
                 <ServiceFields
                   formData={formData}
                   errors={errors}
@@ -418,78 +399,104 @@ export default function CheckoutPage() {
                   onBlur={handleBlur}
                   category={category}
                 />
+
                 <Addons
                   addons={addons}
                   selectedAddOns={selectedAddOns}
-                  onChange={(ids) => setSelectedAddOns(ids)}
+                  onToggle={(id) => {
+                    setSelectedAddOns(prev =>
+                      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+                    );
+                    const add = addons.find(a => a.id === id || a.uuid === id);
+                    if (selectedAddOns.includes(id)) {
+                      toast.info(`Removido: ${add?.name || 'Addon'}`);
+                    } else {
+                      toast.success(`Agregado: ${add?.name || 'Addon'}`);
+                    }
+                  }}
                 />
+
                 <InvoiceFields
                   formData={formData}
                   errors={errors}
                   touched={touched}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
-                  clearConstancia={clearConstancia}
+                  onClearConstancia={clearConstancia}
+                  onProfileSelect={(profile) => {
+                    setFormData(p => ({
+                      ...p,
+                      invoiceProfileUuid: profile.uuid,
+                      invoicePersonType: profile.person_type,
+                      invoiceRfc: profile.rfc,
+                      invoiceName: profile.name,
+                      invoiceZip: profile.zip,
+                      invoiceRegimen: profile.regimen,
+                      invoiceUsoCfdi: profile.uso_cfdi,
+                      invoiceConstanciaName: profile.constancia_name || "",
+                    }));
+                    toast.success("Perfil fiscal aplicado");
+                  }}
                 />
-              </div>
-            ) : (
-              <ReviewAndPay
-                plan={plan}
-                billingCycle={billingCycle}
-                billingCycles={billingCycles}
-                formData={formData}
-                totals={totals}
-                payRef={payRef}
-                onSuccess={handlePaymentSuccess}
-                onError={handlePaymentError}
-                paymentMethods={paymentMethods}
-                selectedPaymentMethodId={selectedPaymentMethodId}
-                setSelectedPaymentMethodId={setSelectedPaymentMethodId}
-                onAddMethod={() => setShowAddMethodModal(true)}
-                selectedAddOns={selectedAddOns as any}
-              />
+              </motion.div>
             )}
-            </motion.div>
+
+            {/* Final Step: Review & Pay */}
+            {((!isGameServer && step === 2) || (isGameServer && step === 3)) && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                <ReviewAndPay
+                  plan={plan}
+                  billingCycle={billingCycle}
+                  billingCycles={billingCycles}
+                  formData={formData}
+                  totals={totals}
+                  payRef={payRef}
+                  onSuccess={handleSuccess}
+                  onError={handleError}
+                  paymentMethods={paymentMethods}
+                  selectedPaymentMethodId={selectedPaymentMethodId}
+                  setSelectedPaymentMethodId={setSelectedPaymentMethodId}
+                  onAddMethod={() => setShowAddMethodModal(true)}
+                  selectedAddOns={selectedAddOns}
+                />
+              </motion.div>
+            )}
+
+            {/* Navigation Buttons (Only if not on last step) */}
+            {step < (isGameServer ? 3 : 2) && (
+              <div className="flex justify-end pt-4">
+                <button
+                  onClick={onNext}
+                  className="px-8 py-4 bg-foreground text-background rounded-2xl font-bold hover:opacity-90 transition shadow-lg shadow-foreground/10"
+                >
+                  Continuar al siguiente paso
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Sidebar */}
-          <div>
-            <motion.div
-              initial={{ opacity: 0, x: 12 }}
-              animate={{ opacity: 1, x: 0 }}
-            >
-              <OrderSummary
-                plan={plan}
-                billingCycle={billingCycle}
-                billingCycles={billingCycles}
-                formData={formData}
-                setFormData={setFormData}
-                totals={totals}
-                step={step}
-                onNext={onNext}
-                onBack={onBack}
-                payRef={payRef}
-                selectedAddOns={selectedAddOns}
-                addons={addons}
-                isGameServer={isGameServer}
-              />
-            </motion.div>
-          </div>
+          {/* Right Column: Summary */}
+          <aside className="sticky top-32">
+            <OrderSummary
+              plan={plan}
+              billingCycle={billingCycle}
+              billingCycles={billingCycles}
+              formData={formData}
+              totals={totals}
+              addons={addons}
+              selectedAddOns={selectedAddOns}
+              onNext={onNext}
+              showButton={step < (isGameServer ? 3 : 2)}
+            />
+          </aside>
         </div>
+      </main>
 
-        {/* Payment Method Modal: allow user to add a new card */}
-        {showAddMethodModal && (
-          <AddPaymentMethodModal
-            isOpen={showAddMethodModal}
-            onClose={() => setShowAddMethodModal(false)}
-            onSuccess={(pm) => {
-              queryClient.invalidateQueries({ queryKey: ["paymentMethods"] });
-              setSelectedPaymentMethodId(pm.stripe_payment_method_id);
-            }}
-            isDefault={paymentMethods.length === 0}
-          />
-        )}
-      </div>
+      <AddPaymentMethodModal
+        isOpen={showAddMethodModal}
+        onClose={() => setShowAddMethodModal(false)}
+        onSuccess={handleAddMethodSuccess}
+      />
     </div>
   );
 }

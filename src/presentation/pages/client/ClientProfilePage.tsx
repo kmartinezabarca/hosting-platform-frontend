@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@presentation/components/features/ToastProvider";
 
 // React Query hooks
 import { 
@@ -79,6 +79,7 @@ const ClientProfilePage = () => {
       const res: any = await generate2FAMutation.mutateAsync(undefined as any);
       setQrCode(res?.data?.qr_code ?? res?.data?.data?.qr_code);
       setTwoFactorSecret(res?.data?.secret ?? res?.data?.data?.secret);
+      toast.info("Código QR generado", "Escanea el código con tu app de autenticación");
     } catch (error) {
       console.error("Error generating 2FA:", error);
       toast.error((error as any)?.message || "Error al generar 2FA");
@@ -90,7 +91,7 @@ const ClientProfilePage = () => {
       await enable2FAMutation.mutateAsync(verificationCode);
       setQrCode("");
       setTwoFactorSecret("");
-      toast.success("2FA activado exitosamente");
+      toast.success("2FA activado exitosamente", "Tu cuenta ahora está más segura");
     } catch (error) {
       console.error("Error enabling 2FA:", error);
       toast.error((error as any)?.message || "Código de verificación inválido");
@@ -133,7 +134,7 @@ const ClientProfilePage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto" />
+          <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto" />
           <p className="text-muted-foreground">Cargando perfil...</p>
         </div>
       </div>
@@ -147,7 +148,7 @@ const ClientProfilePage = () => {
           <p className="text-red-600">Error al cargar el perfil</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800"
           >
             Reintentar
           </button>
@@ -190,9 +191,7 @@ const ClientProfilePage = () => {
           )}
 
           {activeTab === "devices" && (
-            <DevicesSection
-              {...({ devices: (devicesData as any)?.data ?? [], onLogoutDevice: handleLogoutDevice } as any)}
-            />
+            <DevicesSection />
           )}
         </ProfileTabs>
       </div>

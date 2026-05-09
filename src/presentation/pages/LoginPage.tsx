@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useLogin, useLoginWithGoogle } from '@application/hooks/useAuth';
 import { useAuth } from '@application/context/AuthContext';
+import { toast } from "@presentation/components/features/ToastProvider";
 import logoROKE from "@presentation/assets/ROKEIndustriesFusionLogo.png";
 
 const LoginPage = () => {
@@ -41,7 +42,11 @@ const LoginPage = () => {
 
   const googleLogin = useGoogleLogin({
     onSuccess: (tokenResponse) => handleGoogleLoginSuccess(tokenResponse),
-    onError: () => setError(t('auth.errors.googleError')),
+    onError: () => {
+      const msg = t('auth.errors.googleError');
+      setError(msg);
+      toast.error(msg);
+    },
   });
 
   // Count down the rate-limit cooldown every second
@@ -106,6 +111,8 @@ const LoginPage = () => {
       try {
         const response = await login({ email: formData.email, password: formData.password });
         await queryClient.refetchQueries({ queryKey: ['auth', 'me'] });
+        toast.success("¡Bienvenido de nuevo!", "Iniciando sesión...");
+        
         if ((response as any).two_factor_required || response.requires_2fa) {
           navigate("/verify-2fa", { state: { email: formData.email } });
         } else if ((response as any).needs_username) {
@@ -114,9 +121,13 @@ const LoginPage = () => {
           window.location.href = (response as any).redirect_to || '/client/dashboard';
         }
       } catch (err) {
-        setError((err as any)?.message || t('auth.errors.invalidCredentials'));
+        const msg = (err as any)?.message || t('auth.errors.invalidCredentials');
+        setError(msg);
+        toast.error("Error al iniciar sesión", msg);
         setCooldown(5); // 5-second cooldown after failure to limit brute-force
       }
+    } else {
+      toast.warning("Por favor, completa los campos requeridos");
     }
   };
 
@@ -145,6 +156,9 @@ const LoginPage = () => {
       const backendResponse = await loginWithGoogle(googleUserInfo);
       console.log('Backend response after Google login:', backendResponse);
       await queryClient.refetchQueries({ queryKey: ['auth', 'me'] });
+      
+      toast.success("¡Acceso con Google exitoso!");
+      
       const { twoFactorRequired, email, usernameRequired, setupToken, userPreview, needsUsername, redirectTo } = normalizeAuthResponse(backendResponse);
 
       if (twoFactorRequired) {
@@ -159,7 +173,9 @@ const LoginPage = () => {
         window.location.href = redirectTo;
       }
     } catch (err) {
-      setError((err as any)?.message || t('auth.errors.loginIncomplete'));
+      const msg = (err as any)?.message || t('auth.errors.loginIncomplete');
+      setError(msg);
+      toast.error("Error con Google", msg);
       setCooldown(5);
     }
   };
@@ -280,197 +296,154 @@ const LoginPage = () => {
               <div className="space-y-1">
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium text-black font-semibold"
+                  className="block text-sm font-medium text-black/70 ml-1"
                 >
-                  {t('auth.email')}
+                  {t('auth.emailLabel')}
                 </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black/50" aria-hidden="true" />
+                <div className="relative group">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black/40 group-focus-within:text-black transition-colors" />
                   <input
                     id="email"
                     name="email"
                     type="email"
                     autoComplete="email"
+                    required
                     value={formData.email}
                     onChange={handleChange}
-                    aria-invalid={!!formErrors.email}
-                    aria-describedby={formErrors.email ? "email-error" : undefined}
-                    className={`w-full pl-10 pr-4 py-3 bg-white border rounded-xl text-[#222222] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#222222] focus:border-transparent transition-all duration-200 ${
-                      formErrors.email ? "border-red-500" : "border-gray-300"
-                    }`}
-                    placeholder="example@example.com"
+                    className={`w-full pl-11 pr-4 py-3 bg-white/50 border ${
+                      formErrors.email ? "border-red-500" : "border-black/10"
+                    } rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all`}
+                    placeholder="correo@ejemplo.com"
                   />
                 </div>
                 {formErrors.email && (
-                  <motion.p
-                    id="email-error"
-                    role="alert"
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-xs text-red-600 pl-1 pt-1"
-                  >
-                    {formErrors.email}
-                  </motion.p>
+                  <p className="text-xs text-red-600 ml-1">{formErrors.email}</p>
                 )}
               </div>
 
-              {/* Campo Contraseña */}
+              {/* Campo Password */}
               <div className="space-y-1">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-black font-semibold"
-                >
-                  {t('auth.password')}
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-black/50" aria-hidden="true" />
+                <div className="flex items-center justify-between px-1">
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-black/70"
+                  >
+                    {t('auth.passwordLabel')}
+                  </label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs font-semibold text-black hover:underline"
+                  >
+                    {t('auth.forgotPassword')}
+                  </Link>
+                </div>
+                <div className="relative group">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black/40 group-focus-within:text-black transition-colors" />
                   <input
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
+                    required
                     value={formData.password}
                     onChange={handleChange}
-                    aria-invalid={!!formErrors.password}
-                    aria-describedby={formErrors.password ? "password-error" : undefined}
-                    className={`w-full pl-10 pr-12 py-3 bg-white border rounded-xl text-[#222222] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#222222] focus:border-transparent transition-all duration-200 ${
-                      formErrors.password ? "border-red-500" : "border-gray-300"
-                    }`}
-                    placeholder={t('auth.password')}
+                    className={`w-full pl-11 pr-12 py-3 bg-white/50 border ${
+                      formErrors.password ? "border-red-500" : "border-black/10"
+                    } rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all`}
+                    placeholder="••••••••"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? t('a11y.hidePassword') : t('a11y.togglePassword')}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black/50 hover:text-black transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#222222] rounded"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-black/40 hover:text-black transition-colors"
                   >
                     {showPassword ? (
-                      <EyeOff className="w-5 h-5" aria-hidden="true" />
+                      <EyeOff className="w-5 h-5" />
                     ) : (
-                      <Eye className="w-5 h-5" aria-hidden="true" />
+                      <Eye className="w-5 h-5" />
                     )}
                   </button>
                 </div>
                 {formErrors.password && (
-                  <motion.p
-                    id="password-error"
-                    role="alert"
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-xs text-red-600 pl-1 pt-1"
-                  >
-                    {formErrors.password}
-                  </motion.p>
+                  <p className="text-xs text-red-600 ml-1">{formErrors.password}</p>
                 )}
               </div>
 
-              {/* Mensaje de error general */}
               {error && (
                 <motion.div
-                  role="alert"
-                  aria-live="assertive"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-700 text-sm text-center"
+                  className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 text-sm font-medium"
                 >
                   {error}
                 </motion.div>
               )}
 
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center space-x-2 text-black/70 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-300 text-[#222222] focus:ring-[#222222]"
-                  />
-                  <span>{t('auth.rememberMe')}</span>
-                </label>
-                <Link
-                  to="/forgot-password"
-                  className="text-black/70 hover:text-black transition-colors"
-                >
-                  {t('auth.forgotPassword')}
-                </Link>
-              </div>
-
-              <motion.button
+              <button
                 type="submit"
                 disabled={isLoading || cooldown > 0}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full bg-[#222222] text-white py-3 px-6 rounded-xl font-semibold hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#222222] transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-4 bg-black text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-black/90 transition-all shadow-lg shadow-black/10 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : cooldown > 0 ? (
-                  <span>{t('auth.cooldown', { seconds: cooldown })}</span>
+                  `${t('auth.wait')} (${cooldown}s)`
                 ) : (
                   <>
-                    <span>{t('auth.login')}</span>
-                    <ArrowRight className="w-5 h-5" aria-hidden="true" />
+                    {t('auth.loginButton')}
+                    <ArrowRight className="w-5 h-5" />
                   </>
                 )}
-              </motion.button>
+              </button>
             </form>
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+                <div className="w-full border-t border-black/10"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span
-                  className="px-2 bg-white text-black/70"
-                  style={{ background: "rgba(255, 255, 255, 0.8)" }}
-                >
-                  {t('common.or')}
+                <span className="px-4 bg-white/50 backdrop-blur-sm text-black/50 font-medium">
+                  {t('auth.orContinueWith')}
                 </span>
               </div>
             </div>
 
-            <motion.button
+            <button
               type="button"
               onClick={() => googleLogin()}
-              disabled={isLoading || cooldown > 0}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full bg-white border border-gray-300 text-[#333] py-3 px-6 rounded-xl font-semibold hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-all duration-200 flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoading}
+              className="w-full py-3 bg-white border border-black/10 rounded-xl font-semibold flex items-center justify-center gap-3 hover:bg-black/5 transition-all"
             >
-              <svg className="w-5 h-5" viewBox="0 0 48 48">
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
-                  fill="#FFC107"
-                  d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
-                 />
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#4285F4"
+                />
                 <path
-                  fill="#FF3D00"
-                  d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
-                 />
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853"
+                />
                 <path
-                  fill="#4CAF50"
-                  d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"
-                 />
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  fill="#FBBC05"
+                />
                 <path
-                  fill="#1976D2"
-                  d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.021,35.596,44,30.138,44,24C44,22.659,43.862,21.35,43.611,20.083z"
-                 />
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#EA4335"
+                />
               </svg>
-              <span>{t('auth.loginWithGoogle')}</span>
-            </motion.button>
+              Google
+            </button>
 
-            <div className="text-center text-sm text-black/70">
+            <p className="text-center text-sm text-black/60">
               {t('auth.noAccount')}{" "}
               <Link
                 to="/register"
-                className="text-black font-semibold hover:underline"
+                className="font-bold text-black hover:underline"
               >
-                {t('auth.register')}
+                {t('auth.registerLink')}
               </Link>
-              <span className="mx-2 text-black/70">|</span>
-              <Link to="/forgot-password" className="text-primary hover:underline">{t('auth.forgotPassword')}</Link>
-            </div>
-          </div>
-
-          <div className="mt-8 text-center text-black/50 text-xs">
-            <p>{t('common.copyright', { year: 2025 })}</p>
+            </p>
           </div>
         </motion.div>
       </div>
