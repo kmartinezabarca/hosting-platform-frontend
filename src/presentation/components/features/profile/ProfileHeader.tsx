@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
-import { Camera, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Camera, CheckCircle, AlertTriangle, Shield, Zap } from 'lucide-react';
 import ReactCountryFlag from "react-country-flag";
 import { countryName } from '@shared/utils/geo';
 import { cn } from '@shared/utils/utils';
 import AvatarUploader from '@presentation/components/features/profile/AvatarUploader';
 
 const PALETTE = [
-  ['from-slate-500 to-slate-600', 'text-white'],
-  ['from-zinc-500 to-zinc-600', 'text-white'],
-  ['from-gray-500 to-gray-600', 'text-white'],
-  ['from-neutral-500 to-neutral-600', 'text-white'],
-  ['from-stone-500 to-stone-600', 'text-white'],
-  ['from-slate-400 to-slate-500', 'text-white'],
-  ['from-zinc-400 to-zinc-500', 'text-white'],
-  ['from-gray-400 to-gray-500', 'text-white'],
+  ['from-emerald-500 to-teal-600', 'text-white'],
+  ['from-blue-500 to-cyan-600', 'text-white'],
+  ['from-purple-500 to-pink-600', 'text-white'],
+  ['from-orange-500 to-red-600', 'text-white'],
+  ['from-indigo-500 to-purple-600', 'text-white'],
+  ['from-cyan-500 to-blue-600', 'text-white'],
+  ['from-rose-500 to-pink-600', 'text-white'],
+  ['from-amber-500 to-orange-600', 'text-white'],
 ];
 
 const colorFromName = (name = '') => {
@@ -21,24 +21,35 @@ const colorFromName = (name = '') => {
   return PALETTE[code % PALETTE.length];
 };
 
-const StatBox = ({ value, label }) => (
-  <div className="text-center">
-    <p className="text-2xl font-bold text-foreground">{value}</p>
-    <p className="text-xs text-muted-foreground">{label}</p>
+const StatBox = ({ value, label, icon: Icon }) => (
+  <div className="flex flex-col items-center sm:items-start gap-2">
+    <div className="flex items-center gap-2">
+      {Icon && <Icon className="w-4 h-4 text-muted-foreground" />}
+      <p className="text-2xl font-bold text-foreground">{value}</p>
+    </div>
+    <p className="text-xs text-muted-foreground font-medium">{label}</p>
   </div>
 );
 
 const VerificationBadge = ({ isVerified }) => {
   const config = isVerified
-    ? { text: 'Cuenta verificada', iconColor: 'text-green-500', bgColor: 'bg-green-500/15' }
-    : { text: 'Verifica tu correo', iconColor: 'text-yellow-500', bgColor: 'bg-yellow-500/15' };
+    ? { 
+        text: 'Cuenta verificada', 
+        iconColor: 'text-emerald-600 dark:text-emerald-400', 
+        bgColor: 'bg-emerald-500/10 border border-emerald-500/20' 
+      }
+    : { 
+        text: 'Verifica tu correo', 
+        iconColor: 'text-amber-600 dark:text-amber-400', 
+        bgColor: 'bg-amber-500/10 border border-amber-500/20' 
+      };
   
   const Icon = isVerified ? CheckCircle : AlertTriangle;
 
   return (
     <div className={cn("inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium", config.bgColor, config.iconColor)}>
       <Icon className="w-4 h-4" />
-      <span>{config.text}</span>
+      <span className="text-foreground">{config.text}</span>
     </div>
   );
 };
@@ -80,53 +91,77 @@ const ProfileHeader = ({ profile, onAvatarChange }) => {
 
   return (
     <>
-      <div className="bg-card border border-border rounded-2xl p-8">
-        <div className="flex flex-col sm:flex-row items-center gap-6">
+      <div className="bg-gradient-to-br from-card to-card/95 border border-border/60 rounded-3xl p-8 sm:p-10 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-8">
+          {/* Avatar section */}
           <div className="relative flex-shrink-0">
             {avatarUrl ? (
               <img
                 src={avatarUrl}
                 alt="Avatar"
-                className="w-24 h-24 rounded-2xl object-cover border-4 border-background shadow-md"
+                className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl object-cover border-4 border-background shadow-lg"
               />
             ) : (
               <div className={cn(
-                "w-24 h-24 rounded-2xl border-4 border-background shadow-md",
+                "w-28 h-28 sm:w-32 sm:h-32 rounded-2xl border-4 border-background shadow-lg",
                 "bg-gradient-to-br flex items-center justify-center",
                 gradientClass
               )}>
-                <span className={cn("text-3xl font-bold", textClass)}>{initials}</span>
+                <span className={cn("text-4xl sm:text-5xl font-bold", textClass)}>{initials}</span>
               </div>
             )}
             <button
               onClick={() => setShowUploader(true)}
-              className="absolute -bottom-2 -right-2 w-8 h-8 flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110"
+              className="absolute -bottom-2 -right-2 w-10 h-10 flex items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg transition-all hover:scale-110 hover:shadow-xl"
               title="Cambiar avatar"
             >
-              <Camera className="w-4 h-4" />
+              <Camera className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="flex-1 text-center sm:text-left">
-            <h1 className="text-3xl font-bold text-foreground">
-              {displayName}
-            </h1>
-            <p className="text-muted-foreground mt-1">{profile?.email}</p>
+          {/* Info section */}
+          <div className="flex-1">
+            <div className="mb-4">
+              <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
+                {displayName}
+              </h1>
+              <p className="text-muted-foreground mt-2 text-base">{profile?.email}</p>
+            </div>
             
-            <div className="flex flex-wrap justify-center sm:justify-start gap-3 mt-4">
+            {/* Badges */}
+            <div className="flex flex-wrap gap-2 mb-6">
               <VerificationBadge isVerified={Boolean(profile?.email_verified_at)} />
+              {profile?.two_factor_enabled && (
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-sm font-medium text-blue-600 dark:text-blue-400">
+                  <Shield className="w-4 h-4" />
+                  <span>2FA Activado</span>
+                </div>
+              )}
               {profile?.country && (
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted text-sm dark:text-muted-foreground">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/60 border border-border/40 text-sm font-medium text-muted-foreground">
                   <ReactCountryFlag countryCode={profile.country} svg style={{ width: "1.25rem", height: "1.25rem", borderRadius: "2px" }} />
                   <span>{profile.city || countryName(profile.country)}</span>
                 </div>
               )}
             </div>
-          </div>
 
-          <div className="flex gap-8 sm:border-l sm:border-border sm:pl-8">
-            <StatBox value={profile?.years_with_us || 0} label="Años con nosotros" />
-            <StatBox value={profile?.active_services || 0} label="Servicios activos" />
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-6 sm:gap-8">
+              <StatBox 
+                value={profile?.years_with_us || 0} 
+                label="Años con nosotros"
+              />
+              <StatBox 
+                value={profile?.active_services || 0} 
+                label="Servicios activos"
+                icon={Zap}
+              />
+              <StatBox 
+                value={profile?.security_score || 0} 
+                label="Puntuación seguridad"
+                icon={Shield}
+              />
+            </div>
           </div>
         </div>
       </div>
