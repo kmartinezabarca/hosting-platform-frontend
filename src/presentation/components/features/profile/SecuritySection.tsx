@@ -3,6 +3,7 @@ import { Shield, Lock, KeyRound, CheckCircle2, QrCode, Smartphone, Chrome, Alert
 import FormField from '@presentation/components/features/profile/FormField';
 import PasswordStrengthIndicator from '@presentation/components/features/profile/PasswordStrengthIndicator';
 import { cn } from '@shared/utils/utils';
+import { toast } from "@presentation/components/features/ToastProvider";
 
 /* ── Section card wrapper ───────────────────────────────────────────────── */
 const SectionCard = ({ icon: Icon, title, description, badge = null, children }: { icon: any; title: any; description?: any; badge?: any; children: any }) => (
@@ -107,11 +108,19 @@ const SecuritySection = ({
         password:              passwordData.new,
         password_confirmation: passwordData.confirm,
       });
+      // Reset form on success (this should ideally be handled by the parent or via useEffect on savingPassword change)
+      // For now, we assume the parent handles the toast.
+    } else {
+      toast.warning("Por favor, corrige los errores en el formulario de contraseña");
     }
   };
 
   const handle2FAEnable = () => {
-    if (verificationCode.length === 6) on2FAEnable(verificationCode);
+    if (verificationCode.length === 6) {
+      on2FAEnable(verificationCode);
+    } else {
+      toast.warning("Ingresa el código de 6 dígitos");
+    }
   };
 
   /* ── Shared button styles ────────────────────────────────────────────── */
@@ -244,12 +253,6 @@ const SecuritySection = ({
                     : <><CheckCircle2 className="w-3.5 h-3.5" />Activar 2FA</>
                   }
                 </button>
-                <button
-                  onClick={() => setVerificationCode('')}
-                  className={btnSecondary}
-                >
-                  Cancelar
-                </button>
               </div>
             </div>
           </div>
@@ -258,12 +261,12 @@ const SecuritySection = ({
         {/* State: already enabled */}
         {security.two_factor_enabled && (
           <div className="space-y-4">
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-emerald-500/[0.05] border border-emerald-500/20">
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-emerald-500/[0.03] border border-emerald-500/20">
               <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
               <div>
-                <p className="text-sm font-medium text-foreground">2FA activado</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Tu cuenta está protegida con autenticación de dos factores.
+                <p className="text-sm font-medium text-foreground">Tu cuenta está protegida</p>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                  La autenticación de dos factores está activa. Se te solicitará un código cada vez que inicies sesión.
                 </p>
               </div>
             </div>
@@ -277,96 +280,79 @@ const SecuritySection = ({
         )}
       </SectionCard>
 
-      {/* ── Contraseña ────────────────────────────────────────────────── */}
-      {isGoogleUser ? (
-        <SectionCard icon={Lock} title="Contraseña" description="Configuración de acceso">
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-foreground/[0.03] border border-border/50">
-            <Chrome className="w-4 h-4 text-foreground/60 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-foreground">Cuenta vinculada con Google</p>
-              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                Tu acceso está gestionado por Google. No necesitas contraseña para iniciar sesión.
-                Si deseas desvincularte, contacta al soporte.
-              </p>
-            </div>
-          </div>
-        </SectionCard>
-      ) : (
+      {/* ── Password ──────────────────────────────────────────────────── */}
+      {!isGoogleUser && (
         <SectionCard
           icon={Lock}
           title="Cambiar Contraseña"
-          description={`Última actualización: ${
-            security.password_last_changed
-              ? new Date(security.password_last_changed).toLocaleDateString('es-ES')
-              : 'Nunca'
-          }`}
+          description="Actualiza tu contraseña periódicamente para mayor seguridad"
         >
-          <form onSubmit={handlePasswordSubmit} className="space-y-5">
+          <form onSubmit={handlePasswordSubmit} className="space-y-5 max-w-md">
             <FormField
-              label="Contraseña actual"
+              label="Contraseña Actual"
               type="password"
               value={passwordData.current}
               onChange={(e) => handlePasswordChange('current', e.target.value)}
-              placeholder="Tu contraseña actual"
-              icon={Lock}
+              placeholder="••••••••"
+              icon={KeyRound}
               error={passwordErrors.current}
-              showPasswordToggle
-              required
             />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="space-y-3">
-                <FormField
-                  label="Nueva contraseña"
-                  type="password"
-                  value={passwordData.new}
-                  onChange={(e) => handlePasswordChange('new', e.target.value)}
-                  placeholder="Tu nueva contraseña"
-                  icon={Lock}
-                  error={passwordErrors.new}
-                  showPasswordToggle
-                  required
-                />
-                {passwordData.new && <PasswordStrengthIndicator password={passwordData.new} />}
-              </div>
+            <div className="space-y-2">
               <FormField
-                label="Confirmar nueva contraseña"
+                label="Nueva Contraseña"
                 type="password"
-                value={passwordData.confirm}
-                onChange={(e) => handlePasswordChange('confirm', e.target.value)}
-                placeholder="Confirma tu nueva contraseña"
+                value={passwordData.new}
+                onChange={(e) => handlePasswordChange('new', e.target.value)}
+                placeholder="••••••••"
                 icon={Lock}
-                error={passwordErrors.confirm}
-                showPasswordToggle
-                required
+                error={passwordErrors.new}
               />
+              <PasswordStrengthIndicator password={passwordData.new} />
             </div>
-
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-border/40">
-              <button
-                type="button"
-                onClick={() => { setPasswordData({ current: '', new: '', confirm: '' }); setPasswordErrors({}); }}
-                className={btnSecondary}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={
-                  savingPassword ||
-                  Object.keys(passwordErrors).length > 0 ||
-                  !passwordData.current ||
-                  !passwordData.new ||
-                  !passwordData.confirm
-                }
-                className={btnPrimary}
-              >
+            <FormField
+              label="Confirmar Nueva Contraseña"
+              type="password"
+              value={passwordData.confirm}
+              onChange={(e) => handlePasswordChange('confirm', e.target.value)}
+              placeholder="••••••••"
+              icon={Lock}
+              error={passwordErrors.confirm}
+            />
+            <div className="pt-2">
+              <button type="submit" disabled={savingPassword || Object.keys(passwordErrors).length > 0} className={btnPrimary}>
                 {savingPassword
                   ? <><div className="w-3.5 h-3.5 border-2 border-background/30 border-t-background rounded-full animate-spin" />Actualizando...</>
-                  : <><Lock className="w-3.5 h-3.5" />Actualizar contraseña</>
+                  : 'Actualizar Contraseña'
                 }
               </button>
             </div>
           </form>
+        </SectionCard>
+      )}
+
+      {/* ── Google Account ────────────────────────────────────────────── */}
+      {isGoogleUser && (
+        <SectionCard
+          icon={Chrome}
+          title="Cuenta de Google"
+          description="Tu cuenta está vinculada con Google"
+        >
+          <div className="flex items-center gap-4 p-4 rounded-xl bg-foreground/[0.03] border border-border/50">
+            <div className="w-10 h-10 rounded-full bg-white border border-border/60 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Iniciando sesión con Google</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                La gestión de tu contraseña se realiza directamente a través de tu cuenta de Google.
+              </p>
+            </div>
+          </div>
         </SectionCard>
       )}
     </div>

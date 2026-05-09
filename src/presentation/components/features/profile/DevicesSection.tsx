@@ -8,6 +8,7 @@ import {
 import { cn } from '@shared/utils/utils';
 import Pagination from '@presentation/components/ui/pagination-v2';
 import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
+import { toast } from "@presentation/components/features/ToastProvider";
 
 /* ── Device card ────────────────────────────────────────────────────────── */
 const DeviceCard = ({ device, onLogout, isPending }) => {
@@ -120,7 +121,13 @@ const DevicesSection = () => {
   const handleConfirmLogout = () => {
     if (sessionToLogout) {
       logoutMutation.mutate(sessionToLogout.uuid, {
-        onSuccess: () => setSessionToLogout(null),
+        onSuccess: () => {
+          setSessionToLogout(null);
+          toast.success("Sesión cerrada", `Se ha cerrado la sesión en ${sessionToLogout.browser}`);
+        },
+        onError: (error: any) => {
+          toast.error("Error al cerrar sesión", error?.message || "Inténtalo de nuevo más tarde");
+        }
       });
     }
   };
@@ -129,7 +136,13 @@ const DevicesSection = () => {
     const currentDevice = devices.find(d => d.is_current);
     if (currentDevice) {
       logoutOthersMutation.mutate(currentDevice.uuid, {
-        onSuccess: () => setConfirmLogoutOthers(false),
+        onSuccess: () => {
+          setConfirmLogoutOthers(false);
+          toast.success("Sesiones cerradas", "Se han cerrado todas las demás sesiones activas");
+        },
+        onError: (error: any) => {
+          toast.error("Error al cerrar sesiones", error?.message || "Inténtalo de nuevo más tarde");
+        }
       });
     }
   };
