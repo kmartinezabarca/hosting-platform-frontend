@@ -54,21 +54,6 @@ export default defineConfig(({ mode }) => {
       host:       true,
       port:       Number(env.VITE_DEV_PORT) || 5173,
       strictPort: true,
-      hmr: {
-        host: '5173-idfi9x9veas4sl1ixpqa9-f9be0046.us1.manus.computer',
-        protocol: 'wss',
-      },
-      // Agrega el host permitido para evitar el error de "Blocked request"
-      // Esto es necesario cuando se accede a través de un proxy o un dominio diferente.
-      // Asegúrate de que este valor coincida con el dominio que estás utilizando.
-      // Por ejemplo, si estás usando un túnel ngrok, sería algo como 'your-ngrok-domain.ngrok.io'
-      // En este caso, estamos usando el dominio proporcionado por Manus.
-      // Para producción, se recomienda configurar esto de forma más robusta.
-      // Ver: https://vitejs.dev/config/server-options.html#server-allowedhosts
-      // Ver: https://vitejs.dev/config/server-options.html#server-hmr
-      allowedHosts: [
-        '5173-idfi9x9veas4sl1ixpqa9-f9be0046.us1.manus.computer'
-      ],
     },
 
     preview: {

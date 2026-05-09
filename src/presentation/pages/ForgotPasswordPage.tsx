@@ -1,229 +1,345 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion";
 import {
   Mail,
   ArrowRight,
-  Shield,
-  Zap,
-  Globe,
+  ShieldCheck,
+  Clock3,
+  LockKeyhole,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
-import { useForgotPassword } from '@application/hooks/useAuth';
+import { AxiosError } from "axios";
+
+import { useForgotPassword } from "@application/hooks/useAuth";
 import logoROKE from "@presentation/assets/ROKEIndustriesFusionLogo.png";
 
+interface ApiErrorResponse {
+  success?: boolean;
+  message?: string;
+  code?: string;
+  errors?: Record<string, string[]>;
+}
+
 const ForgotPasswordPage = () => {
-  const { t } = useTranslation();
   const [email, setEmail] = useState("");
-  const [formErrors, setFormErrors] = useState<Record<string, string | undefined>>({});
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const { mutateAsync: forgotPassword, isPending: isLoading } = useForgotPassword();
+  const { mutateAsync: forgotPassword, isPending: isLoading } =
+    useForgotPassword();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEmail(e.target.value);
-    if (formErrors.email) {
-      setFormErrors({
-        ...formErrors,
-        email: undefined,
-      });
-    }
-    if (error) setError("");
-    if (message) setMessage("");
+  const clearMessages = () => {
+    setMessage("");
+    setError("");
   };
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    if (!email) {
-      newErrors.email = "El correo electrónico es obligatorio.";
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "El formato del correo no es válido.";
+    const errors: Record<string, string> = {};
+    const normalizedEmail = email.trim();
+
+    if (!normalizedEmail) {
+      errors.email = "El correo electrónico es obligatorio.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      errors.email = "Ingresa un correo electrónico válido.";
     }
-    return newErrors;
+
+    return errors;
+  };
+
+  const getErrorMessage = (error: unknown): string => {
+    const axiosError = error as AxiosError<ApiErrorResponse>;
+
+    if (!axiosError.response) {
+      return "No fue posible conectar con el servidor. Verifica tu conexión.";
+    }
+
+    const { status, data } = axiosError.response;
+
+    switch (status) {
+      case 403:
+        return (
+          data?.message ||
+          "Esta cuenta utiliza inicio de sesión con Google."
+        );
+
+      case 422:
+        if (data?.errors) {
+          const firstError = Object.values(data.errors)?.[0];
+
+          if (Array.isArray(firstError) && firstError.length > 0) {
+            return firstError[0];
+          }
+        }
+
+        return data?.message || "La solicitud no pudo ser procesada.";
+
+      case 429:
+        return (
+          data?.message ||
+          "Demasiados intentos. Intenta nuevamente más tarde."
+        );
+
+      case 500:
+        return "Ocurrió un error interno. Intenta nuevamente más tarde.";
+
+      default:
+        return data?.message || "Ocurrió un error inesperado.";
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+
+    if (formErrors.email) {
+      setFormErrors((prev) => ({
+        ...prev,
+        email: "",
+      }));
+    }
+
+    clearMessages();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors = validateForm();
-    setFormErrors(newErrors);
 
-    if (Object.keys(newErrors).length === 0) {
-      setError("");
-      setMessage("");
-      try {
-        const response = await forgotPassword(email);
-        setMessage(response.message || "Se ha enviado un enlace de restablecimiento de contraseña a tu correo electrónico.");
-      } catch (err) {
-        setError((err as any)?.message || "Error al solicitar el restablecimiento de contraseña.");
-      }
+    clearMessages();
+
+    const errors = validateForm();
+
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+
+    try {
+      const response = await forgotPassword(
+        email.trim().toLowerCase(),
+      );
+
+      setMessage(
+        response?.message ||
+          "Si la cuenta existe, enviaremos instrucciones al correo registrado.",
+      );
+    } catch (err) {
+      setError(getErrorMessage(err));
     }
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{
-        background:
-          "linear-gradient(135deg, hsl(var(--color-primary)) 0%, #B366FF 50%, #0052CC 100%)",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      <div
-        style={{
-          content: '""',
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage:
-            "radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.1) 0%, transparent 50%), radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.1) 0%, transparent 50%)",
-          pointerEvents: "none",
-        }}
-      />
-      <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-start">
-        {/* Panel izquierdo - Información */}
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          className="hidden lg:block text-black space-y-8"
-        >
-          <div className="space-y-4">
-            <img src={logoROKE} alt="ROKE Industries" className="h-24 w-auto" />
-            <h1 className="text-5xl font-bold leading-tight">
-              Restablece tu <br />
-              <span
-                style={{
-                  background: "linear-gradient(135deg, #222222, #555555)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
-              >
-                Contraseña
-              </span>
-            </h1>
-            <p className="text-xl text-black/80 leading-relaxed">
-              Ingresa tu correo electrónico para recibir un enlace y restablecer tu contraseña.
-            </p>
-          </div>
+    <div className="relative min-h-screen overflow-hidden bg-[#f5f7fb]">
+      {/* Background */}
+      <div className="absolute inset-0">
+        <div className="absolute top-[-250px] left-[-120px] h-[500px] w-[500px] rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute bottom-[-200px] right-[-100px] h-[420px] w-[420px] rounded-full bg-violet-500/10 blur-3xl" />
+      </div>
 
-          <div className="space-y-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
-                <Shield className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">Seguridad Avanzada</h3>
-                <p className="text-black/70">
-                  Protección de tus datos en todo momento.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
-                <Zap className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">Proceso Sencillo</h3>
-                <p className="text-black/70">
-                  Recupera tu acceso en pocos pasos.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
-                <Globe className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">Soporte Global</h3>
-                <p className="text-black/70">
-                  Asistencia disponible cuando la necesites.
-                </p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Panel derecho - Formulario */}
-        <motion.div
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="w-full max-w-md mx-auto"
-        >
-          <div
-            className="p-8 space-y-6 rounded-2xl border border-white/20"
-            style={{
-              background: "rgba(255, 255, 255, 0.8)",
-              backdropFilter: "blur(10px)",
-              boxShadow: "0 35px 60px -12px rgba(0, 0, 0, 0.3)",
-            }}
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-6 py-12">
+        <div className="grid w-full max-w-6xl gap-14 lg:grid-cols-2 lg:items-center">
+          {/* LEFT CONTENT */}
+          <motion.div
+            initial={{ opacity: 0, x: -25 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.45 }}
+            className="hidden lg:block"
           >
-            <div className="text-center space-y-2">
-              <h2 className="text-3xl font-bold text-black">¿Olvidaste tu Contraseña?</h2>
-              <p className="text-black/70">No te preocupes, te ayudamos a recuperarla.</p>
+            <img
+              src={logoROKE}
+              alt="ROKE Industries"
+              className="mb-10 h-16 w-auto"
+            />
+
+            <div className="max-w-xl">
+              <span className="mb-5 inline-flex items-center rounded-full border border-primary/10 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary">
+                Seguridad y recuperación de acceso
+              </span>
+
+              <h1 className="text-5xl font-bold leading-tight text-slate-900">
+                Recupera el acceso a tu cuenta
+              </h1>
+
+              <p className="mt-6 text-lg leading-relaxed text-slate-600">
+                Restablece tu contraseña de forma segura y continúa gestionando
+                tus servicios, infraestructura y plataforma desde cualquier
+                lugar.
+              </p>
             </div>
 
-            {message && (
-              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
-                <span className="block sm:inline">{message}</span>
-              </div>
-            )}
-            {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-                <span className="block sm:inline">{error}</span>
-              </div>
-            )}
+            <div className="mt-12 space-y-6">
+              {[
+                {
+                  icon: ShieldCheck,
+                  title: "Protección avanzada",
+                  text: "Todas las solicitudes son protegidas mediante validaciones y controles de seguridad.",
+                },
+                {
+                  icon: Clock3,
+                  title: "Proceso rápido",
+                  text: "Recibe instrucciones de recuperación en cuestión de segundos.",
+                },
+                {
+                  icon: LockKeyhole,
+                  title: "Acceso seguro",
+                  text: "Tus credenciales y sesiones permanecen protegidas durante todo el proceso.",
+                },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  className="flex items-start gap-4"
+                >
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
+                    <item.icon className="h-6 w-6 text-primary" />
+                  </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-              {/* Campo Email */}
-              <div>
-                <label htmlFor="email" className="sr-only">Correo Electrónico</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    placeholder="Correo Electrónico"
-                    value={email}
-                    onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-2 rounded-lg border ${formErrors.email ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-black`}
-                    disabled={isLoading}
-                  />
+                  <div>
+                    <h3 className="text-base font-semibold text-slate-900">
+                      {item.title}
+                    </h3>
+
+                    <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                      {item.text}
+                    </p>
+                  </div>
                 </div>
-                {formErrors.email && (
-                  <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>
-                )}
+              ))}
+            </div>
+          </motion.div>
+
+          {/* RIGHT CARD */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+            className="mx-auto w-full max-w-md"
+          >
+            <div className="rounded-3xl border border-slate-200/70 bg-white/90 p-8 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl">
+              {/* MOBILE LOGO */}
+              <div className="mb-6 flex justify-center lg:hidden">
+                <img
+                  src={logoROKE}
+                  alt="ROKE Industries"
+                  className="h-14 w-auto"
+                />
               </div>
 
-              <button
-                type="submit"
-                className="w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary-dark transition-colors duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    Enviar Enlace de Restablecimiento <ArrowRight className="w-5 h-5" />
-                  </>
-                )}
-              </button>
-            </form>
+              <div className="text-center">
+                <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+                  Recuperar contraseña
+                </h2>
 
-            <div className="text-center text-sm text-black/70">
-              ¿Recordaste tu contraseña?{" "}
-              <Link to="/login" className="text-primary hover:underline">
-                Iniciar Sesión
-              </Link>
+                <p className="mt-3 text-sm leading-relaxed text-slate-500">
+                  Ingresa el correo asociado a tu cuenta y te enviaremos las
+                  instrucciones necesarias para restablecer tu contraseña.
+                </p>
+              </div>
+
+              {/* SUCCESS */}
+              {message && (
+                <div className="mt-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-emerald-700">
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0" />
+
+                  <p className="text-sm leading-relaxed">
+                    {message}
+                  </p>
+                </div>
+              )}
+
+              {/* ERROR */}
+              {error && (
+                <div className="mt-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-red-700">
+                  <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0" />
+
+                  <p className="text-sm leading-relaxed">
+                    {error}
+                  </p>
+                </div>
+              )}
+
+              <form
+                onSubmit={handleSubmit}
+                className="mt-8 space-y-6"
+                noValidate
+              >
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="mb-2 block text-sm font-medium text-slate-700"
+                  >
+                    Correo electrónico
+                  </label>
+
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+
+                    <input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      value={email}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                      placeholder="correo@empresa.com"
+                      className={`
+                        w-full rounded-2xl border bg-white py-3.5 pl-12 pr-4
+                        text-slate-900 placeholder:text-slate-400
+                        transition-all duration-200 outline-none
+                        ${
+                          formErrors.email
+                            ? "border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-100"
+                            : "border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/10"
+                        }
+                      `}
+                    />
+                  </div>
+
+                  {formErrors.email && (
+                    <p className="mt-2 text-sm text-red-500">
+                      {formErrors.email}
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="
+                    flex w-full items-center justify-center gap-2
+                    rounded-2xl bg-slate-950 px-4 py-3.5
+                    text-sm font-semibold text-white
+                    transition-all duration-300
+                    hover:-translate-y-[1px]
+                    hover:bg-slate-900
+                    disabled:cursor-not-allowed
+                    disabled:opacity-60
+                  "
+                >
+                  {isLoading ? (
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  ) : (
+                    <>
+                      Enviar instrucciones
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              <div className="mt-8 text-center text-sm text-slate-500">
+                ¿Recordaste tu contraseña?{" "}
+                <Link
+                  to="/login"
+                  className="font-semibold text-slate-900 transition-colors hover:text-primary"
+                >
+                  Iniciar sesión
+                </Link>
+              </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
