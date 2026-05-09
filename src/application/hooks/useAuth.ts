@@ -97,6 +97,34 @@ export const useCompleteProfile = () => {
   });
 };
 
+/**
+ * Hook para solicitar el restablecimiento de contraseña
+ */
+export const useForgotPassword = () => {
+  return useMutation({
+    mutationFn: authService.forgotPassword,
+    onError: (error) => {
+      console.error("Error al solicitar restablecimiento de contraseña", error);
+    },
+  });
+};
+
+/**
+ * Hook para restablecer la contraseña
+ */
+export const useResetPassword = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: authService.resetPassword,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+    },
+    onError: (error) => {
+      console.error("Error al restablecer contraseña", error);
+    },
+  });
+};
+
 export const useSetupUsername = () => {
   const queryClient = useQueryClient();
   return useMutation({

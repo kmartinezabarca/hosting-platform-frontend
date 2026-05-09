@@ -11,7 +11,9 @@ const Verify2FAPage = lazy(() => import('@presentation/pages/Verify2FAPage'))
 const CompleteProfilePage = lazy(() => import('@presentation/pages/CompleteProfilePage'))
 const SetupUsernamePage   = lazy(() => import('@presentation/pages/SetupUsernamePage'))
 const ProfileDemo   = lazy(() => import('@presentation/pages/ProfileDemo'))
-const NotFoundPage  = lazy(() => import('@presentation/pages/NotFoundPage'))
+const NotFoundPage  = lazy(() => import("@presentation/pages/NotFoundPage"))
+const ForgotPasswordPage = lazy(() => import("@presentation/pages/ForgotPasswordPage"))
+const ResetPasswordPage = lazy(() => import("@presentation/pages/ResetPasswordPage"))
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -30,6 +32,8 @@ export default function AppPortal() {
           <Route path="/auth/complete-profile" element={<CompleteProfilePage />} />
           <Route path="/auth/setup-username"   element={<SetupUsernamePage />} />
           <Route path="/profile-demo"          element={<ProfileDemo />} />
+          <Route path="/forgot-password"     element={<ForgotPasswordPage />} />
+          <Route path="/reset-password"      element={<ResetPasswordPage />} />
 
           <Route
             path="/client/*"

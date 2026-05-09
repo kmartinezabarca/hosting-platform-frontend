@@ -463,8 +463,10 @@ const LoginPage = () => {
                 to="/register"
                 className="text-black font-semibold hover:underline"
               >
-                {t('auth.createAccount')}
+                Regístrate
               </Link>
+              <span className="mx-2 text-black/70">|</span>
+              <Link to="/forgot-password" className="text-primary hover:underline">¿Olvidaste tu contraseña?</Link>
             </div>
           </div>
 

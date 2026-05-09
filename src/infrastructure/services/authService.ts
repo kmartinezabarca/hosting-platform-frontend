@@ -134,6 +134,16 @@ const authService = {
     return response.data;
   },
 
+  forgotPassword: async (email: string): Promise<{ message: string }> => {
+    const response = await ApiService.post<{ message: string }>('/forgot-password', { email });
+    return response.data;
+  },
+
+  resetPassword: async (payload: { token: string; email: string; password: string; password_confirmation: string }): Promise<{ message: string }> => {
+    const response = await ApiService.post<{ message: string }>('/reset-password', payload);
+    return response.data;
+  },
+
   getCurrentUser: async (signal?: AbortSignal): Promise<{ data: User } | null> => {
     const res = await ApiService.get<{ data: User }>('/auth/me', {
       signal,
