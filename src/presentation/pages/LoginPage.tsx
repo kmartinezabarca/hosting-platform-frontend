@@ -41,7 +41,7 @@ const LoginPage = () => {
 
   const googleLogin = useGoogleLogin({
     onSuccess: (tokenResponse) => handleGoogleLoginSuccess(tokenResponse),
-    onError: () => setError("Error al conectar con Google. Inténtalo de nuevo."),
+    onError: () => setError(t('auth.errors.googleError')),
   });
 
   // Count down the rate-limit cooldown every second
@@ -85,12 +85,12 @@ const LoginPage = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!formData.email) {
-      newErrors.email = "El correo electrónico es obligatorio.";
+      newErrors.email = t('auth.errors.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "El formato del correo no es válido.";
+      newErrors.email = t('auth.errors.emailInvalid');
     }
     if (!formData.password) {
-      newErrors.password = "La contraseña es obligatoria.";
+      newErrors.password = t('auth.errors.passwordRequired');
     }
     return newErrors;
   };
@@ -114,7 +114,7 @@ const LoginPage = () => {
           window.location.href = (response as any).redirect_to || '/client/dashboard';
         }
       } catch (err) {
-        setError((err as any)?.message || "Error al iniciar sesión. Verifica tus credenciales.");
+        setError((err as any)?.message || t('auth.errors.invalidCredentials'));
         setCooldown(5); // 5-second cooldown after failure to limit brute-force
       }
     }
@@ -139,7 +139,7 @@ const LoginPage = () => {
         "https://www.googleapis.com/oauth2/v3/userinfo",
         { headers: { Authorization: `Bearer ${tokenResponse.access_token}` } }
       );
-      if (!userInfoResponse.ok) throw new Error("No se pudo obtener la información de Google.");
+      if (!userInfoResponse.ok) throw new Error(t('auth.errors.googleProfileError'));
 
       const googleUserInfo = await userInfoResponse.json();
       const backendResponse = await loginWithGoogle(googleUserInfo);
@@ -159,7 +159,7 @@ const LoginPage = () => {
         window.location.href = redirectTo;
       }
     } catch (err) {
-      setError((err as any)?.message || "No se pudo completar el inicio de sesión.");
+      setError((err as any)?.message || t('auth.errors.loginIncomplete'));
       setCooldown(5);
     }
   };
@@ -198,7 +198,7 @@ const LoginPage = () => {
           <div className="space-y-4">
             <img src={logoROKE} alt="ROKE Industries" className="h-24 w-auto" />
             <h1 className="text-5xl font-bold leading-tight">
-              Bienvenido a <br />
+              {t('auth.hero.welcome')} <br />
               <span
                 style={{
                   background: "linear-gradient(135deg, #222222, #555555)",
@@ -211,8 +211,7 @@ const LoginPage = () => {
               </span>
             </h1>
             <p className="text-xl text-black/80 leading-relaxed">
-              Tu plataforma de hosting tecnológica y moderna. Gestiona tus
-              servicios, servidores y dominios desde un solo lugar.
+              {t('auth.hero.description')}
             </p>
           </div>
 
@@ -222,9 +221,9 @@ const LoginPage = () => {
                 <Shield className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Seguridad Avanzada</h3>
+                <h3 className="font-semibold text-lg">{t('features.security.title')}</h3>
                 <p className="text-black/70">
-                  Protección 24/7 con autenticación de doble factor
+                  {t('features.security.desc')}
                 </p>
               </div>
             </div>
@@ -233,9 +232,9 @@ const LoginPage = () => {
                 <Zap className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Rendimiento Óptimo</h3>
+                <h3 className="font-semibold text-lg">{t('features.performance.title')}</h3>
                 <p className="text-black/70">
-                  Servidores de alta velocidad y disponibilidad
+                  {t('features.performance.desc')}
                 </p>
               </div>
             </div>
@@ -244,9 +243,9 @@ const LoginPage = () => {
                 <Globe className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Alcance Global</h3>
+                <h3 className="font-semibold text-lg">{t('features.global.title')}</h3>
                 <p className="text-black/70">
-                  Infraestructura distribuida mundialmente
+                  {t('features.global.desc')}
                 </p>
               </div>
             </div>
@@ -269,8 +268,8 @@ const LoginPage = () => {
             }}
           >
             <div className="text-center space-y-2">
-              <h2 className="text-3xl font-bold text-black">Iniciar Sesión</h2>
-              <p className="text-black/70">Accede a tu panel de control</p>
+              <h2 className="text-3xl font-bold text-black">{t('auth.loginTitle')}</h2>
+              <p className="text-black/70">{t('auth.loginSubtitle')}</p>
             </div>
 
             {/* Región de errores con aria-live para lectores de pantalla */}
@@ -423,7 +422,7 @@ const LoginPage = () => {
                   className="px-2 bg-white text-black/70"
                   style={{ background: "rgba(255, 255, 255, 0.8)" }}
                 >
-                  o continúa con
+                  {t('common.or')}
                 </span>
               </div>
             </div>
@@ -463,15 +462,15 @@ const LoginPage = () => {
                 to="/register"
                 className="text-black font-semibold hover:underline"
               >
-                Regístrate
+                {t('auth.register')}
               </Link>
               <span className="mx-2 text-black/70">|</span>
-              <Link to="/forgot-password" className="text-primary hover:underline">¿Olvidaste tu contraseña?</Link>
+              <Link to="/forgot-password" className="text-primary hover:underline">{t('auth.forgotPassword')}</Link>
             </div>
           </div>
 
           <div className="mt-8 text-center text-black/50 text-xs">
-            <p>© 2025 ROKE Industries. Todos los derechos reservados.</p>
+            <p>{t('common.copyright', { year: 2025 })}</p>
           </div>
         </motion.div>
       </div>

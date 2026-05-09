@@ -33,6 +33,10 @@
     "twoFactorTitle": "Two-step verification",
     "twoFactorDesc": "Enter the code from your authenticator app",
     "cooldown": "Wait {{seconds}}s before retrying",
+    "hero": {
+      "welcome": "Welcome to",
+      "description": "Your modern, technological hosting platform. Manage your services, servers and domains from one place."
+    },
     "errors": {
       "emailRequired": "Email address is required.",
       "emailInvalid": "Invalid email format.",
@@ -42,7 +46,9 @@
       "lastNameRequired": "Last name is required.",
       "passwordMismatch": "Passwords do not match.",
       "termsRequired": "You must accept the terms and conditions.",
-      "googleError": "Failed to connect with Google. Please try again."
+      "googleError": "Failed to connect with Google. Please try again.",
+      "googleProfileError": "Could not retrieve Google profile information.",
+      "loginIncomplete": "Could not complete sign in."
     }
   },
   "common": {
@@ -52,6 +58,7 @@
     "edit": "Edit",
     "view": "View",
     "back": "Back",
+    "previous": "Previous",
     "next": "Next",
     "finish": "Finish",
     "loading": "Loading...",
@@ -250,7 +257,13 @@
     "loadingPage": "Loading page...",
     "loadingSection": "Loading section...",
     "errorSection": "Section error",
-    "dialogTitle": "Confirmation dialog"
+    "dialogTitle": "Confirmation dialog",
+    "pagination": "Pagination",
+    "previousPage": "Go to previous page",
+    "nextPage": "Go to next page",
+    "morePages": "More pages",
+    "previousSlide": "Previous slide",
+    "nextSlide": "Next slide"
   },
   "features": {
     "security": {

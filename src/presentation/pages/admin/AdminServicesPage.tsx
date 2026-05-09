@@ -102,7 +102,7 @@ const ProfessionalProjectFields = ({ cfg, setCfg, addTag, removeTag, extraFields
         </div>
       ))}
     </div>
-    <TagInputField label="Entregables / Deliverables" field="deliverables" cfg={cfg} addTag={addTag} removeTag={removeTag} placeholder="Escribe un entregable y presiona Enter o +" />
+    <TagInputField label="Entregables" field="deliverables" cfg={cfg} addTag={addTag} removeTag={removeTag} placeholder="Escribe un entregable y presiona Enter o +" />
     <TagInputField label="Stack tecnológico" field="tech_stack" cfg={cfg} addTag={addTag} removeTag={removeTag} placeholder="Laravel / React / MySQL…" />
   </div>
 );
@@ -741,10 +741,10 @@ const AdminServicesPage = () => {
                           </div>
                         )}
                         {['software-development', 'database-architecture', 'migration-modernization'].includes(categorySlug) && (
-                          <ProfessionalProjectFields cfg={cfg} setCfg={setCfg} addTag={addTag} removeTag={removeTag} extraFields={[{ key: 'project_manager', label: 'Project Manager', placeholder: 'Nombre del PM' }]} />
+                          <ProfessionalProjectFields cfg={cfg} setCfg={setCfg} addTag={addTag} removeTag={removeTag} extraFields={[{ key: 'project_manager', label: 'Responsable del proyecto', placeholder: 'Nombre del responsable' }]} />
                         )}
                         {categorySlug === 'security-devops' && (
-                          <ProfessionalProjectFields cfg={cfg} setCfg={setCfg} addTag={addTag} removeTag={removeTag} extraFields={[{ key: 'scope', label: 'Alcance / Scope', placeholder: 'Descripción del alcance del proyecto' }]} />
+                          <ProfessionalProjectFields cfg={cfg} setCfg={setCfg} addTag={addTag} removeTag={removeTag} extraFields={[{ key: 'scope', label: 'Alcance', placeholder: 'Descripción del alcance del proyecto' }]} />
                         )}
                         {categorySlug === 'critical-support' && (
                           <div className="space-y-4">
@@ -756,7 +756,7 @@ const AdminServicesPage = () => {
                                 </div>
                               ))}
                             </div>
-                            <TagInputField label="Canales de contacto" field="contact_channels" cfg={cfg} addTag={addTag} removeTag={removeTag} placeholder="email / phone / slack / whatsapp" />
+                            <TagInputField label="Canales de contacto" field="contact_channels" cfg={cfg} addTag={addTag} removeTag={removeTag} placeholder="correo / telefono / Slack / WhatsApp" />
                             <TagInputField label="Sistemas cubiertos" field="covered_systems" cfg={cfg} addTag={addTag} removeTag={removeTag} placeholder="hosting principal / base de datos producción" />
                           </div>
                         )}

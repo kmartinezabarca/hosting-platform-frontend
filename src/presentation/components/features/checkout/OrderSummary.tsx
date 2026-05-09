@@ -56,12 +56,12 @@ export default function OrderSummary({
   const cycle = CYCLE_LABELS[billingCycle] || CYCLE_LABELS.monthly;
 
   return (
-    <aside className="sticky top-6 rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0f1115] overflow-hidden">
+    <aside className="sticky top-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#101820]">
 
       {/* Plan header */}
-      <div className="px-5 py-4 border-b border-black/8 dark:border-white/8 bg-foreground/[0.025] dark:bg-white/[0.03]">
+      <div className="border-b border-slate-200 bg-slate-50 px-5 py-4 dark:border-white/10 dark:bg-white/[0.04]">
         <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-foreground/10 dark:bg-white/10 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-white ring-1 ring-slate-200 dark:bg-white/10 dark:ring-white/10 flex items-center justify-center shrink-0">
             <Zap className="w-4 h-4 text-foreground" />
           </div>
           <div className="min-w-0 flex-1">
@@ -69,9 +69,9 @@ export default function OrderSummary({
               {plan.name}
             </p>
             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-foreground/10 text-foreground">
-                {cycle.badge}
-              </span>
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 dark:bg-white/10 dark:text-slate-200">
+                  {cycle.badge}
+                </span>
               {cycle.savings && (
                 <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                   −{cycle.savings}
@@ -88,7 +88,7 @@ export default function OrderSummary({
         <div className="space-y-2">
           {items.map((item) => (
             <div key={item.key} className="flex justify-between items-start gap-3 text-sm">
-              <span className="text-muted-foreground leading-snug">{item.name}</span>
+              <span className="text-slate-600 dark:text-slate-300 leading-snug">{item.name}</span>
               <span className="text-foreground font-medium shrink-0">
                 ${parseFloat(item.price)?.toFixed(2) ?? "0.00"}
               </span>
@@ -97,22 +97,22 @@ export default function OrderSummary({
         </div>
 
         {/* Totals breakdown */}
-        <div className="border-t border-black/8 dark:border-white/8 pt-3 space-y-1.5">
+        <div className="border-t border-slate-200 pt-3 space-y-1.5 dark:border-white/10">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Subtotal</span>
+            <span className="text-slate-600 dark:text-slate-300">Subtotal</span>
             <span className="text-foreground">${totals.subtotal.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">IVA 16%</span>
+            <span className="text-slate-600 dark:text-slate-300">IVA 16%</span>
             <span className="text-foreground">${totals.iva.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between items-baseline pt-1">
+          <div className="flex justify-between items-end pt-2">
             <span className="text-base font-bold text-foreground">Total</span>
             <div className="text-right">
-              <span className="text-lg font-bold text-foreground">
+              <span className="text-3xl font-bold tracking-tight text-foreground">
                 ${totals.total.toFixed(2)}
               </span>
-              <span className="text-xs text-muted-foreground ml-1">
+              <span className="block text-xs font-medium text-slate-500 dark:text-slate-400">
                 MXN/{cycle.label}
               </span>
             </div>
@@ -120,7 +120,7 @@ export default function OrderSummary({
         </div>
 
         {/* Auto-renewal toggle */}
-        <label className="flex items-center gap-3 p-3.5 rounded-xl border border-black/8 dark:border-white/8 bg-black/[0.015] dark:bg-white/[0.02] cursor-pointer hover:border-foreground/20 transition-colors">
+        <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer transition-colors hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-white/20">
           <div className="shrink-0 relative">
             <div
               className={[
@@ -149,7 +149,7 @@ export default function OrderSummary({
               <RefreshCw className="w-3.5 h-3.5 shrink-0" />
               Renovación automática
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+            <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 leading-snug">
               ${totals.total.toFixed(2)} MXN cada {cycle.label}
             </p>
           </div>
@@ -157,21 +157,21 @@ export default function OrderSummary({
 
         {/* Plan features */}
         {plan.features?.length > 0 && (
-          <div className="border-t border-black/8 dark:border-white/8 pt-3 space-y-2">
-            <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+          <div className="border-t border-slate-200 pt-3 space-y-2 dark:border-white/10">
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider dark:text-slate-400">
               Incluye
             </p>
             <div className="space-y-1.5">
               {plan.features.slice(0, 4).map((f, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <Check className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                  <span className="text-xs text-muted-foreground leading-snug">
+                  <span className="text-xs text-slate-600 leading-snug dark:text-slate-300">
                     {typeof f === "string" ? f : f.feature}
                   </span>
                 </div>
               ))}
               {plan.features.length > 4 && (
-                <p className="text-xs text-muted-foreground pl-5">
+                <p className="text-xs text-slate-500 pl-5 dark:text-slate-400">
                   +{plan.features.length - 4} más incluidas
                 </p>
               )}
@@ -184,7 +184,7 @@ export default function OrderSummary({
   <button
     type="button"
     onClick={onNext}
-    className="w-full mt-1 rounded-xl px-5 py-3 bg-foreground text-background font-semibold hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2"
+    className="w-full mt-1 rounded-xl px-5 py-3 bg-[#222] text-white font-semibold hover:brightness-110 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2 dark:bg-white dark:text-[#101214]"
   >
     {step === (isGameServer ? 2 : 1) ? "Continuar al Pago" : "Continuar"}
     <ArrowRight className="w-4 h-4" />
@@ -193,7 +193,7 @@ export default function OrderSummary({
   <button
     type="button"
     onClick={onBack}
-    className="w-full mt-1 rounded-xl px-5 py-3 border border-black/10 dark:border-white/10 text-foreground hover:bg-black/5 dark:hover:bg-white/8 transition font-medium inline-flex items-center justify-center gap-2"
+    className="w-full mt-1 rounded-xl px-5 py-3 border border-slate-200 dark:border-white/10 text-foreground hover:bg-slate-50 dark:hover:bg-white/10 transition font-medium inline-flex items-center justify-center gap-2"
   >
     <ChevronLeft className="w-4 h-4" />
     Volver

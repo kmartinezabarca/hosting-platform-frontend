@@ -8,6 +8,9 @@ i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
+    // Producto temporalmente en español. Se mantiene i18n listo para reactivar selector de idioma.
+    lng: 'es',
+
     // Idioma de respaldo si la detección falla o falta clave
     fallbackLng: 'es',
 

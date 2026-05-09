@@ -25,7 +25,6 @@ export default function CheckoutPage() {
   const { plan, category, billingCycle } = location.state || {};
   const [step, setStep] = useState(1);
   const payRef = useRef(null);
-  console.log("CheckoutPage initialized with:", { plan, category, billingCycle, user });
 
   const [formData, setFormData] = useState({
     firstName: user?.first_name || "",
@@ -335,56 +334,61 @@ export default function CheckoutPage() {
   if (!plan) return null;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 mb-16 space-y-8">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-4"
-      >
-        <button
-          onClick={() => navigate("/client/contract-service")}
-          className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition shrink-0"
-          aria-label="Volver"
+    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-[#f8fafc] to-[#f1f5f9] dark:from-[#0b0f14] dark:to-[#111827]">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-5 flex flex-col gap-4 border-b border-slate-200 pb-5 dark:border-white/10 lg:flex-row lg:items-end lg:justify-between"
         >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-bold text-foreground">Checkout</h1>
-            {plan?.name && (
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-foreground/10 text-foreground">
-                {plan.name}
-              </span>
-            )}
-            {billingCycle && billingCycles[billingCycle] && (
-              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-black/8 dark:bg-white/8 text-muted-foreground">
-                {billingCycles[billingCycle].name}
-              </span>
-            )}
+          <div className="flex items-start gap-4">
+            <button
+              onClick={() => navigate("/client/contract-service")}
+              className="mt-1 rounded-xl border border-slate-200 bg-white p-2 shadow-sm transition hover:bg-slate-50 dark:border-white/10 dark:bg-[#101820] dark:hover:bg-white/10"
+              aria-label="Volver"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300">Finalizar contratación</p>
+              <div className="mt-1 flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl font-bold text-foreground">Checkout</h1>
+                {plan?.name && (
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-200 text-slate-700 dark:bg-white/10 dark:text-slate-200">
+                    {plan.name}
+                  </span>
+                )}
+                {billingCycle && billingCycles[billingCycle] && (
+                  <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-white text-slate-600 ring-1 ring-slate-200 dark:bg-white/10 dark:text-slate-300 dark:ring-white/10">
+                    {billingCycles[billingCycle].name}
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
+                Paso {step} de {isGameServer ? 3 : 2}. Completa los datos necesarios y confirma tu pago.
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Paso {step} de {isGameServer ? 3 : 2} · Finaliza tu contratación
-          </p>
-        </div>
-      </motion.div>
 
-      {/* Stepper */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <Stepper step={step} showInvoice={formData.requireInvoice} />
-      </motion.div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main */}
-        <div className="lg:col-span-2">
+          {/* Stepper */}
           <motion.div
-            initial={{ opacity: 0, x: -12 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#0f1115] p-8"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="overflow-x-auto rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-white/10 dark:bg-[#101820]"
           >
+            <Stepper step={step} showInvoice={formData.requireInvoice} />
+          </motion.div>
+        </motion.div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+          {/* Main */}
+          <div>
+            <motion.div
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-[#101820] lg:p-7"
+            >
             {step === 1 && isGameServer ? (
               <div className="space-y-8">
                 <GameSelector
@@ -445,46 +449,47 @@ export default function CheckoutPage() {
                 selectedAddOns={selectedAddOns as any}
               />
             )}
-          </motion.div>
+            </motion.div>
+          </div>
+
+          {/* Sidebar */}
+          <div>
+            <motion.div
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+            >
+              <OrderSummary
+                plan={plan}
+                billingCycle={billingCycle}
+                billingCycles={billingCycles}
+                formData={formData}
+                setFormData={setFormData}
+                totals={totals}
+                step={step}
+                onNext={onNext}
+                onBack={onBack}
+                payRef={payRef}
+                selectedAddOns={selectedAddOns}
+                addons={addons}
+                isGameServer={isGameServer}
+              />
+            </motion.div>
+          </div>
         </div>
 
-        {/* Sidebar */}
-        <div className="lg:col-span-1">
-          <motion.div
-            initial={{ opacity: 0, x: 12 }}
-            animate={{ opacity: 1, x: 0 }}
-          >
-            <OrderSummary
-              plan={plan}
-              billingCycle={billingCycle}
-              billingCycles={billingCycles}
-              formData={formData}
-              setFormData={setFormData}
-              totals={totals}
-              step={step}
-              onNext={onNext}
-              onBack={onBack}
-              payRef={payRef}
-              selectedAddOns={selectedAddOns}
-              addons={addons}
-              isGameServer={isGameServer}
-            />
-          </motion.div>
-        </div>
+        {/* Payment Method Modal: allow user to add a new card */}
+        {showAddMethodModal && (
+          <AddPaymentMethodModal
+            isOpen={showAddMethodModal}
+            onClose={() => setShowAddMethodModal(false)}
+            onSuccess={(pm) => {
+              queryClient.invalidateQueries({ queryKey: ["paymentMethods"] });
+              setSelectedPaymentMethodId(pm.stripe_payment_method_id);
+            }}
+            isDefault={paymentMethods.length === 0}
+          />
+        )}
       </div>
-
-      {/* Payment Method Modal: allow user to add a new card */}
-      {showAddMethodModal && (
-        <AddPaymentMethodModal
-          isOpen={showAddMethodModal}
-          onClose={() => setShowAddMethodModal(false)}
-          onSuccess={(pm) => {
-            queryClient.invalidateQueries({ queryKey: ["paymentMethods"] });
-            setSelectedPaymentMethodId(pm.stripe_payment_method_id);
-          }}
-          isDefault={paymentMethods.length === 0}
-        />
-      )}
     </div>
   );
 }

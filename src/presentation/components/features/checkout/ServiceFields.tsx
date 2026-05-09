@@ -163,7 +163,7 @@ export default function ServiceFields({ formData, errors, touched, onChange, onB
             <div className="flex items-start gap-1.5 px-1 mt-1">
               <Info className="w-3 h-3 text-muted-foreground mt-0.5" />
               <p className="text-[10px] text-muted-foreground italic">
-                Este nombre te ayudará a organizar tus servicios en el Dashboard.
+                    Este nombre te ayudará a organizar tus servicios en el panel.
               </p>
             </div>
             {touched.serviceName && errors.serviceName && (

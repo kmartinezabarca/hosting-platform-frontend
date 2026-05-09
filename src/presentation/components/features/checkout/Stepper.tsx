@@ -9,16 +9,16 @@ export default function Stepper({ step, showInvoice }) {
   ];
 
   return (
-    <div className="flex items-start w-full max-w-2xl mx-auto">
+    <div className="flex items-start w-full min-w-[520px] lg:min-w-[600px]">
       {steps.map((s, i) => {
         const done = step > s.n;
         const active = step === s.n;
         return (
           <React.Fragment key={s.n}>
-            <div className="flex flex-col items-center gap-2 shrink-0">
+            <div className="flex flex-col items-center gap-1.5 shrink-0">
               <div
                 className={[
-                  "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300",
+                  "w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300",
                   done
                     ? "bg-emerald-500 text-white shadow-sm shadow-emerald-500/40 ring-4 ring-emerald-500/15"
                     : active
@@ -32,13 +32,13 @@ export default function Stepper({ step, showInvoice }) {
                 <p className={`text-xs font-semibold leading-tight ${active || done ? "text-foreground" : "text-muted-foreground"}`}>
                   {s.label}
                 </p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{s.sub}</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{s.sub}</p>
               </div>
             </div>
 
             {i < steps.length - 1 && (
-              <div className="flex-1 mt-5 px-4">
-                <div className="h-px w-full bg-black/10 dark:bg-white/10 relative rounded-full overflow-hidden">
+              <div className="flex-1 mt-4 px-4">
+                <div className="h-px w-full bg-slate-200 dark:bg-white/10 relative rounded-full overflow-hidden">
                   <div
                     className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out ${
                       step > s.n ? "w-full bg-emerald-500" : "w-0"

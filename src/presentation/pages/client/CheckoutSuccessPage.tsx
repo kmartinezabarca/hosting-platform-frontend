@@ -83,7 +83,7 @@ export default function CheckoutSuccessPage() {
     hosting: {
       setupTime: "5-10 minutos",
       accessInfo: "Panel cPanel disponible inmediatamente",
-      nextAction: "Subir archivos vía FTP o File Manager",
+      nextAction: "Subir archivos via FTP o gestor de archivos",
     },
     gameserver: {
       setupTime: "2-5 minutos",

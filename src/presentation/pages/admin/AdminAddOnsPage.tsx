@@ -21,7 +21,7 @@ import { useAdminAddOns, useAdminServicePlans, useAdminCreateAddOn, useAdminUpda
 import { toast } from 'sonner';
 
 const addOnSchema = z.object({
-  slug: z.string().min(1, 'El slug es requerido').regex(/^[a-z0-9-]+$/, 'El slug solo puede contener letras minúsculas, números y guiones'),
+  slug: z.string().min(1, 'El identificador es requerido').regex(/^[a-z0-9-]+$/, 'El identificador solo puede contener letras minúsculas, números y guiones'),
   name: z.string().min(1, 'El nombre es requerido').min(2, 'El nombre debe tener al menos 2 caracteres'),
   description: z.string().optional(),
   price: z.string().min(1, 'El precio es requerido').refine(val => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, 'El precio debe ser un número válido mayor o igual a 0'),
@@ -96,16 +96,16 @@ const AdminAddOnsPage = () => {
       const payload = { ...data, price: parseFloat(data.price || 0) };
       if (editingAddOn) {
         await updateAddOnMutation.mutateAsync({ uuid: editingAddOn.uuid, data: payload });
-        toast.success(`Add-on "${data.name}" actualizado correctamente`);
+        toast.success(`Complemento "${data.name}" actualizado correctamente`);
       } else {
         await createAddOnMutation.mutateAsync(payload);
-        toast.success(`Add-on "${data.name}" creado correctamente`);
+        toast.success(`Complemento "${data.name}" creado correctamente`);
       }
       closeSheet();
       setCurrentPage(1);
       setDataLoaded(false);
     } catch (error) {
-      const message = (error as any)?.response?.data?.message || (error as any)?.message || 'Error al guardar add-on';
+      const message = (error as any)?.response?.data?.message || (error as any)?.message || 'Error al guardar complemento';
       toast.error('Error', { description: message });
     }
   };
@@ -118,12 +118,12 @@ const AdminAddOnsPage = () => {
     setIsActionLoading(true);
     try {
       await deleteAddOnMutation.mutateAsync(confirmModal.addOn?.uuid);
-      toast.success('Add-on eliminado correctamente');
+      toast.success('Complemento eliminado correctamente');
       setConfirmModal({ isOpen: false, addOn: null });
       setCurrentPage(1);
       setDataLoaded(false);
     } catch (error) {
-      const message = (error as any)?.response?.data?.message || (error as any)?.message || 'Error al eliminar add-on';
+      const message = (error as any)?.response?.data?.message || (error as any)?.message || 'Error al eliminar complemento';
       toast.error('Error', { description: message });
     } finally {
       setIsActionLoading(false);
@@ -172,8 +172,8 @@ const AdminAddOnsPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Add-ons</h1>
-          <p className="text-sm text-muted-foreground mt-1">{stats.total} add-ons registrados</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Complementos</h1>
+          <p className="text-sm text-muted-foreground mt-1">{stats.total} complementos registrados</p>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -191,7 +191,7 @@ const AdminAddOnsPage = () => {
           </Button>
           <Button onClick={() => { reset(); setEditingAddOn(null); setIsSheetOpen(true); }} size="sm" disabled={isLoadingState}>
             <Plus className="h-4 w-4 mr-2" />
-            Nuevo Add-on
+            Nuevo complemento
           </Button>
         </div>
       </div>
@@ -250,7 +250,7 @@ const AdminAddOnsPage = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="Buscar add-ons..."
+                  placeholder="Buscar complementos..."
                   value={searchTerm}
                   onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                   className="pl-9 h-9 w-48 sm:w-64 text-foreground"
@@ -282,7 +282,7 @@ const AdminAddOnsPage = () => {
               )}
             </div>
             <div className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{addOns.length}</span> add-ons
+              <span className="font-medium text-foreground">{addOns.length}</span> complementos
             </div>
           </div>
 
@@ -306,7 +306,7 @@ const AdminAddOnsPage = () => {
               <thead>
                 <tr className="border-b border-border dark:border-white/10">
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Add-on
+                    Complemento
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Precio
@@ -356,7 +356,7 @@ const AdminAddOnsPage = () => {
                   <tr>
                     <td colSpan={5} className="px-4 py-12 text-center">
                       <Package className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40" />
-                      <p className="text-sm text-muted-foreground">No se encontraron add-ons</p>
+                      <p className="text-sm text-muted-foreground">No se encontraron complementos</p>
                     </td>
                   </tr>
                 ) : (
@@ -407,7 +407,7 @@ const AdminAddOnsPage = () => {
                                 <Edit className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>Editar add-on</TooltipContent>
+                            <TooltipContent>Editar complemento</TooltipContent>
                           </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -425,7 +425,7 @@ const AdminAddOnsPage = () => {
                                 )}
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>Eliminar add-on</TooltipContent>
+                            <TooltipContent>Eliminar complemento</TooltipContent>
                           </Tooltip>
                         </div>
                       </td>
@@ -497,10 +497,10 @@ const AdminAddOnsPage = () => {
           <div className="flex flex-col h-full">
             <SheetHeader className="px-6 py-4 border-b border-border dark:border-white/10 shrink-0">
               <SheetTitle className="text-xl font-semibold text-foreground">
-                {editingAddOn ? 'Editar Add-on' : 'Nuevo Add-on'}
+                {editingAddOn ? 'Editar complemento' : 'Nuevo complemento'}
               </SheetTitle>
               <SheetDescription className="text-muted-foreground">
-                {editingAddOn ? 'Modifica los datos del add-on' : 'Completa la información para crear un nuevo add-on'}
+                {editingAddOn ? 'Modifica los datos del complemento' : 'Completa la información para crear un nuevo complemento'}
               </SheetDescription>
             </SheetHeader>
 
@@ -540,7 +540,7 @@ const AdminAddOnsPage = () => {
                     {...register('description')}
                     rows={2}
                     className="resize-none bg-background dark:bg-[#0f1115] border-border dark:border-white/10 text-foreground"
-                    placeholder="Descripción del add-on..."
+                    placeholder="Descripción del complemento..."
                   />
                 </div>
 
@@ -571,7 +571,7 @@ const AdminAddOnsPage = () => {
                     id="is_active"
                     {...register('is_active')}
                   />
-                  <Label htmlFor="is_active" className="text-sm font-medium cursor-pointer text-foreground">Add-on Activo</Label>
+                  <Label htmlFor="is_active" className="text-sm font-medium cursor-pointer text-foreground">Complemento activo</Label>
                 </div>
 
                 {servicePlans.length > 0 && (
@@ -606,7 +606,7 @@ const AdminAddOnsPage = () => {
                         {editingAddOn ? 'Guardando...' : 'Creando...'}
                       </>
                     ) : (
-                      editingAddOn ? 'Guardar Cambios' : 'Crear Add-on'
+                      editingAddOn ? 'Guardar cambios' : 'Crear complemento'
                     )}
                   </Button>
                 </div>
@@ -621,11 +621,11 @@ const AdminAddOnsPage = () => {
         isOpen={confirmModal.isOpen}
         onClose={() => setConfirmModal({ isOpen: false, addOn: null })}
         onConfirm={handleConfirmDelete}
-        title="Eliminar Add-on"
+        title="Eliminar complemento"
         confirmText="Eliminar"
         isConfirming={isActionLoading}
       >
-        <p>¿Estás seguro de que quieres eliminar el add-on <strong className="text-foreground">{confirmModal.addOn?.name}</strong>? Esta acción no se puede deshacer.</p>
+        <p>¿Estás seguro de que quieres eliminar el complemento <strong className="text-foreground">{confirmModal.addOn?.name}</strong>? Esta acción no se puede deshacer.</p>
       </ConfirmationModal>
     </div>
   );
