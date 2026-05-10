@@ -87,6 +87,8 @@ const ProfileHeader = ({ profile, onAvatarChange }) => {
               <img
                 src={avatarUrl}
                 alt="Avatar"
+                loading="lazy"
+                referrerPolicy="no-referrer"
                 className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl object-cover border border-slate-200 dark:border-white/10 shadow-sm"
               />
             ) : (

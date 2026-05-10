@@ -1,8 +1,7 @@
 import React from "react";
-import { User, Mail, Phone, Server, Globe, Gamepad2, Info } from "lucide-react";
+import { User, Mail, Phone, Server, Globe, Info } from "lucide-react";
 import { useInputClass } from "./useInputStyles";
 import { cn } from "@shared/utils/utils";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@presentation/components/ui/select";
 
 function SectionHeader({ icon: Icon, label, description }) {
   return (
@@ -111,38 +110,6 @@ export default function ServiceFields({ formData, errors, touched, onChange, onB
         />
         
         <div className="space-y-6">
-          {/* Selector de Juego si es Game Server */}
-          {(category === "game_server" || category === "gameserver") && (
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-muted-foreground uppercase ml-1">
-                Selecciona el Juego <span className="text-primary">*</span>
-              </label>
-              <div className="relative group">
-                <Gamepad2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
-                <Select
-                  value={formData.game || ""}
-                  onValueChange={(value) => handleSelectChange("game", value)}
-                  onOpenChange={(open) => {
-                    if (!open) handleSelectBlur("game");
-                  }}
-                >
-                  <SelectTrigger className={cn(cls("game"), "pl-10 cursor-pointer")}>
-                    <SelectValue placeholder="¿A qué vamos a jugar?" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {gameOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label} - {option.description}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {touched.game && errors.game && (
-                <p className="text-[11px] text-red-500 font-medium ml-1">{errors.game}</p>
-              )}
-            </div>
-          )}
 
           {/* Nombre del Servicio */}
           <div className="space-y-2">

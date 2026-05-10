@@ -5,7 +5,7 @@ import quotationService from '@infrastructure/services/quotationService';
 import { Loader2, CheckCircle, XCircle, Clock, AlertTriangle, Printer, Mail } from 'lucide-react';
 import { Button } from '@presentation/components/ui/button';
 import { Separator } from '@presentation/components/ui/separator';
-import logoROKE from '@presentation/components/features/assets/logo_v4.png';
+import logoROKE from "@presentation/assets/logo_v4.png"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

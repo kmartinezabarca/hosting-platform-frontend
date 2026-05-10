@@ -42,7 +42,7 @@ const AdminCfdiPage           = lazy(() => import('@presentation/pages/admin/Adm
 const AdminQuotationsPage     = lazy(() => import('@presentation/pages/admin/AdminQuotationsPage'));
 const AdminQuotationDetailPage = lazy(() => import('@presentation/pages/admin/AdminQuotationDetailPage'));
 const NotFoundPage           = lazy(() => import('@presentation/pages/NotFoundPage'));
-import logoROKE from "../assets/logo_v4.png";
+import logoROKE from "@presentation/assets/logo_v4.png"
 
 const SIDEBAR_WIDTH = "280px";
 const SIDEBAR_WIDTH_COLLAPSED = "72px";

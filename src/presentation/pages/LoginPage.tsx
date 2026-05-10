@@ -154,7 +154,7 @@ const LoginPage = () => {
 
       const googleUserInfo = await userInfoResponse.json();
       const backendResponse = await loginWithGoogle(googleUserInfo);
-      console.log('Backend response after Google login:', backendResponse);
+     
       await queryClient.refetchQueries({ queryKey: ['auth', 'me'] });
       
       toast.success("¡Acceso con Google exitoso!");
@@ -170,7 +170,8 @@ const LoginPage = () => {
       } else if (needsUsername) {
         navigate('/auth/setup-username');
       } else {
-        window.location.href = redirectTo;
+        // window.location.href = redirectTo;
+        window.location.href ='/client/dashboard';
       }
     } catch (err) {
       const msg = (err as any)?.message || t('auth.errors.loginIncomplete');
@@ -298,7 +299,7 @@ const LoginPage = () => {
                   htmlFor="email"
                   className="block text-sm font-medium text-black/70 ml-1"
                 >
-                  {t('auth.emailLabel')}
+                  {t('auth.email')}
                 </label>
                 <div className="relative group">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black/40 group-focus-within:text-black transition-colors" />
@@ -328,7 +329,7 @@ const LoginPage = () => {
                     htmlFor="password"
                     className="block text-sm font-medium text-black/70"
                   >
-                    {t('auth.passwordLabel')}
+                    {t('auth.password')}
                   </label>
                   <Link
                     to="/forgot-password"
@@ -390,7 +391,7 @@ const LoginPage = () => {
                   `${t('auth.wait')} (${cooldown}s)`
                 ) : (
                   <>
-                    {t('auth.loginButton')}
+                    {t('auth.login')}
                     <ArrowRight className="w-5 h-5" />
                   </>
                 )}
@@ -403,7 +404,7 @@ const LoginPage = () => {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-4 bg-white/50 backdrop-blur-sm text-black/50 font-medium">
-                  {t('auth.orContinueWith')}
+                  {t('common.or')}
                 </span>
               </div>
             </div>
@@ -441,7 +442,7 @@ const LoginPage = () => {
                 to="/register"
                 className="font-bold text-black hover:underline"
               >
-                {t('auth.registerLink')}
+                {t('auth.register')}
               </Link>
             </p>
           </div>
