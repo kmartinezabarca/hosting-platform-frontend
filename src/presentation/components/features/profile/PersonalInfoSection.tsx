@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Phone, MapPin, Save, RotateCcw } from 'lucide-react';
-import CountrySelector from '@presentation/components/features/forms/CountrySelector'; 
+import { Mail, Phone, MapPin, Save, RotateCcw, Loader2 } from 'lucide-react';
+import PhoneInput from '@presentation/components/features/forms/PhoneInput';
 import FormField from '@presentation/components/features/profile/FormField';
 import { cn } from '@shared/utils/utils';
+import { searchPostalCode, mexicanStates } from '@shared/utils/sepomex';
+import { toast } from '@presentation/components/features/ToastProvider';
 
 const PersonalInfoSection = ({ profile, onUpdate, saving }: { profile: any; onUpdate: (data: any) => void; saving?: boolean }) => {
   const [formData, setFormData] = useState<any>(profile);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [hasChanges, setHasChanges] = useState(false);
+  const [loadingPostalCode, setLoadingPostalCode] = useState(false);
 
   useEffect(() => {
     setFormData(profile);
@@ -43,7 +46,7 @@ const PersonalInfoSection = ({ profile, onUpdate, saving }: { profile: any; onUp
         break;
 
       case 'phone':
-        if (value && !/^\+?[\d\s\-\(\)]+$/.test(value)) {
+        if (value && !/^[\d\s\-\(\)]+$/.test(value)) {
           newErrors.phone = 'Formato de teléfono inválido';
         } else {
           delete newErrors.phone;
@@ -70,6 +73,48 @@ const PersonalInfoSection = ({ profile, onUpdate, saving }: { profile: any; onUp
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     validateField(field, value);
+  };
+
+  const handleCountryChange = (countryCode: string) => {
+    setFormData(prev => ({ ...prev, country: countryCode }));
+    // Limpiar datos de dirección si cambia el país
+    setFormData(prev => ({ 
+      ...prev, 
+      postal_code: '',
+      state: '',
+      city: '',
+      address: ''
+    }));
+  };
+
+  // Autocompletar dirección cuando se ingresa un CP en México
+  const handlePostalCodeChange = async (postalCode: string) => {
+    handleChange('postal_code', postalCode);
+
+    if (formData.country === 'MX' && postalCode.length === 5) {
+      setLoadingPostalCode(true);
+      try {
+        // Simulamos un pequeño delay para que se vea como si estuviera buscando
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        const data = searchPostalCode(postalCode);
+        
+        if (data) {
+          setFormData(prev => ({
+            ...prev,
+            state: data.estado,
+            city: data.ciudad,
+          }));
+          toast.success(`CP encontrado: ${data.estado}, ${data.ciudad}`);
+        } else {
+          toast.warning('Código postal no encontrado en la base de datos');
+        }
+      } catch (error) {
+        toast.error('Error al buscar el código postal');
+      } finally {
+        setLoadingPostalCode(false);
+      }
+    }
   };
 
   const handleSubmit = (e) => {
@@ -155,30 +200,15 @@ const PersonalInfoSection = ({ profile, onUpdate, saving }: { profile: any; onUp
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            label="Teléfono"
-            type="tel"
+        <div className="space-y-6">
+          <PhoneInput
             value={formData.phone || ""}
-            onChange={(e) => handleChange("phone", e.target.value)}
-            placeholder="+52 55 1234 5678"
-            icon={Phone}
+            onChange={(phone) => handleChange("phone", phone)}
+            onCountryChange={handleCountryChange}
+            selectedCountry={formData.country || "MX"}
+            placeholder="Número de teléfono"
             error={errors.phone}
           />
-
-          <div>
-            <label
-              htmlFor="country-selector"
-              className="block text-sm font-medium text-foreground mb-2"
-            >
-              País
-            </label>
-            <CountrySelector
-              id="country-selector"
-              value={formData.country || "MX"}
-              onChange={(countryCode) => handleChange("country", countryCode)}
-            />
-          </div>
         </div>
       </div>
 
@@ -207,7 +237,62 @@ const PersonalInfoSection = ({ profile, onUpdate, saving }: { profile: any; onUp
             icon={MapPin}
           />
 
+          {/* Código Postal con búsqueda automática */}
+          <div className="relative">
+            <FormField
+              label="Código Postal"
+              value={formData.postal_code || ""}
+              onChange={(e) => handlePostalCodeChange(e.target.value)}
+              placeholder={formData.country === "MX" ? "12345" : "12345-6789"}
+              error={errors.postal_code}
+              disabled={loadingPostalCode}
+            />
+            {loadingPostalCode && (
+              <div className="absolute right-3 top-10 text-slate-400">
+                <Loader2 className="w-4 h-4 animate-spin" />
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Estado/Provincia */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Estado/Provincia
+              </label>
+              {formData.country === "MX" ? (
+                <select
+                  value={formData.state || ""}
+                  onChange={(e) => handleChange("state", e.target.value)}
+                  className={cn(
+                    "w-full px-3 py-2.5 rounded-lg border",
+                    "bg-card border-border hover:border-border/80",
+                    "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50",
+                    "transition-colors"
+                  )}
+                >
+                  <option value="">Selecciona un estado</option>
+                  {mexicanStates.map(state => (
+                    <option key={state} value={state}>{state}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={formData.state || ""}
+                  onChange={(e) => handleChange("state", e.target.value)}
+                  placeholder="Estado o provincia"
+                  className={cn(
+                    "w-full px-3 py-2.5 rounded-lg border",
+                    "bg-card border-border hover:border-border/80",
+                    "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50",
+                    "transition-colors placeholder:text-muted-foreground"
+                  )}
+                />
+              )}
+            </div>
+
+            {/* Ciudad */}
             <FormField
               label="Ciudad"
               value={formData.city || ""}
@@ -215,20 +300,28 @@ const PersonalInfoSection = ({ profile, onUpdate, saving }: { profile: any; onUp
               placeholder="Tu ciudad"
             />
 
-            <FormField
-              label="Estado/Provincia"
-              value={formData.state || ""}
-              onChange={(e) => handleChange("state", e.target.value)}
-              placeholder="Estado o provincia"
-            />
-
-            <FormField
-              label="Código Postal"
-              value={formData.postal_code || ""}
-              onChange={(e) => handleChange("postal_code", e.target.value)}
-              placeholder={formData.country === "MX" ? "12345" : "12345-6789"}
-              error={errors.postal_code}
-            />
+            {/* País */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                País
+              </label>
+              <select
+                value={formData.country || "MX"}
+                onChange={(e) => handleCountryChange(e.target.value)}
+                className={cn(
+                  "w-full px-3 py-2.5 rounded-lg border",
+                  "bg-card border-border hover:border-border/80",
+                  "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50",
+                  "transition-colors"
+                )}
+              >
+                <option value="MX">México</option>
+                <option value="US">Estados Unidos</option>
+                <option value="ES">España</option>
+                <option value="CO">Colombia</option>
+                <option value="AR">Argentina</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
