@@ -52,6 +52,11 @@ const profileService = {
     const response = await ApiService.put<ApiResponse<{ message: string }>>('/profile/password', payload);
     return response.data;
   },
+
+  getPostalCode: async (code: string, country: string = 'MX'): Promise<ApiResponse<any>> => {
+    const response = await ApiService.get<ApiResponse<any>>(`/postal-codes/${code}?country=${country}`);
+    return response.data;
+  },
 };
 
 export default profileService;

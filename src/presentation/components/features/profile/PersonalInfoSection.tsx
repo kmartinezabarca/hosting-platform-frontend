@@ -3,7 +3,8 @@ import { Mail, Phone, MapPin, Save, RotateCcw, Loader2 } from 'lucide-react';
 import PhoneInput from '@presentation/components/features/forms/PhoneInput';
 import FormField from '@presentation/components/features/profile/FormField';
 import { cn } from '@shared/utils/utils';
-import { searchPostalCode, mexicanStates } from '@shared/utils/sepomex';
+import { mexicanStates } from '@shared/utils/sepomex';
+import profileService from '@infrastructure/services/profileService';
 import { toast } from '@presentation/components/features/ToastProvider';
 
 const PersonalInfoSection = ({ profile, onUpdate, saving }: { profile: any; onUpdate: (data: any) => void; saving?: boolean }) => {
@@ -94,23 +95,23 @@ const PersonalInfoSection = ({ profile, onUpdate, saving }: { profile: any; onUp
     if (formData.country === 'MX' && postalCode.length === 5) {
       setLoadingPostalCode(true);
       try {
-        // Simulamos un pequeño delay para que se vea como si estuviera buscando
-        await new Promise(resolve => setTimeout(resolve, 300));
+        const response = await profileService.getPostalCode(postalCode, 'MX');
         
-        const data = searchPostalCode(postalCode);
-        
-        if (data) {
+        if (response.success && response.data) {
+          const { state, city } = response.data;
           setFormData(prev => ({
             ...prev,
-            state: data.estado,
-            city: data.ciudad,
+            state: state,
+            city: city,
           }));
-          toast.success(`CP encontrado: ${data.estado}, ${data.ciudad}`);
-        } else {
-          toast.warning('Código postal no encontrado en la base de datos');
+          toast.success(`CP encontrado: ${state}, ${city}`);
         }
-      } catch (error) {
-        toast.error('Error al buscar el código postal');
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          toast.warning('Código postal no encontrado');
+        } else {
+          toast.error('Error al buscar el código postal');
+        }
       } finally {
         setLoadingPostalCode(false);
       }
