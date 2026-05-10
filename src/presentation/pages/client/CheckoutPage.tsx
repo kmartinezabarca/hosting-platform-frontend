@@ -25,7 +25,7 @@ export default function CheckoutPage() {
 
   const { plan, category, billingCycle } = location.state || {};
   const [step, setStep] = useState(1);
-  const payRef = useRef(null);
+  const payRef = useRef<HTMLButtonElement>(null);
 
   const [formData, setFormData] = useState({
     firstName: user?.first_name || "",
@@ -365,7 +365,7 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Column: Steps */}
           <div className="lg:col-span-8 space-y-8">
-            <Stepper step={step} isGameServer={isGameServer} />
+            <Stepper step={step} showInvoice={formData.requireInvoice} />
 
             {/* STEP 1: Game Selection (Only for Game Servers) */}
             {isGameServer && step === 1 && (
@@ -439,7 +439,7 @@ export default function CheckoutPage() {
                   selectedPaymentMethodId={selectedPaymentMethodId}
                   setSelectedPaymentMethodId={setSelectedPaymentMethodId}
                   onAddMethod={() => setShowAddMethodModal(true)}
-                  selectedAddOns={selectedAddOns}
+                  selectedAddOns={selectedAddOns as any}
                 />
               </motion.div>
             )}
