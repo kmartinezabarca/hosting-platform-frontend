@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Camera, CheckCircle, AlertTriangle, Shield, Zap } from 'lucide-react';
+import { Camera, CheckCircle, AlertTriangle, Shield, Zap, Calendar } from 'lucide-react';
 import ReactCountryFlag from "react-country-flag";
 import { countryName } from '@shared/utils/geo';
 import { cn } from '@shared/utils/utils';
 import AvatarUploader from '@presentation/components/features/profile/AvatarUploader';
 
-const StatBox = ({ value, label, icon: Icon }) => (
+const StatBox = ({ value, label, icon: Icon = null }) => (
   <div className="flex flex-col items-center sm:items-start">
     <div className="flex items-center gap-2">
       {Icon && <Icon className="w-4 h-4 text-slate-400" />}
@@ -128,6 +128,7 @@ const ProfileHeader = ({ profile, onAvatarChange }) => {
               <StatBox 
                 value={profile?.years_with_us || 0} 
                 label="Años"
+                icon={Calendar}
               />
               <StatBox 
                 value={profile?.active_services || 0} 

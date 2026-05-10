@@ -4,7 +4,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Eye, EyeOff, Mail, Lock, User, ArrowRight, AtSign,
-  Shield, Zap, Globe, X, AlertCircle, CheckCircle2, Loader2
+  X, AlertCircle, CheckCircle2, Loader2
 } from 'lucide-react';
 import { useRegister, useLoginWithGoogle } from '@application/hooks/useAuth';
 import authService from '@infrastructure/services/authService';
@@ -358,7 +358,9 @@ const RegisterPage = () => {
           <div className="space-y-6">
             <div className="flex items-center space-x-4">
               <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
-                <Shield className="w-6 h-6" />
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Seguridad de Nivel Empresarial</h3>
@@ -367,7 +369,9 @@ const RegisterPage = () => {
             </div>
             <div className="flex items-center space-x-4">
               <div className="p-3 bg-white/10 rounded-xl backdrop-blur-sm">
-                <Zap className="w-6 h-6" />
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                </svg>
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Rendimiento sin Compromisos</h3>

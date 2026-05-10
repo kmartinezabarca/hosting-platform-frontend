@@ -2,8 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useSessions, useLogoutSession, useLogoutOtherSessions } from '@application/hooks/useSessions';
 import {
   MonitorSmartphone, Smartphone, Tablet, Monitor,
-  MapPin, Clock, LogOut, AlertTriangle, ShieldAlert,
-  Zap, ShieldCheck
+  MapPin, Clock, LogOut, AlertTriangle, ShieldAlert
 } from 'lucide-react';
 import { cn } from '@shared/utils/utils';
 import Pagination from '@presentation/components/ui/pagination-v2';

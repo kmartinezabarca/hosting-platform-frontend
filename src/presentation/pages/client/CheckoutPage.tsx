@@ -33,7 +33,7 @@ export default function CheckoutPage() {
     email: user?.email || "",
     phone: user?.phone || "",
     serviceName: "",
-    selectedEggId: null,
+    selectedEggId: null as string | number | null,
     domain: "",
     game: "",
     autoRenew: true,
@@ -50,12 +50,12 @@ export default function CheckoutPage() {
     invoiceConstanciaB64: "",
   });
 
-  const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [addons, setAddons] = useState<any[]>([]);
-  const [selectedAddOns, setSelectedAddOns] = useState<any[]>([]);
+  const [selectedAddOns, setSelectedAddOns] = useState<(string | number)[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
-  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState(null);
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string | null>(null);
   const [showAddMethodModal, setShowAddMethodModal] = useState(false);
 
   useEffect(() => {
@@ -303,94 +303,95 @@ export default function CheckoutPage() {
     // Paso 1 game server → solo validar egg seleccionado
     if (step === 1 && isGameServer) {
       if (!formData.selectedEggId) {
-        setErrors(prev => ({ ...prev, selectedEggId: "Debes seleccionar un juego" }));
-        setTouched(prev => ({ ...prev, selectedEggId: true }));
-        toast.warning("Debes seleccionar un juego para continuar");
+        setErrors((prev) => ({ ...prev, selectedEggId: "Debes seleccionar un juego" }));
+        toast.warning("Selecciona un juego para continuar");
         return;
       }
       setStep(2);
+      window.scrollTo(0, 0);
       return;
     }
 
-    // Paso 1 no-game (o paso 2 game) → validar campos de servicio
-    const isInfoStep = (!isGameServer && step === 1) || (isGameServer && step === 2);
-    if (isInfoStep) {
+    // Paso 1 (otros) o Paso 2 (game server) → validar formulario
+    const isFormStep = isGameServer ? step === 2 : step === 1;
+    if (isFormStep) {
       if (validateStep1()) {
         setStep(step + 1);
+        window.scrollTo(0, 0);
       }
       return;
     }
 
-    setStep(step + 1);
+    // Último paso → disparar pago
+    if (payRef.current) {
+      payRef.current.click();
+    }
   };
 
   const onBack = () => {
-    if (step > 1) setStep(step - 1);
-    else navigate(-1);
+    if (step > 1) {
+      setStep(step - 1);
+      window.scrollTo(0, 0);
+    } else {
+      navigate(-1);
+    }
   };
 
-  const handleSuccess = (res: any) => {
-    console.log("Checkout success:", res);
-    queryClient.invalidateQueries({ queryKey: ["services"] });
-    toast.success("¡Servicio contratado con éxito!", "Estamos configurando tu instancia.");
-    navigate("/client/services", { replace: true });
-  };
-
-  const handleError = (msg: string) => {
-    console.error("Checkout error:", msg);
-    toast.error("Error al procesar el pago", msg);
-  };
-
-  const handleAddMethodSuccess = () => {
-    setShowAddMethodModal(false);
-    queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
-    toast.success("Método de pago agregado correctamente");
-  };
+  if (!plan) return null;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#0b0f14]">
-      {/* Header / Stepper */}
-      <header className="sticky top-0 z-30 bg-white/80 dark:bg-[#101820]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10">
-        <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between gap-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0a0c10] pb-20">
+      {/* Header */}
+      <header className="bg-white dark:bg-[#101820] border-b border-slate-200 dark:border-white/10 sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition"
+            className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Volver</span>
+            Volver
           </button>
-
-          <div className="flex-1 flex justify-center overflow-x-auto no-scrollbar">
-            <Stepper step={step} showInvoice={formData.requireInvoice} />
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
+              <span className="text-white font-bold text-xs">R</span>
+            </div>
+            <span className="font-bold text-sm tracking-tight">ROKE INDUSTRIES</span>
           </div>
-
-          <div className="w-20 hidden sm:block" />
+          <div className="w-20" /> {/* Spacer */}
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 lg:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 lg:gap-12 items-start">
-          {/* Left Column: Forms */}
-          <div className="space-y-8">
-            {/* Step 1: Game Selection (Only for Game Servers) */}
-            {step === 1 && isGameServer && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+      <main className="max-w-7xl mx-auto px-4 pt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Column: Steps */}
+          <div className="lg:col-span-8 space-y-8">
+            <Stepper step={step} isGameServer={isGameServer} />
+
+            {/* STEP 1: Game Selection (Only for Game Servers) */}
+            {isGameServer && step === 1 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
                 <GameSelector
                   gameNests={gameNests}
                   selectedEggId={formData.selectedEggId}
-                  onSelect={(id) => {
+                  onSelectEgg={(id) => {
                     setFormData(p => ({ ...p, selectedEggId: id }));
                     setErrors(prev => ({ ...prev, selectedEggId: "" }));
                   }}
-                  loading={gameEggsLoading}
-                  error={errors["selectedEggId"]}
+                  isLoading={gameEggsLoading}
                 />
               </motion.div>
             )}
 
-            {/* Step 1 (Non-Game) or Step 2 (Game): Service Info */}
+            {/* STEP 1 (Normal) or STEP 2 (Game Server): Service Details */}
             {((!isGameServer && step === 1) || (isGameServer && step === 2)) && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-10">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-8"
+              >
                 <ServiceFields
                   formData={formData}
                   errors={errors}
@@ -403,16 +404,8 @@ export default function CheckoutPage() {
                 <Addons
                   addons={addons}
                   selectedAddOns={selectedAddOns}
-                  onToggle={(id) => {
-                    setSelectedAddOns(prev =>
-                      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-                    );
-                    const add = addons.find(a => a.id === id || a.uuid === id);
-                    if (selectedAddOns.includes(id)) {
-                      toast.info(`Removido: ${add?.name || 'Addon'}`);
-                    } else {
-                      toast.success(`Agregado: ${add?.name || 'Addon'}`);
-                    }
+                  onChange={(selected) => {
+                    setSelectedAddOns(selected);
                   }}
                 />
 
@@ -422,28 +415,17 @@ export default function CheckoutPage() {
                   touched={touched}
                   onChange={handleInputChange}
                   onBlur={handleBlur}
-                  onClearConstancia={clearConstancia}
-                  onProfileSelect={(profile) => {
-                    setFormData(p => ({
-                      ...p,
-                      invoiceProfileUuid: profile.uuid,
-                      invoicePersonType: profile.person_type,
-                      invoiceRfc: profile.rfc,
-                      invoiceName: profile.name,
-                      invoiceZip: profile.zip,
-                      invoiceRegimen: profile.regimen,
-                      invoiceUsoCfdi: profile.uso_cfdi,
-                      invoiceConstanciaName: profile.constancia_name || "",
-                    }));
-                    toast.success("Perfil fiscal aplicado");
-                  }}
+                  clearConstancia={clearConstancia}
                 />
               </motion.div>
             )}
 
-            {/* Final Step: Review & Pay */}
-            {((!isGameServer && step === 2) || (isGameServer && step === 3)) && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            {/* FINAL STEP: Review & Pay */}
+            {step === (isGameServer ? 3 : 2) && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
                 <ReviewAndPay
                   plan={plan}
                   billingCycle={billingCycle}
@@ -451,8 +433,8 @@ export default function CheckoutPage() {
                   formData={formData}
                   totals={totals}
                   payRef={payRef}
-                  onSuccess={handleSuccess}
-                  onError={handleError}
+                  onSuccess={() => navigate("/client/services")}
+                  onError={(err) => toast.error(err)}
                   paymentMethods={paymentMethods}
                   selectedPaymentMethodId={selectedPaymentMethodId}
                   setSelectedPaymentMethodId={setSelectedPaymentMethodId}
@@ -461,32 +443,24 @@ export default function CheckoutPage() {
                 />
               </motion.div>
             )}
-
-            {/* Navigation Buttons (Only if not on last step) */}
-            {step < (isGameServer ? 3 : 2) && (
-              <div className="flex justify-end pt-4">
-                <button
-                  onClick={onNext}
-                  className="px-8 py-4 bg-foreground text-background rounded-2xl font-bold hover:opacity-90 transition shadow-lg shadow-foreground/10"
-                >
-                  Continuar al siguiente paso
-                </button>
-              </div>
-            )}
           </div>
 
           {/* Right Column: Summary */}
-          <aside className="sticky top-32">
+          <aside className="lg:col-span-4">
             <OrderSummary
               plan={plan}
               billingCycle={billingCycle}
               billingCycles={billingCycles}
               formData={formData}
+              setFormData={setFormData}
               totals={totals}
+              step={step}
+              onNext={onNext}
+              onBack={onBack}
+              payRef={payRef}
               addons={addons}
               selectedAddOns={selectedAddOns}
-              onNext={onNext}
-              showButton={step < (isGameServer ? 3 : 2)}
+              isGameServer={isGameServer}
             />
           </aside>
         </div>
@@ -495,7 +469,12 @@ export default function CheckoutPage() {
       <AddPaymentMethodModal
         isOpen={showAddMethodModal}
         onClose={() => setShowAddMethodModal(false)}
-        onSuccess={handleAddMethodSuccess}
+        onSuccess={(newPm) => {
+          queryClient.invalidateQueries({ queryKey: ["payment-methods"] });
+          setSelectedPaymentMethodId(newPm.id);
+          setShowAddMethodModal(false);
+          toast.success("Tarjeta agregada correctamente");
+        }}
       />
     </div>
   );
