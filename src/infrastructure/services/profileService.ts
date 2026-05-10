@@ -53,7 +53,7 @@ const profileService = {
     return response.data;
   },
 
-  getPostalCode: async (code: string, country: string = 'MX'): Promise<ApiResponse<any>> => {
+  getPostalCode: async (code: string, country = 'MX'): Promise<ApiResponse<any>> => {
     const response = await ApiService.get<ApiResponse<any>>(`/postal-codes/${code}?country=${country}`);
     return response.data;
   },

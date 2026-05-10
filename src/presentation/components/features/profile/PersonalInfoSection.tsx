@@ -97,7 +97,7 @@ const PersonalInfoSection = ({ profile, onUpdate, saving }: { profile: any; onUp
       try {
         const response = await profileService.getPostalCode(postalCode, 'MX');
         
-        if (response.success && response.data) {
+        if (response.data) {
           const { state, city } = response.data;
           setFormData(prev => ({
             ...prev,
