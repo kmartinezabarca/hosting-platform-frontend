@@ -36,7 +36,7 @@ import {
   Check
 } from 'lucide-react';
 import usersService from '@infrastructure/services/userService';
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 
 const generateSecurePassword = (options: { length?: number; uppercase?: boolean; lowercase?: boolean; numbers?: boolean; symbols?: boolean } = {}) => {
   const { length = 16, uppercase = true, lowercase = true, numbers = true, symbols = true } = options;

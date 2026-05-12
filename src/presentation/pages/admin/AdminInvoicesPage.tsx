@@ -15,7 +15,7 @@ import { Skeleton } from '@presentation/components/ui/skeleton';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@presentation/components/ui/tooltip';
 import { StatCard } from '@presentation/components/ui/stat-card';
 import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 import { 
   Plus,
   Edit,

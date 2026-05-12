@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@presentation/components/features/ToastProvider";
 
 // Componentes del perfil
 import ProfileHeader from '@presentation/components/features/profile/ProfileHeader';

@@ -18,7 +18,7 @@ import {
   Plus, Edit, Trash2, Search, Eye, EyeOff, DollarSign, Package, RefreshCw, Sparkles, Filter, X, Loader2
 } from 'lucide-react';
 import { useAdminAddOns, useAdminServicePlans, useAdminCreateAddOn, useAdminUpdateAddOn, useAdminDeleteAddOn } from '@application/hooks/useAdminAddOns';
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 
 const addOnSchema = z.object({
   slug: z.string().min(1, 'El identificador es requerido').regex(/^[a-z0-9-]+$/, 'El identificador solo puede contener letras minúsculas, números y guiones'),

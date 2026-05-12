@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Square, RotateCcw, Zap, Loader2, AlertTriangle, ShieldAlert, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 import { useGameServerPower, useGameServerUsage } from '@application/hooks/useGameServer';
 import { cn } from '@shared/utils/utils';
 

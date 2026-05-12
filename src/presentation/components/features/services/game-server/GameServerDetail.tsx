@@ -6,7 +6,7 @@ import {
   Copy, Check, Terminal,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@presentation/components/features/ToastProvider";
 import { cn } from "@shared/utils/utils";
 import PowerControlCard from "./PowerControlCard";
 import MetricsCard from "./MetricsCard";

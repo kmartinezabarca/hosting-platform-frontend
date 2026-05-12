@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@presentation/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@presentation/components/ui/dialog';
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 import { cn } from '@shared/utils/utils';
 
 // Convierte el crop a una imagen recortada en base64

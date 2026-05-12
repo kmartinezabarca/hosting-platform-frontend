@@ -31,7 +31,7 @@ import {
   useReactivateAdminService,
 } from '@application/hooks/useAdminServices';
 import { useServicePlans } from '@application/hooks/useServicePlans';
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 
 const serviceSchema = z.object({
   user_id: z.string().min(1, 'Selecciona un usuario'),

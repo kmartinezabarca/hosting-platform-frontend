@@ -8,7 +8,7 @@ import {
   DialogDescription,
 } from '@presentation/components/ui/dialog';
 import { useFixGameServerJava } from '@application/hooks/useGameServer';
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 import { cn } from '@shared/utils/utils';
 
 // ── Types ─────────────────────────────────────────────────────────────────────

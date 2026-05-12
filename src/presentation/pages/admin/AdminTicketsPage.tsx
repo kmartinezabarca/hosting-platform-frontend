@@ -20,7 +20,7 @@ import {
   MessageSquare, ArrowUp, ArrowDown, Minus, RefreshCw, Ticket, Zap, Filter, X, Loader2, User
 } from 'lucide-react';
 import adminTicketsService from '@infrastructure/services/adminTicketsService';
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 
 const ticketSchema = z.object({
   user_id: z.string().min(1, 'El ID de usuario es requerido'),

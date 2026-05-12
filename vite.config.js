@@ -71,7 +71,7 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             vendor: ['react', 'react-dom', 'react-router-dom'],
             query:  ['@tanstack/react-query'],
-            ui:     ['framer-motion', 'lucide-react', 'sonner'],
+            ui:     ['framer-motion', 'lucide-react', 'sileo'],
             radix: [
               '@radix-ui/react-dialog',
               '@radix-ui/react-select',

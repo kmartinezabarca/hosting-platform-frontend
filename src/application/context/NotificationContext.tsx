@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 import { useAuth } from '@application/context/AuthContext';
 import { getEcho } from '@infrastructure/services/echoService';
 

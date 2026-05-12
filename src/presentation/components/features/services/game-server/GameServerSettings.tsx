@@ -20,7 +20,7 @@ import {
   Zap,
   RefreshCw,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@presentation/components/features/ToastProvider";
 import { cn } from "@shared/utils/utils";
 import {
   useGameServerConfiguration,

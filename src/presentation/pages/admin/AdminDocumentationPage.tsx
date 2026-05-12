@@ -26,7 +26,7 @@ import {
   ArrowLeft,
   Save
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@presentation/components/features/ToastProvider";
 import documentationAdminService from "@infrastructure/services/documentationAdminService";
 
 const docSchema = z.object({
