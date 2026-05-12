@@ -749,7 +749,7 @@ const AdminLayout = () => {
           id="admin-main-content"
           tabIndex={-1}
           className={cn(
-            "flex-1 min-h-[calc(100vh-4rem)] overflow-y-auto pt-16 outline-none",
+            "flex-1 min-h-[calc(100vh-4rem)] overflow-y-auto outline-none",
             isSidebarCollapsed ? "lg:ml-[72px]" : "lg:ml-[280px]"
           )}
         >

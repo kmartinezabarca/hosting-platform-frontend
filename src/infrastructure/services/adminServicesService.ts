@@ -48,17 +48,17 @@ const adminServicesService = {
   },
 
   changeStatus: async (id: string | number, status: ServiceStatus): Promise<ApiResponse<Service>> => {
-    const response = await ApiService.patch<ApiResponse<Service>>(`/admin/services/${id}/status`, { status });
+    const response = await ApiService.put<ApiResponse<Service>>(`/admin/services/${id}/status`, { status });
     return response.data;
   },
 
   suspend: async (id: string | number, reason?: string): Promise<ApiResponse<Service>> => {
-    const response = await ApiService.patch<ApiResponse<Service>>(`/admin/services/${id}/suspend`, { reason });
+    const response = await ApiService.put<ApiResponse<Service>>(`/admin/services/${id}/status`, { status: 'suspended', reason });
     return response.data;
   },
 
   reactivate: async (id: string | number): Promise<ApiResponse<Service>> => {
-    const response = await ApiService.patch<ApiResponse<Service>>(`/admin/services/${id}/reactivate`);
+    const response = await ApiService.put<ApiResponse<Service>>(`/admin/services/${id}/status`, { status: 'active' });
     return response.data;
   },
 

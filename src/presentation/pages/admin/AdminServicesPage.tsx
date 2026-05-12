@@ -23,6 +23,7 @@ import {
 import usersService from '@infrastructure/services/userService';
 import {
   useAdminServices,
+  useAdminService,
   useCreateAdminService,
   useUpdateAdminService,
   useDeleteAdminService,
@@ -119,6 +120,8 @@ const AdminServicesPage = () => {
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingService, setEditingService] = useState<any>(null);
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+  const [isSheetReady, setIsSheetReady] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; action: any; service: any }>({ isOpen: false, action: null, service: null });
   const [isActionLoading, setIsActionLoading] = useState(false);
 
@@ -157,6 +160,92 @@ const AdminServicesPage = () => {
   const services = servicesData?.services || [];
   const pagination = servicesData?.pagination;
   const plans = plansData?.data || plansData || [];
+
+  // Detail hook — only fires when editing
+  const { data: serviceDetailRaw, isLoading: detailLoading } = useAdminService(editingServiceId);
+
+  // Populate form when detail loads
+  useEffect(() => {
+    if (!editingServiceId || !serviceDetailRaw) return;
+    const svc = (serviceDetailRaw as any)?.data ?? serviceDetailRaw;
+    if (!svc?.id) return;
+    setEditingService(svc);
+    const foundPlan = (plansData?.data || plansData || []).find((p: any) => p.id === svc.plan?.id);
+    setSelectedPlan(foundPlan ?? svc.plan ?? null);
+    setSelectedUser(svc.user ?? null);
+    setUserSearch(svc.user ? `${svc.user.first_name ?? ''} ${svc.user.last_name ?? ''}`.trim() : '');
+
+    // Merge stored config + connection_details first
+    const cfgMerged: Record<string, any> = {
+      ...(svc.configuration || {}),
+      ...(svc.connection_details || {}),
+    };
+
+    // Laravel serialises relations as snake_case in JSON
+    const egg = svc.selected_egg ?? svc.selectedEgg;
+    const eggDisplayName = egg?.display_name || egg?.egg_name;
+    if (eggDisplayName && !cfgMerged.game) {
+      cfgMerged.game = eggDisplayName;
+    }
+
+    // max_players lives directly on the service row
+    if (svc.max_players != null && cfgMerged.max_players == null) {
+      cfgMerged.max_players = svc.max_players;
+    }
+    // pterodactyl_uuid from connection_details → pterodactyl_id config key
+    if (cfgMerged.pterodactyl_uuid && !cfgMerged.pterodactyl_id) {
+      cfgMerged.pterodactyl_id = cfgMerged.pterodactyl_uuid;
+    }
+
+    // Backfill resource values from plan.specifications.
+    // Specs are human-readable strings like "8 GB RAM", "100 GB SSD", "4 vCPU"
+    const specs = svc.plan?.specifications ?? {};
+    const catSlug = svc.plan?.category?.slug ?? '';
+
+    const parseGb = (v: any): number | null => {
+      if (v == null) return null;
+      if (typeof v === 'number') return v;
+      const m = String(v).match(/(\d+(?:\.\d+)?)/);
+      return m ? parseFloat(m[1]) : null;
+    };
+    const parseMb = (v: any): number | null => {
+      const gb = parseGb(v);
+      return gb != null ? Math.round(gb * 1024) : null;
+    };
+    const parseCores = (v: any): number | null => {
+      if (v == null) return null;
+      if (typeof v === 'number') return v;
+      const m = String(v).match(/(\d+)/);
+      return m ? parseInt(m[1]) : null;
+    };
+
+    if (catSlug === 'gameserver') {
+      if (cfgMerged.ram_mb == null) { const v = parseMb(specs.ram); if (v != null) cfgMerged.ram_mb = v; }
+      if (cfgMerged.disk_gb == null) { const v = parseGb(specs.storage); if (v != null) cfgMerged.disk_gb = v; }
+    } else if (catSlug === 'vps') {
+      if (cfgMerged.ram_gb == null)   { const v = parseGb(specs.ram);     if (v != null) cfgMerged.ram_gb   = v; }
+      if (cfgMerged.disk_gb == null)  { const v = parseGb(specs.storage); if (v != null) cfgMerged.disk_gb  = v; }
+      if (cfgMerged.cpu_cores == null){ const v = parseCores(specs.cpu);  if (v != null) cfgMerged.cpu_cores = v; }
+    } else if (catSlug === 'hosting') {
+      if (cfgMerged.disk_gb == null) { const v = parseGb(specs.storage); if (v != null) cfgMerged.disk_gb = v; }
+    } else if (catSlug === 'database') {
+      if (cfgMerged.storage_gb == null) { const v = parseGb(specs.storage); if (v != null) cfgMerged.storage_gb = v; }
+    }
+
+    setConfiguration(cfgMerged);
+    reset({
+      user_id: svc.user_id?.toString() || '',
+      service_plan_id: svc.plan?.id?.toString() || '',
+      name: svc.name || '',
+      domain: svc.domain || '',
+      status: svc.status || 'active',
+      billing_cycle: svc.billing_cycle || 'monthly',
+      price: svc.price?.toString() || '',
+      setup_fee: svc.setup_fee?.toString() || '0',
+      notes: svc.notes || '',
+    });
+    setIsSheetReady(true);
+  }, [serviceDetailRaw, editingServiceId, reset, plansData]);
 
   const createServiceMutation = useCreateAdminService();
   const updateServiceMutation = useUpdateAdminService();
@@ -249,7 +338,7 @@ const AdminServicesPage = () => {
       if (showDomain && data.domain?.trim()) payload.domain = data.domain.trim();
 
       if (editingService) {
-        await updateServiceMutation.mutateAsync({ id: editingService.id, serviceData: payload });
+        await updateServiceMutation.mutateAsync({ id: editingService.uuid, serviceData: payload });
         toast.success('Servicio actualizado correctamente');
       } else {
         await createServiceMutation.mutateAsync(payload as any);
@@ -271,14 +360,16 @@ const AdminServicesPage = () => {
   const handleConfirmAction = () => {
     if (!confirmModal.service) return;
     setIsActionLoading(true);
-    if (confirmModal.action === 'delete') deleteServiceMutation.mutate(confirmModal.service.id);
-    else if (confirmModal.action === 'suspend') suspendServiceMutation.mutate({ id: confirmModal.service.id, reason: 'Suspendido por admin' });
-    else if (confirmModal.action === 'reactivate') reactivateServiceMutation.mutate(confirmModal.service.id);
+    if (confirmModal.action === 'delete') deleteServiceMutation.mutate(confirmModal.service.uuid);
+    else if (confirmModal.action === 'suspend') suspendServiceMutation.mutate({ id: confirmModal.service.uuid, reason: 'Suspendido por admin' });
+    else if (confirmModal.action === 'reactivate') reactivateServiceMutation.mutate(confirmModal.service.uuid);
   };
 
   const closeSheet = () => {
     setIsSheetOpen(false);
     setEditingService(null);
+    setEditingServiceId(null);
+    setIsSheetReady(false);
     setSelectedUser(null);
     setSelectedPlan(null);
     setConfiguration({});
@@ -287,30 +378,17 @@ const AdminServicesPage = () => {
     reset();
   };
 
-  const openEditSheet = (service) => {
-    setEditingService(service);
-    setSelectedUser(service.user || null);
-    setUserSearch(service.user ? `${service.user.first_name ?? ''} ${service.user.last_name ?? ''}`.trim() : '');
-    const found = (plansData?.data || plansData || []).find(p => p.id === service.plan?.id);
-    setSelectedPlan(found ?? null);
-    setConfiguration({
-      ...(service.configuration || {}),
-      ...(service.connection_details || {}),
-      ...(service.max_players != null ? { max_players: String(service.max_players) } : {}),
-    });
-    reset({
-      user_id: service.user_id?.toString() || '',
-      service_plan_id: service.plan?.id?.toString() || '',
-      name: service.name || '',
-      domain: service.domain || '',
-      status: service.status || 'active',
-      billing_cycle: service.billing_cycle || 'monthly',
-      price: service.price?.toString() || '',
-      setup_fee: service.setup_fee?.toString() || '0',
-      notes: service.notes || '',
-    });
-    fetchUsers('');
+  const openEditSheet = (service: any) => {
+    // Reset state so old data doesn't flash
+    setIsSheetReady(false);
+    setEditingService(null);
+    setSelectedUser(null);
+    setSelectedPlan(null);
+    setConfiguration({});
+    reset();
+    setEditingServiceId(service.uuid);
     setIsSheetOpen(true);
+    fetchUsers('');
   };
 
   useEffect(() => {
@@ -381,7 +459,7 @@ const AdminServicesPage = () => {
           <Button onClick={() => { setDataLoaded(false); refetchServices(); }} variant="outline" size="sm" disabled={isLoadingState}>
             {isLoadingState ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}Actualizar
           </Button>
-          <Button onClick={() => { reset({ user_id: '', service_plan_id: '', name: '', domain: '', status: 'active', billing_cycle: 'monthly', price: '', setup_fee: '0', notes: '' }); setEditingService(null); setSelectedUser(null); setSelectedPlan(null); setConfiguration({}); setUserSearch(''); fetchUsers(''); setIsSheetOpen(true); }} size="sm" disabled={isLoadingState}>
+          <Button onClick={() => { reset({ user_id: '', service_plan_id: '', name: '', domain: '', status: 'active', billing_cycle: 'monthly', price: '', setup_fee: '0', notes: '' }); setEditingService(null); setEditingServiceId(null); setSelectedUser(null); setSelectedPlan(null); setConfiguration({}); setUserSearch(''); setIsSheetReady(true); fetchUsers(''); setIsSheetOpen(true); }} size="sm" disabled={isLoadingState}>
             <Plus className="h-4 w-4 mr-2" />Nuevo Servicio
           </Button>
         </div>
@@ -530,6 +608,13 @@ const AdminServicesPage = () => {
             </div>
           </div>
 
+          {/* Loader while fetching detail for edit */}
+          {editingServiceId && (detailLoading || !isSheetReady) ? (
+            <div className="flex flex-1 items-center justify-center gap-3 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="text-sm">Cargando datos del servicio…</span>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
             <div className="flex-1 overflow-y-auto">
               <div className="px-6 py-5 space-y-6">
@@ -705,8 +790,17 @@ const AdminServicesPage = () => {
                         )}
                         {categorySlug === 'gameserver' && (
                           <div className="grid grid-cols-2 gap-4">
-                            {[{ key: 'game', label: 'Juego', placeholder: 'Minecraft / Valheim / CS2', span: 2 }, { key: 'server_ip', label: 'IP del servidor', placeholder: '45.62.100.10' }, { key: 'server_port', label: 'Puerto', placeholder: '25565', type: 'number' }, { key: 'max_players', label: 'Jugadores máximos', placeholder: '20', type: 'number' }, { key: 'ram_mb', label: 'RAM (MB)', placeholder: '4096', type: 'number' }, { key: 'mod_pack', label: 'Mod pack / versión', placeholder: 'Vanilla 1.21' }].map(f => (
-                              <div key={f.key} className={`space-y-1.5 ${f.span === 2 ? 'col-span-2' : ''}`}>
+                            {[
+                              { key: 'game',         label: 'Juego',                 placeholder: 'Minecraft / Valheim / CS2', span: 2 },
+                              { key: 'panel_url',    label: 'URL del panel',          placeholder: 'https://panel.rokeindustries.net/server/...', span: 2 },
+                              { key: 'server_ip',    label: 'IP del servidor',        placeholder: '45.62.100.10' },
+                              { key: 'server_port',  label: 'Puerto',                 placeholder: '25565', type: 'number' },
+                              { key: 'max_players',  label: 'Jugadores máximos',      placeholder: '20',    type: 'number' },
+                              { key: 'ram_mb',       label: 'RAM (MB)',               placeholder: '4096',  type: 'number' },
+                              { key: 'mod_pack',     label: 'Mod pack / versión',     placeholder: 'Vanilla 1.21' },
+                              { key: 'pterodactyl_id', label: 'Pterodactyl UUID',     placeholder: 'xxxxxxxx-xxxx-...', span: 2 },
+                            ].map(f => (
+                              <div key={f.key} className={`space-y-1.5 ${(f as any).span === 2 ? 'col-span-2' : ''}`}>
                                 <Label className="text-sm font-medium text-foreground">{f.label}</Label>
                                 <Input type={f.type ?? 'text'} value={cfg(f.key)} onChange={(e) => setCfg(f.key, e.target.value)} placeholder={f.placeholder} className="h-10 rounded-lg bg-background dark:bg-[#0f1115] border-border dark:border-white/10 text-foreground" />
                               </div>
@@ -761,6 +855,7 @@ const AdminServicesPage = () => {
               </div>
             </div>
           </form>
+          )}
         </SheetContent>
       </Sheet>
 
