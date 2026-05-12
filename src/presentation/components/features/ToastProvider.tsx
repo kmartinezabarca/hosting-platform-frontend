@@ -1,12 +1,5 @@
 import React from "react";
-import { Toaster, toast as sonnerToast } from "sonner";
-
-interface ToastOptions {
-  title?: string;
-  description?: string;
-  variant?: 'success' | 'error' | 'warning' | 'info' | 'default';
-  duration?: number;
-}
+import { Toaster, sileo as sileoToast } from "sileo";
 
 interface ToastProviderProps {
   children: React.ReactNode;
@@ -18,42 +11,59 @@ export const ToastProvider = ({ children }: ToastProviderProps): React.ReactElem
       {children}
       <Toaster 
         position="top-right" 
-        richColors 
-        closeButton
         theme="light"
-        toastOptions={{
-          style: {
-            borderRadius: '12px',
-            padding: '16px',
-          },
-        }}
       />
     </>
   );
 };
 
-// Helper function to maintain compatibility with existing code or provide a clean API
-export const toast = (opts: ToastOptions | string): void => {
-  if (typeof opts === 'string') {
-    sonnerToast(opts);
-    return;
-  }
+interface SileoOptions {
+  title?: string;
+  description?: string;
+  duration?: number;
+}
 
-  const { title, description, variant = 'default', duration = 4000 } = opts;
-  
-  const toastFn = variant === 'default' ? sonnerToast : sonnerToast[variant];
-  
-  toastFn(title, {
-    description,
-    duration,
-  });
+// Helper function to maintain compatibility with existing code or provide a clean API
+export const toast = (title: string, optionsOrDescription?: SileoOptions | string): void => {
+  if (typeof optionsOrDescription === 'string') {
+    sileoToast.show({ title, description: optionsOrDescription });
+  } else {
+    sileoToast.show({ title, ...optionsOrDescription });
+  }
 };
 
 // Static methods for easier access
-toast.success = (message: string, description?: string) => sonnerToast.success(message, { description });
-toast.error = (message: string, description?: string) => sonnerToast.error(message, { description });
-toast.warning = (message: string, description?: string) => sonnerToast.warning(message, { description });
-toast.info = (message: string, description?: string) => sonnerToast.info(message, { description });
+toast.success = (message: string, optionsOrDescription?: SileoOptions | string) => {
+  if (typeof optionsOrDescription === 'string') {
+    sileoToast.success({ title: message, description: optionsOrDescription });
+  } else {
+    sileoToast.success({ title: message, ...optionsOrDescription });
+  }
+};
+
+toast.error = (message: string, optionsOrDescription?: SileoOptions | string) => {
+  if (typeof optionsOrDescription === 'string') {
+    sileoToast.error({ title: message, description: optionsOrDescription });
+  } else {
+    sileoToast.error({ title: message, ...optionsOrDescription });
+  }
+};
+
+toast.warning = (message: string, optionsOrDescription?: SileoOptions | string) => {
+  if (typeof optionsOrDescription === 'string') {
+    sileoToast.warning({ title: message, description: optionsOrDescription });
+  } else {
+    sileoToast.warning({ title: message, ...optionsOrDescription });
+  }
+};
+
+toast.info = (message: string, optionsOrDescription?: SileoOptions | string) => {
+  if (typeof optionsOrDescription === 'string') {
+    sileoToast.info({ title: message, description: optionsOrDescription });
+  } else {
+    sileoToast.info({ title: message, ...optionsOrDescription });
+  }
+};
 
 export const useToast = () => {
   return { toast };

@@ -27,7 +27,7 @@ import PaymentModal from "@presentation/components/features/invoices/PaymentModa
 import InvoiceDetailModal from "@presentation/components/features/invoices/InvoiceDetailModal";
 import AddPaymentMethodModal from "@presentation/components/features/invoices/AddPaymentMethodModal";
 import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
-import { toast } from "sonner";
+import { toast } from "@presentation/components/features/ToastProvider";
 
 // --- Componentes Internos para Estados de Carga y Error ---
 

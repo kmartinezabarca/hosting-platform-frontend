@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import _adminDashboardService from '@infrastructure/services/adminDashboardService';
 // Cast to any since adminDashboardService types may not match expected methods
 const adminDashboardService = _adminDashboardService as any;
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 
 type AdminParams = Record<string, unknown>;
 

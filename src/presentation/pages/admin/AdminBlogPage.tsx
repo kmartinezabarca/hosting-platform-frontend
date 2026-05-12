@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@presentation/components/ui/select';
 import BlogService from '@infrastructure/services/blogService';
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 
 const AdminBlogPage = () => {
   const navigate = useNavigate();

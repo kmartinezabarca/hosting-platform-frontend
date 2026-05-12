@@ -5,7 +5,7 @@ import {
   Loader2, Cpu, MemoryStick, HardDrive, WifiOff,
   User, Package, Activity, Puzzle,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 import { cn } from '@shared/utils/utils';
 import { GameServerConsole } from '@presentation/components/features/services/GameServerConsole';
 import FileManager from '@presentation/components/features/services/game-server/ModsManager';

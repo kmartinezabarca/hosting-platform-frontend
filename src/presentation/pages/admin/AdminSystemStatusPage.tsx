@@ -13,7 +13,7 @@ import { Skeleton } from "@presentation/components/ui/skeleton";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@presentation/components/ui/tooltip";
 import ConfirmationModal from "@presentation/components/features/modals/ConfirmationModal";
 import { Plus, Edit, Trash2, Search, RefreshCw, Server, CheckCircle, Clock, AlertTriangle, XCircle, Loader2, Filter, X, ArrowLeft, Save } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@presentation/components/features/ToastProvider";
 import systemStatusAdminService from "@infrastructure/services/systemStatusAdminService";
 
 const statusSchema = z.object({

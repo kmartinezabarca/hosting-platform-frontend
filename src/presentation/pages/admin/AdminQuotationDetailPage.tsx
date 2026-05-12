@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 import {
   ArrowLeft, Edit, Trash2, Send, RefreshCw, Copy, ExternalLink,
   CheckCircle, XCircle, Clock, Link2, AlertCircle, Loader2,

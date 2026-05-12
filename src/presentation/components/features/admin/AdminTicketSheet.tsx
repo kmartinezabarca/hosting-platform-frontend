@@ -12,7 +12,7 @@ import {
   ZapIcon, ArrowUpIcon, MinusIcon, ArrowDownIcon,
   ImageOff,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@presentation/components/features/ToastProvider";
 
 import adminTicketsService from "@infrastructure/services/adminTicketsService";
 import { getEcho } from "@infrastructure/services/echoService";

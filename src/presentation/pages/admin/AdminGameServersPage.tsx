@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Gamepad2, Search, RefreshCw, AlertTriangle, Loader2, Play, Trash2, RotateCcw, Shield, ShieldOff, Filter, X, ChevronUp, ChevronDown, Eye } from 'lucide-react';
 import AdminGameServerDetailPanel from '@presentation/components/features/admin/AdminGameServerDetailPanel';
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 import { Button } from '@presentation/components/ui/button';
 import { Input } from '@presentation/components/ui/input';
 import { Badge } from '@presentation/components/ui/badge';

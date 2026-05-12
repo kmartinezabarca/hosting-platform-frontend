@@ -16,7 +16,7 @@ import {
 import { Label } from '@presentation/components/ui/label';
 import { Switch } from '@presentation/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@presentation/components/ui/dialog';
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 import BlogService from '@infrastructure/services/blogService';
 import BlogEditor from '@presentation/components/features/admin/BlogEditor';
 

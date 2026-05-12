@@ -14,7 +14,7 @@ import {
   Calendar,
   X,
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 import documentationRequestAdminService from '@infrastructure/services/documentationRequestAdminService';
 import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
 

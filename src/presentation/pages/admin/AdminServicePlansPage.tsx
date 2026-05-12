@@ -51,7 +51,7 @@ import {
   useBulkActivateAdminServicePlans,
   useBulkDeactivateAdminServicePlans,
 } from '@application/hooks/useAdminServicePlans';
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 
 const planSchema = z.object({
   category_id: z.string().min(1, 'La categoría es requerida'),

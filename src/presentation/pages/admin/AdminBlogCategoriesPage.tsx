@@ -14,7 +14,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from '@presentation/component
 import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
 import { Plus, Edit, Trash2, Search, Tag, RefreshCw, Filter, X, Loader2 } from 'lucide-react';
 import BlogService from '@infrastructure/services/blogService';
-import { toast } from 'sonner';
+import { toast } from '@presentation/components/features/ToastProvider';
 
 const categorySchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
