@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '@application/context/AuthContext';
 import { getEcho } from '@infrastructure/services/echoService';
@@ -9,101 +10,92 @@ interface NotificationContextValue {
   isReady: boolean;
 }
 
-interface BroadcastPayload {
+interface WsNotification {
+  id?: string;
+  type?: string;
+  title?: string;
   message?: string;
+  text?: string;
+  target?: string;
   [key: string]: unknown;
 }
 
-interface LaravelNotification {
-  data?: {
-    title?: string;
-    message?: string;
-    text?: string;
-  };
-  [key: string]: unknown;
-}
+// ─── Query keys (alineados con useClientNotifications y useAdminNotifications) ──
+
+const CLIENT_UNREAD_QK  = ['notifications', 'client', 'unreadCount'] as const;
+const CLIENT_LIST_QK    = ['notifications', 'client', 'list'] as const;
+const ADMIN_BASE_QK     = ['admin', 'notifications'] as const;
 
 // ─── Contexto ─────────────────────────────────────────────────────────────
 
 const NotificationContext = createContext<NotificationContextValue | null>(null);
 
-// Eventos custom emitidos con broadcastAs('...')
-const CUSTOM_EVENTS = [
-  'service.purchased',
-  'service.ready',
-  'service.status.changed',
-  'invoice.generated',
-  'invoice.status.changed',
-  'payment.processed',
-  'payment.failed',
-  'ticket.replied',
-] as const;
-
-type CustomEvent = typeof CUSTOM_EVENTS[number];
-
 // ─── Provider ─────────────────────────────────────────────────────────────
 
-interface NotificationProviderProps {
-  children: React.ReactNode;
-}
+export const NotificationProvider = ({ children }: { children: React.ReactNode }) => {
+  const { user, isAuthenticated, isAuthReady, isAdmin } = useAuth();
+  const qc = useQueryClient();
 
-export const NotificationProvider = ({ children }: NotificationProviderProps) => {
-  const { user, isAuthenticated, isAuthReady } = useAuth();
-
-  const showInfo    = (title: string, message?: string) => toast.info(title,    { description: message || undefined });
-  const showSuccess = (title: string, message?: string) => toast.success(title, { description: message || undefined });
-  const showError   = (title: string, message?: string) => toast.error(title,   { description: message || undefined });
+  const isReady = Boolean(isAuthReady && isAuthenticated && user?.uuid);
 
   useEffect(() => {
-    const ready = Boolean(isAuthReady && isAuthenticated && user?.uuid);
-    if (!ready) return;
+    if (!isReady) return;
 
     const echo = getEcho();
-    const channelName = `user.${user!.uuid}`;
-    const channel = echo
-      .private(channelName)
-      .error((e: unknown) => console.error('[NotificationProvider] channel error', e));
 
-    // 1) Notificaciones de Laravel ($user->notify(..., via ['database','broadcast']))
-    channel.notification((n: LaravelNotification) => {
-      const title = n?.data?.title ?? 'Notificación';
-      const msg   = n?.data?.message ?? n?.data?.text ?? '';
-      showInfo(title, msg);
-    });
+    if (isAdmin) {
+      // ── Canal admin ────────────────────────────────────────────────────
+      const ch = echo
+        .private('admin.notifications')
+        .subscribed(() => console.log('✅ admin.notifications subscribed'))
+        .error((e: unknown) => console.error('[NotificationProvider] admin channel error', e));
 
-    // 2) Eventos custom (ServicePurchased, etc.) con broadcastAs('...')
-    const handlers: Record<CustomEvent, (payload: BroadcastPayload) => void> = {
-      'service.purchased':     (p) => showSuccess('¡Servicio adquirido!', p?.message ?? 'Tu compra fue procesada.'),
-      'service.ready':         (p) => showSuccess('Servicio listo', p?.message ?? 'Tu servicio está activo.'),
-      'service.status.changed':(p) => showInfo('Estado del servicio', p?.message ?? 'El estado de tu servicio cambió.'),
-      'invoice.generated':     (p) => showInfo('Nueva factura', p?.message ?? 'Se generó una nueva factura.'),
-      'invoice.status.changed':(p) => showInfo('Factura actualizada', p?.message ?? 'El estado de tu factura cambió.'),
-      'payment.processed':     (p) => showSuccess('Pago procesado', p?.message ?? 'Tu pago fue registrado exitosamente.'),
-      'payment.failed':        (p) => showError('Pago fallido', p?.message ?? 'Intenta con otro método de pago.'),
-      'ticket.replied':        (p) => showInfo('Respuesta en ticket', p?.message ?? 'Tienes una nueva respuesta en tu ticket.'),
-    };
+      ch.notification((n: WsNotification) => {
+        const title = n?.title ?? 'Notificación';
+        const msg   = n?.message ?? n?.text ?? '';
+        toast.info(title, { description: msg || undefined });
 
-    CUSTOM_EVENTS.forEach((evt) => channel.listen(`.${evt}`, handlers[evt]));
+        qc.invalidateQueries({ queryKey: ADMIN_BASE_QK });
+      });
 
-    const conn = echo.connector?.pusher?.connection;
-    const onReconnected = () => showInfo('Reconectado', 'La conexión en tiempo real fue restaurada.');
-    conn?.bind?.('connected', onReconnected);
+      return () => {
+        try { echo.leave('admin.notifications'); } catch { /* noop */ }
+      };
+    } else {
+      // ── Canal cliente ──────────────────────────────────────────────────
+      const channelName = `user.${user!.uuid}`;
+      const ch = echo
+        .private(channelName)
+        .subscribed(() => console.log('✅', `private-${channelName}`, 'subscribed'))
+        .error((e: unknown) => console.error('[NotificationProvider] client channel error', e));
 
-    return () => {
-      try {
-        CUSTOM_EVENTS.forEach((evt) => channel.stopListening(`.${evt}`));
-        conn?.unbind?.('connected', onReconnected);
-      } catch (err) {
-        console.warn('cleanup warn (notifications):', err);
-      }
-    };
-  }, [isAuthReady, isAuthenticated, user?.uuid]); // eslint-disable-line react-hooks/exhaustive-deps
+      ch.notification((n: WsNotification) => {
+        const title = n?.title ?? 'Notificación';
+        const msg   = n?.message ?? n?.text ?? '';
+        toast.info(title, { description: msg || undefined });
+
+        // Incremento reactivo del contador — sin ningún request adicional
+        qc.setQueryData<number>(CLIENT_UNREAD_QK, (old) => (old ?? 0) + 1);
+        // Invalidar la lista para que se refresque al próximo uso
+        qc.invalidateQueries({ queryKey: CLIENT_LIST_QK });
+      });
+
+      const conn = echo.connector?.pusher?.connection;
+      const onReconnected = () => toast.info('Reconectado', { description: 'La conexión en tiempo real fue restaurada.' });
+      conn?.bind?.('connected', onReconnected);
+
+      return () => {
+        try {
+          echo.leave(channelName);
+          conn?.unbind?.('connected', onReconnected);
+        } catch { /* noop */ }
+      };
+    }
+  }, [isReady, isAdmin, user?.uuid, qc]);
 
   const value = useMemo<NotificationContextValue>(
-    () => ({
-      isReady: Boolean(isAuthReady && isAuthenticated && user?.uuid),
-    }),
-    [isAuthReady, isAuthenticated, user?.uuid],
+    () => ({ isReady }),
+    [isReady],
   );
 
   return (

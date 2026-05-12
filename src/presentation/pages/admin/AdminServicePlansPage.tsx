@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import React, { useState, useMemo, useEffect, startTransition } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSoftwareVersions } from '@application/hooks/useSoftwareVersions';
@@ -9,15 +9,16 @@ import { Input } from '@presentation/components/ui/input';
 import { Label } from '@presentation/components/ui/label';
 import { Textarea } from '@presentation/components/ui/textarea';
 import { Switch } from '@presentation/components/ui/switch';
+import { Checkbox } from '@presentation/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@presentation/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@presentation/components/ui/sheet';
 import { Card, CardContent } from '@presentation/components/ui/card';
 import { Badge } from '@presentation/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@presentation/components/ui/tabs';
-import { Progress } from '@presentation/components/ui/progress';
 import { Skeleton } from '@presentation/components/ui/skeleton';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@presentation/components/ui/tooltip';
 import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
+import { StatCard } from '@presentation/components/ui/stat-card';
 import {
   Plus,
   Edit,
@@ -36,14 +37,19 @@ import {
   Settings2,
   Gamepad2,
   AlertTriangle,
+  CheckCheck,
 } from 'lucide-react';
 import {
   useAdminServicePlans,
+  useAdminServicePlan,
   useAdminServicePlanCategories,
   useAdminBillingCycles,
   useCreateAdminServicePlan,
   useUpdateAdminServicePlan,
   useDeleteAdminServicePlan,
+  useBulkDeleteAdminServicePlans,
+  useBulkActivateAdminServicePlans,
+  useBulkDeactivateAdminServicePlans,
 } from '@application/hooks/useAdminServicePlans';
 import { toast } from 'sonner';
 
@@ -135,12 +141,12 @@ const PterodactylTab = ({ watch, setValue }: { watch: any; setValue: any }) => {
       <div>
         <Label className="text-sm font-medium text-foreground">Proveedor de aprovisionamiento</Label>
         <p className="text-xs text-muted-foreground mt-0.5 mb-2">Selecciona si este plan usa Pterodactyl para servidores de juego.</p>
-        <Select value={provisioner} onValueChange={(v) => setValue('provisioner', v)}>
+        <Select value={provisioner || 'none'} onValueChange={(v) => setValue('provisioner', v === 'none' ? '' : v)}>
           <SelectTrigger className="h-10 bg-background dark:bg-[#0f1115] border-border dark:border-white/10 text-foreground">
             <SelectValue placeholder="Sin proveedor" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Sin proveedor</SelectItem>
+            <SelectItem value="none">Sin proveedor</SelectItem>
             <SelectItem value="pterodactyl">
               <div className="flex items-center gap-2">
                 <Gamepad2 className="h-4 w-4 text-violet-500" />Pterodactyl
@@ -246,10 +252,14 @@ const AdminServicePlansPage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isSheetReady, setIsSheetReady] = useState(false);
   const [editingPlan, setEditingPlan] = useState<any>(null);
+  const [editingPlanUuid, setEditingPlanUuid] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; plan: any }>({ isOpen: false, plan: null });
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('basic');
+  const [selectedUuids, setSelectedUuids] = useState<string[]>([]);
+  const [bulkActionType, setBulkActionType] = useState<'activate' | 'deactivate' | 'delete' | null>(null);
 
   const { register, handleSubmit, control, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(planSchema),
@@ -286,13 +296,17 @@ const AdminServicePlansPage = () => {
     return params;
   }, [searchTerm, selectedCategory, statusFilter, currentPage, perPage]);
 
-  const { data: plansData, isLoading: plansLoading, error: plansError, refetch: refetchPlans } = useAdminServicePlans(filters);
+  const { data: plansData, isLoading: plansLoading, isFetching: plansFetching, error: plansError, refetch: refetchPlans } = useAdminServicePlans(filters);
   const { data: categoriesData, isLoading: categoriesLoading } = useAdminServicePlanCategories();
   const { data: billingCyclesData, isLoading: billingCyclesLoading } = useAdminBillingCycles();
+  const { data: planDetailRaw, isLoading: planDetailLoading } = useAdminServicePlan(editingPlanUuid);
 
   const createPlanMutation = useCreateAdminServicePlan();
   const updatePlanMutation = useUpdateAdminServicePlan();
   const deletePlanMutation = useDeleteAdminServicePlan();
+  const bulkDeleteMutation = useBulkDeleteAdminServicePlans();
+  const bulkActivateMutation = useBulkActivateAdminServicePlans();
+  const bulkDeactivateMutation = useBulkDeactivateAdminServicePlans();
 
   const servicePlans = plansData?.data || [];
   const categories = categoriesData?.data || [];
@@ -311,6 +325,38 @@ const AdminServicePlansPage = () => {
       setDataLoaded(true);
     }
   }, [dataLoaded]);
+
+  // Poblar el form con el detalle completo del plan cuando llega desde la API
+  useEffect(() => {
+    if (!editingPlanUuid || !planDetailRaw) return;
+    const plan = (planDetailRaw as any)?.data ?? planDetailRaw;
+    if (!plan?.uuid) return;
+    setEditingPlan(plan);
+    startTransition(() => {
+      reset({
+        category_id:              plan.category_id?.toString() || '',
+        slug:                     plan.slug,
+        name:                     plan.name,
+        description:              plan.description || '',
+        base_price:               plan.base_price?.toString() || '',
+        setup_fee:                plan.setup_fee?.toString() || '0',
+        stripe_price_id:          plan.stripe_price_id || '',
+        is_popular:               plan.is_popular,
+        is_active:                plan.is_active,
+        sort_order:               plan.sort_order?.toString() || '0',
+        features:                 plan.features?.map((f: any) => f.feature ?? f) || [],
+        pricing:                  plan.pricing?.map((p: any) => ({
+          billing_cycle_id: p.billing_cycle_id,
+          price:            p.price?.toString() || '',
+        })) || [],
+        specifications:           Object.entries(plan.specifications || {}).map(([key, value]) => ({ key, value: value as string })),
+        provisioner:              plan.provisioner || '',
+        pterodactyl_egg:          plan.pterodactyl_egg || '',
+        pterodactyl_version:      plan.pterodactyl_version || 'latest',
+        pterodactyl_environment:  plan.pterodactyl_environment || {},
+      });
+    });
+  }, [planDetailRaw, editingPlanUuid, reset]);
 
   const stats = useMemo(() => ({
     total: plansData?.pagination?.total || servicePlans.length,
@@ -348,7 +394,10 @@ const AdminServicePlansPage = () => {
     }
   };
 
-  const handleDelete = (plan) => setConfirmModal({ isOpen: true, plan });
+  const handleDelete = (plan) => {
+    setBulkActionType(null);
+    setConfirmModal({ isOpen: true, plan });
+  };
 
   const handleConfirmDelete = async () => {
     setIsActionLoading(true);
@@ -366,37 +415,69 @@ const AdminServicePlansPage = () => {
     }
   };
 
+  // ── Bulk actions ──────────────────────────────────────────────────────────────
+
+  const handleBulkAction = (type: 'activate' | 'deactivate' | 'delete') => {
+    setBulkActionType(type);
+    setConfirmModal({ isOpen: true, plan: null });
+  };
+
+  const handleConfirmBulkAction = async () => {
+    if (!bulkActionType || selectedUuids.length === 0) return;
+    setIsActionLoading(true);
+    try {
+      if (bulkActionType === 'activate') {
+        await bulkActivateMutation.mutateAsync(selectedUuids);
+        toast.success(`${selectedUuids.length} plan(es) activado(s)`);
+      } else if (bulkActionType === 'deactivate') {
+        await bulkDeactivateMutation.mutateAsync(selectedUuids);
+        toast.success(`${selectedUuids.length} plan(es) desactivado(s)`);
+      } else if (bulkActionType === 'delete') {
+        await bulkDeleteMutation.mutateAsync(selectedUuids);
+        toast.success(`${selectedUuids.length} plan(es) eliminado(s)`);
+      }
+      setSelectedUuids([]);
+      setBulkActionType(null);
+      setConfirmModal({ isOpen: false, plan: null });
+      setCurrentPage(1);
+      setDataLoaded(false);
+    } catch (error) {
+      console.error('Error in bulk action:', error);
+      toast.error('Error al realizar la acción masiva');
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedUuids.length === servicePlans.length) {
+      setSelectedUuids([]);
+    } else {
+      setSelectedUuids(servicePlans.map(p => p.uuid));
+    }
+  };
+
+  const toggleSelect = (uuid: string) => {
+    setSelectedUuids(prev =>
+      prev.includes(uuid) ? prev.filter(u => u !== uuid) : [...prev, uuid]
+    );
+  };
+
   const closeSheet = () => {
     setIsSheetOpen(false);
+    setIsSheetReady(false);
     setEditingPlan(null);
+    setEditingPlanUuid(null);
     reset();
   };
 
   const openEditSheet = (plan) => {
+    setIsSheetReady(false);
+    setEditingPlanUuid(plan.uuid);
     setEditingPlan(plan);
-    reset({
-      category_id: plan.category_id?.toString() || '',
-      slug: plan.slug,
-      name: plan.name,
-      description: plan.description || '',
-      base_price: plan.base_price?.toString() || '',
-      setup_fee: plan.setup_fee?.toString() || '0',
-      stripe_price_id: plan.stripe_price_id || '',
-      is_popular: plan.is_popular,
-      is_active: plan.is_active,
-      sort_order: plan.sort_order?.toString() || '0',
-      features: plan.features?.map(f => f.feature) || [],
-      pricing: plan.pricing?.map(p => ({
-        billing_cycle_id: p.billing_cycle_id,
-        price: p.price?.toString() || ''
-      })) || [],
-      specifications: Object.entries(plan.specifications || {}).map(([key, value]) => ({ key, value: value as any })),
-      provisioner: plan.provisioner || '',
-      pterodactyl_egg: plan.pterodactyl_egg || '',
-      pterodactyl_version: plan.pterodactyl_version || 'latest',
-      pterodactyl_environment: plan.pterodactyl_environment || {},
-    });
     setIsSheetOpen(true);
+    // Render the heavy form content only after the open animation finishes
+    setTimeout(() => setIsSheetReady(true), 220);
   };
 
   const addFeature = () => setValue('features', [...features, '']);
@@ -454,11 +535,11 @@ const AdminServicePlansPage = () => {
           <p className="text-sm text-muted-foreground mt-1">{stats.total} planes registrados</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => { setDataLoaded(false); refetchPlans(); }} variant="outline" size="sm" disabled={plansLoading}>
-            {plansLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+          <Button onClick={() => { setDataLoaded(false); refetchPlans(); }} variant="outline" size="sm" disabled={plansFetching}>
+            {plansFetching ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Actualizar
           </Button>
-          <Button onClick={() => { reset(); setEditingPlan(null); setIsSheetOpen(true); }} size="sm" disabled={plansLoading}>
+          <Button onClick={() => { reset(); setEditingPlan(null); setIsSheetReady(false); setIsSheetOpen(true); setTimeout(() => setIsSheetReady(true), 220); }} size="sm" disabled={plansLoading}>
             <Plus className="h-4 w-4 mr-2" />
             Nuevo Plan
           </Button>
@@ -466,50 +547,10 @@ const AdminServicePlansPage = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="bg-gradient-to-br from-slate-100/80 to-slate-50/50 dark:from-slate-800/60 dark:to-slate-800/30 border-slate-200/50 dark:border-slate-700/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-slate-600 dark:text-slate-300">Total</p>
-                <p className="text-2xl font-semibold mt-1 text-slate-800 dark:text-slate-100">{stats.total}</p>
-              </div>
-              <div className="p-2.5 bg-slate-500/15 rounded-xl">
-                <Package className="h-5 w-5 text-slate-600 dark:text-slate-300" />
-              </div>
-            </div>
-            <Progress value={100} className="h-1 mt-3 bg-slate-200/50 dark:bg-slate-700/50" />
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 dark:from-emerald-950/40 dark:to-emerald-950/20 border-emerald-200/50 dark:border-emerald-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Activos</p>
-                <p className="text-2xl font-semibold mt-1 text-emerald-800 dark:text-emerald-100">{stats.active}</p>
-              </div>
-              <div className="p-2.5 bg-emerald-500/15 rounded-xl">
-                <Zap className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              </div>
-            </div>
-            <Progress value={getActivePercentage()} className="h-1 mt-3 bg-emerald-200/50 dark:bg-emerald-800/50 [&>div]:bg-emerald-500" />
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-violet-50/80 to-violet-50/30 dark:from-violet-950/40 dark:to-violet-950/20 border-violet-200/50 dark:border-violet-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-violet-700 dark:text-violet-300">Populares</p>
-                <p className="text-2xl font-semibold mt-1 text-violet-800 dark:text-violet-100">{stats.popular}</p>
-              </div>
-              <div className="p-2.5 bg-violet-500/15 rounded-xl">
-                <Star className="h-5 w-5 text-violet-600 dark:text-violet-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard icon={Package} label="Total" value={stats.total} accent="slate" loading={plansFetching} />
+        <StatCard icon={Zap} label="Activos" value={stats.active} progress={getActivePercentage()} accent="emerald" loading={plansFetching} />
+        <StatCard icon={Star} label="Populares" value={stats.popular} accent="violet" loading={plansFetching} />
       </div>
 
       {/* Plans Table */}
@@ -569,11 +610,41 @@ const AdminServicePlansPage = () => {
               </Select>
             </div>
           )}
+
+          {/* Bulk action bar */}
+          {selectedUuids.length > 0 && (
+            <div className="flex items-center gap-2 mb-3 px-2 py-2 rounded-lg bg-primary/5 border border-primary/10">
+              <CheckCheck className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">{selectedUuids.length} seleccionado(s)</span>
+              <div className="ml-auto flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleBulkAction('activate')} className="h-8 text-xs">
+                  <Eye className="h-3.5 w-3.5 mr-1" />Activar
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleBulkAction('deactivate')} className="h-8 text-xs">
+                  <EyeOff className="h-3.5 w-3.5 mr-1" />Desactivar
+                </Button>
+                <Button variant="destructive" size="sm" onClick={() => handleBulkAction('delete')} className="h-8 text-xs">
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />Eliminar
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedUuids([])} className="h-8 text-xs text-muted-foreground">
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          )}
           
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border dark:border-white/10">
+                  <th className="px-4 py-3 w-10">
+                    <Checkbox
+                      className="mt-0.5"
+                      checked={servicePlans.length > 0 && selectedUuids.length === servicePlans.length}
+                      onCheckedChange={toggleSelectAll}
+                      aria-label="Seleccionar todos"
+                    />
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Plan</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Categoría</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Precio</th>
@@ -583,9 +654,10 @@ const AdminServicePlansPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border dark:divide-white/10">
-                {plansLoading || categoriesLoading ? (
+                {plansFetching || categoriesLoading ? (
                   Array.from({ length: 5 }).map((_, index) => (
                     <tr key={`skeleton-${index}`} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3"><Skeleton className="h-4 w-4 rounded" /></td>
                       <td className="px-4 py-3"><div className="flex items-center gap-3"><Skeleton className="h-10 w-10 rounded-lg" /><div className="space-y-2"><Skeleton className="h-4 w-40" /><Skeleton className="h-3 w-24" /></div></div></td>
                       <td className="px-4 py-3"><Skeleton className="h-6 w-24 rounded-full" /></td>
                       <td className="px-4 py-3"><Skeleton className="h-5 w-20" /></td>
@@ -596,7 +668,7 @@ const AdminServicePlansPage = () => {
                   ))
                 ) : servicePlans.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center">
+                    <td colSpan={7} className="px-4 py-12 text-center">
                       <Package className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40" />
                       <p className="text-sm text-muted-foreground">No se encontraron planes</p>
                     </td>
@@ -604,6 +676,14 @@ const AdminServicePlansPage = () => {
                 ) : (
                   servicePlans.map((plan) => (
                     <tr key={plan.id || plan.uuid} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3">
+                        <Checkbox
+                          className="mt-0.5"
+                          checked={selectedUuids.includes(plan.uuid)}
+                          onCheckedChange={() => toggleSelect(plan.uuid)}
+                          aria-label={`Seleccionar ${plan.name}`}
+                        />
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${plan.is_popular ? 'bg-violet-100 dark:bg-violet-900/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
@@ -646,7 +726,7 @@ const AdminServicePlansPage = () => {
                         )}
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
-                        <span className="text-xs text-muted-foreground">{plan.features?.length || 0} características</span>
+                        <span className="text-xs text-muted-foreground">{plan.features_count || 0} características</span>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
@@ -679,7 +759,7 @@ const AdminServicePlansPage = () => {
             <div className="flex items-center justify-between px-4 py-3 border-t border-border dark:border-white/10">
               <div className="text-sm text-muted-foreground">Página <span className="font-medium text-foreground">{currentPage}</span> de <span className="font-medium text-foreground">{totalPages}</span></div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1 || plansLoading}>Anterior</Button>
+                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1 || plansFetching}>Anterior</Button>
                 <div className="flex items-center gap-1">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let pageNum;
@@ -688,13 +768,13 @@ const AdminServicePlansPage = () => {
                     else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
                     else pageNum = currentPage - 2 + i;
                     return (
-                      <Button key={pageNum} variant={currentPage === pageNum ? "default" : "ghost"} size="sm" onClick={() => setCurrentPage(pageNum)} disabled={plansLoading} className="h-8 w-8 p-0">
+                      <Button key={pageNum} variant={currentPage === pageNum ? "default" : "ghost"} size="sm" onClick={() => setCurrentPage(pageNum)} disabled={plansFetching} className="h-8 w-8 p-0">
                         {pageNum}
                       </Button>
                     );
                   })}
                 </div>
-                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || plansLoading}>Siguiente</Button>
+                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || plansFetching}>Siguiente</Button>
               </div>
             </div>
           )}
@@ -706,12 +786,20 @@ const AdminServicePlansPage = () => {
         <SheetContent side="right" className="!w-full !max-w-[640px] p-0 flex flex-col gap-0 bg-background dark:bg-[#0f1115]">
           <div className="flex flex-col h-full">
             <SheetHeader className="px-6 py-4 border-b border-border dark:border-white/10 shrink-0">
-              <SheetTitle className="text-xl font-semibold text-foreground">{editingPlan ? 'Editar Plan' : 'Nuevo Plan'}</SheetTitle>
+              <div className="flex items-center gap-2">
+                <SheetTitle className="text-xl font-semibold text-foreground">{editingPlan ? 'Editar Plan' : 'Nuevo Plan'}</SheetTitle>
+                {planDetailLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+              </div>
               <SheetDescription className="text-muted-foreground">
-                {editingPlan ? 'Modifica los datos del plan' : 'Completa la información para crear un nuevo plan'}
+                {editingPlan ? `Modifica los datos de "${editingPlan.name}"` : 'Completa la información para crear un nuevo plan'}
               </SheetDescription>
             </SheetHeader>
             
+            {!isSheetReady ? (
+              <div className="flex flex-1 items-center justify-center">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
               <div className="flex-1 overflow-y-auto px-6 py-4">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -725,6 +813,25 @@ const AdminServicePlansPage = () => {
                     </TabsTrigger>
                   </TabsList>
 
+                  {editingPlan && planDetailLoading ? (
+                    <div className="space-y-6 py-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-full rounded-lg" /></div>
+                        <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-full rounded-lg" /></div>
+                      </div>
+                      <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-20 w-full rounded-lg" /></div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-full rounded-lg" /></div>
+                        <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-full rounded-lg" /></div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-full rounded-lg" /></div>
+                        <div className="space-y-2"><Skeleton className="h-4 w-24" /><Skeleton className="h-10 w-full rounded-lg" /></div>
+                      </div>
+                      <div className="flex gap-6"><Skeleton className="h-6 w-32 rounded-full" /><Skeleton className="h-6 w-28 rounded-full" /></div>
+                    </div>
+                  ) : (
+                  <>
                   <TabsContent value="basic" className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -791,11 +898,23 @@ const AdminServicePlansPage = () => {
 
                     <div className="flex flex-wrap items-center gap-6">
                       <div className="flex items-center gap-3">
-                        <Switch id="is_popular" {...register('is_popular')} />
+                        <Controller
+                          name="is_popular"
+                          control={control}
+                          render={({ field }) => (
+                            <Switch id="is_popular" checked={field.value} onCheckedChange={field.onChange} />
+                          )}
+                        />
                         <Label htmlFor="is_popular" className="text-sm font-medium cursor-pointer text-foreground">Plan Popular</Label>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Switch id="is_active" {...register('is_active')} />
+                        <Controller
+                          name="is_active"
+                          control={control}
+                          render={({ field }) => (
+                            <Switch id="is_active" checked={field.value} onCheckedChange={field.onChange} />
+                          )}
+                        />
                         <Label htmlFor="is_active" className="text-sm font-medium cursor-pointer text-foreground">Plan Activo</Label>
                       </div>
                     </div>
@@ -913,7 +1032,9 @@ const AdminServicePlansPage = () => {
                       )}
                     </div>
                   </TabsContent>
-                </Tabs>
+                </>
+              )}
+            </Tabs>
               </div>
               
               <div className="px-6 py-4 border-t border-border dark:border-white/10 shrink-0 bg-background dark:bg-[#0f1115]">
@@ -929,19 +1050,24 @@ const AdminServicePlansPage = () => {
                 </div>
               </div>
             </form>
+            )}
           </div>
         </SheetContent>
       </Sheet>
 
       <ConfirmationModal
         isOpen={confirmModal.isOpen}
-        onClose={() => setConfirmModal({ isOpen: false, plan: null })}
-        onConfirm={handleConfirmDelete}
-        title="Eliminar Plan"
-        confirmText="Eliminar"
+        onClose={() => { setConfirmModal({ isOpen: false, plan: null }); setBulkActionType(null); }}
+        onConfirm={bulkActionType ? handleConfirmBulkAction : handleConfirmDelete}
+        title={bulkActionType ? (bulkActionType === 'delete' ? 'Eliminar Planes' : bulkActionType === 'activate' ? 'Activar Planes' : 'Desactivar Planes') : 'Eliminar Plan'}
+        confirmText={bulkActionType === 'delete' ? 'Eliminar' : bulkActionType === 'activate' ? 'Activar' : 'Desactivar'}
         isConfirming={isActionLoading}
       >
-        <p>¿Estás seguro de que quieres eliminar el plan <strong className="text-foreground">{confirmModal.plan?.name}</strong>? Esta acción no se puede deshacer.</p>
+        {bulkActionType ? (
+          <p>¿Estás seguro de que quieres <strong>{bulkActionType === 'delete' ? 'eliminar' : bulkActionType === 'activate' ? 'activar' : 'desactivar'}</strong> <strong className="text-foreground">{selectedUuids.length} plan(es)</strong>?</p>
+        ) : (
+          <p>¿Estás seguro de que quieres eliminar el plan <strong className="text-foreground">{confirmModal.plan?.name}</strong>? Esta acción no se puede deshacer.</p>
+        )}
       </ConfirmationModal>
     </div>
   );

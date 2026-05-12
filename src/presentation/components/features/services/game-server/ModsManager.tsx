@@ -36,11 +36,24 @@ import { useRestartState } from "@application/hooks/useRestartState";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export interface FileManagerHooksOverride {
+    files: { name: string; size: number; modified_at: string }[];
+    isLoading: boolean;
+    error: unknown;
+    refetch: () => void;
+    deleteFiles: (names: string[]) => Promise<void>;
+    downloadFile: (name: string) => Promise<void>;
+    upload: (file: File) => Promise<void>;
+    progress: number | null;
+    powerAction: (signal: 'start' | 'stop' | 'restart' | 'kill') => Promise<any>;
+}
+
 interface Props {
     serviceUuid: string;
     eggName: string;
     restartServerRequired?: boolean;
     pendingChangesCount?: number;
+    hooksOverride?: FileManagerHooksOverride;
 }
 
 type RestartState = "idle" | "confirming" | "restarting" | "done" | "dismissed";
@@ -710,7 +723,7 @@ function RestartBanner({ isDark, installedCount, restartState, onRestart, onDism
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function FileManager({ serviceUuid, eggName, restartServerRequired, pendingChangesCount }: Props) {
+export default function FileManager({ serviceUuid, eggName, restartServerRequired, pendingChangesCount, hooksOverride }: Props) {
     const directory = detectDirectory(eggName);
     const label     = detectLabel(directory);
 
@@ -745,11 +758,24 @@ export default function FileManager({ serviceUuid, eggName, restartServerRequire
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const { data: files = [], isLoading, error, refetch } = useFileList(serviceUuid, directory);
-    const { mutateAsync: deleteFiles }  = useDeleteFile(serviceUuid, directory);
-    const { mutateAsync: downloadFile } = useDownloadFile(serviceUuid, directory);
-    const { upload, progress }          = useUploadFile(serviceUuid, directory);
-    const { mutateAsync: powerAction }  = usePowerServer(serviceUuid);
+    // Hooks default — se desactivan cuando hay override para evitar llamadas innecesarias
+    const defaultUuid = hooksOverride ? '' : serviceUuid;
+    const defaultFileList = useFileList(defaultUuid, directory);
+    const defaultDelete   = useDeleteFile(defaultUuid, directory);
+    const defaultDownload = useDownloadFile(defaultUuid, directory);
+    const defaultUpload   = useUploadFile(defaultUuid, directory);
+    const defaultPower    = usePowerServer(defaultUuid);
+
+    // Usar override si se proporcionó, de lo contrario usar hooks default
+    const files      = hooksOverride?.files      ?? (defaultFileList.data ?? []);
+    const isLoading  = hooksOverride?.isLoading  ?? defaultFileList.isLoading;
+    const error      = hooksOverride?.error      ?? defaultFileList.error;
+    const refetch    = hooksOverride?.refetch    ?? defaultFileList.refetch;
+    const deleteFiles  = hooksOverride?.deleteFiles  ?? defaultDelete.mutateAsync;
+    const downloadFile = hooksOverride?.downloadFile ?? defaultDownload.mutateAsync;
+    const upload       = hooksOverride?.upload       ?? defaultUpload.upload;
+    const progress     = hooksOverride?.progress     ?? defaultUpload.progress;
+    const powerAction  = hooksOverride?.powerAction  ?? defaultPower.mutateAsync;
 
     const t = isDark ? dark : light;
     const filtered = search ? files.filter(f => f.name.toLowerCase().includes(search.toLowerCase())) : files;

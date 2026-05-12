@@ -1,8 +1,7 @@
 // useAdminNotifications.ts
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import adminNotificationsService from '@infrastructure/services/adminNotificationsService';
-import { getEcho } from '@infrastructure/services/echoService';
 import { useAuth } from '@application/context/AuthContext';
 
 interface HookOptions { onSuccess?: (...args: any[]) => void; [key: string]: any }
@@ -51,13 +50,14 @@ export const useAdminNotifications = (params = {}, options: HookOptions = {}) =>
   // clave estable para el cache
   const normKey = useMemo(() => JSON.stringify(params || {}), [params]);
 
-  const { onSuccess: _onSuccess, ...restOptions } = options;
+  const { onSuccess: _onSuccess, enabled: enabledOpt, ...restOptions } = options;
+  const enabled = shouldFetch && (enabledOpt !== false);
 
   return useQuery({
     queryKey: QK.list(normKey),
     queryFn: () => adminNotificationsService.getNotifications(params),
     select: selectNotifications,
-    enabled: shouldFetch,
+    enabled,
     placeholderData: (prev) => prev,
     staleTime: 60_000,
     retry: false,
@@ -91,7 +91,6 @@ export const useAdminBroadcastNotification = (options: HookOptions = {}) => {
     mutationFn: (payload: any) => adminNotificationsService.broadcast(payload),
     onSuccess: (...args) => {
       qc.invalidateQueries({ queryKey: QK.base });
-      qc.invalidateQueries({ queryKey: QK.stats });
       options.onSuccess?.(...args);
     },
   });
@@ -104,7 +103,6 @@ export const useAdminSendNotificationToUser = (options: HookOptions = {}) => {
       adminNotificationsService.sendToUser(userId, payload),
     onSuccess: (...args) => {
       qc.invalidateQueries({ queryKey: QK.base });
-      qc.invalidateQueries({ queryKey: QK.stats });
       options.onSuccess?.(...args);
     },
   });
@@ -117,7 +115,6 @@ export const useAdminMarkNotificationAsRead = (options: HookOptions = {}) => {
       adminNotificationsService.markAsRead(notificationId),
     onSuccess: (...args) => {
       qc.invalidateQueries({ queryKey: QK.base });
-      qc.invalidateQueries({ queryKey: QK.stats });
       options.onSuccess?.(...args);
     },
   });
@@ -129,7 +126,6 @@ export const useAdminMarkAllNotificationsAsRead = (options: HookOptions = {}) =>
     mutationFn: () => adminNotificationsService.markAllAsRead(),
     onSuccess: (...args) => {
       qc.invalidateQueries({ queryKey: QK.base });
-      qc.invalidateQueries({ queryKey: QK.stats });
       options.onSuccess?.(...args);
     },
   });
@@ -138,11 +134,53 @@ export const useAdminMarkAllNotificationsAsRead = (options: HookOptions = {}) =>
 export const useAdminDeleteNotification = (options: HookOptions = {}) => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (notificationId: any) =>
-      adminNotificationsService.delete(notificationId),
+    mutationFn: (notificationId: string) => adminNotificationsService.delete(notificationId),
     onSuccess: (...args) => {
       qc.invalidateQueries({ queryKey: QK.base });
-      qc.invalidateQueries({ queryKey: QK.stats });
+      options.onSuccess?.(...args);
+    },
+  });
+};
+
+export const useAdminArchiveNotification = (options: HookOptions = {}) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (notificationId: string) => adminNotificationsService.archive(notificationId),
+    onSuccess: (...args) => {
+      qc.invalidateQueries({ queryKey: QK.base });
+      options.onSuccess?.(...args);
+    },
+  });
+};
+
+export const useAdminUnarchiveNotification = (options: HookOptions = {}) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (notificationId: string) => adminNotificationsService.unarchive(notificationId),
+    onSuccess: (...args) => {
+      qc.invalidateQueries({ queryKey: QK.base });
+      options.onSuccess?.(...args);
+    },
+  });
+};
+
+export const useAdminArchiveAllRead = (options: HookOptions = {}) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => adminNotificationsService.archiveAllRead(),
+    onSuccess: (...args) => {
+      qc.invalidateQueries({ queryKey: QK.base });
+      options.onSuccess?.(...args);
+    },
+  });
+};
+
+export const useAdminDeleteAllArchived = (options: HookOptions = {}) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => adminNotificationsService.deleteAllArchived(),
+    onSuccess: (...args) => {
+      qc.invalidateQueries({ queryKey: QK.base });
       options.onSuccess?.(...args);
     },
   });
@@ -153,81 +191,22 @@ export const useAdminDeleteNotification = (options: HookOptions = {}) => {
 ========================= */
 
 export const useAdminNotificationsHub = (params = {}) => {
-  const { user, isAuthReady, isAuthenticated, isAdmin } = useAuth();
-  const qc = useQueryClient();
-  const shouldFetch = Boolean(isAuthReady && isAuthenticated && isAdmin && user?.uuid);
+  const { isAuthReady, isAuthenticated, isAdmin } = useAuth();
+  const shouldFetch = Boolean(isAuthReady && isAuthenticated && isAdmin);
 
   const { data: notificationsResp, isLoading, error } = useAdminNotifications(params);
   const { data: stats, isLoading: isLoadingStats, error: statsError } = useAdminNotificationStats();
 
-  const broadcast = useAdminBroadcastNotification();
-  const sendToUser = useAdminSendNotificationToUser();
-  const markAsRead = useAdminMarkNotificationAsRead();
-  const markAllAsRead = useAdminMarkAllNotificationsAsRead();
-  const remove = useAdminDeleteNotification();
+  const broadcast         = useAdminBroadcastNotification();
+  const sendToUser        = useAdminSendNotificationToUser();
+  const markAsRead        = useAdminMarkNotificationAsRead();
+  const markAllAsRead     = useAdminMarkAllNotificationsAsRead();
+  const remove            = useAdminDeleteNotification();
+  const archive           = useAdminArchiveNotification();
+  const unarchive         = useAdminUnarchiveNotification();
 
-  // Pequeño debounce para evitar invalidar en ráfaga
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const bump = () => {
-    if (debounceRef.current !== null) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      qc.invalidateQueries({ queryKey: QK.base });
-      qc.invalidateQueries({ queryKey: QK.stats });
-    }, 120);
-  };
-
-  useEffect(() => {
-    if (!shouldFetch) return;
-
-    const echo = getEcho();
-
-    // 1) Canal global de admin para "notificaciones de admin"
-    const chAdminNotifications = echo
-      .private('admin.notifications')
-      .subscribed(() => console.log('✅ admin.notifications subscribed'))
-      .error((e: any) => console.error('❌ admin.notifications error', e));
-
-    // a) Si usas Laravel Notifications dirigidas a "admins" como notifiable:
-    chAdminNotifications.notification((n: any) => {
-      console.log('🔔 admin.notification', n);
-      bump();
-    });
-
-    // b) Eventos custom con broadcastAs('...'):
-    const adminNotifEvents = [
-      'admin.service.purchased',
-      'admin.invoice.generated',
-      'admin.payment.processed',
-      'admin.service.status',
-      'notification.received',
-    ];
-    adminNotifEvents.forEach((name) => chAdminNotifications.listen(`.${name}`, bump));
-
-    // 2) Canal de "servicios" de admin
-    const chAdminServices = echo
-      .private('admin.services')
-      .subscribed(() => console.log('✅ admin.services subscribed'))
-      .error((e: any) => console.error('❌ admin.services error', e));
-
-    const adminServiceEvents = [
-      'service.purchased',
-      'invoice.generated',
-      'payment.processed',
-      'service.status',
-      'service.maintenance.scheduled',
-      'service.maintenance.completed',
-    ];
-    adminServiceEvents.forEach((name) => chAdminServices.listen(`.${name}`, bump));
-
-    return () => {
-      try {
-        adminNotifEvents.forEach((name) => chAdminNotifications.stopListening(`.${name}`));
-        adminServiceEvents.forEach((name) => chAdminServices.stopListening(`.${name}`));
-      } catch (err) {
-        console.warn('cleanup warn (admin hub):', err);
-      }
-    };
-  }, [shouldFetch, qc]);
+  // El canal admin.notifications es suscrito por NotificationContext,
+  // que invalida ['admin', 'notifications'] en cada evento WS.
 
   return {
     // datos
@@ -249,5 +228,12 @@ export const useAdminNotificationsHub = (params = {}) => {
     markAsRead: markAsRead.mutate,
     markAllAsRead: markAllAsRead.mutate,
     deleteNotification: remove.mutate,
+    archiveNotification: archive.mutate,
+    unarchiveNotification: unarchive.mutate,
+    // pending IDs for per-button loading states
+    markingReadId:    markAsRead.isPending  ? (markAsRead.variables  as string) : null,
+    deletingId:       remove.isPending      ? (remove.variables      as string) : null,
+    archivingId:      archive.isPending     ? (archive.variables     as string) : null,
+    unarchivingId:    unarchive.isPending   ? (unarchive.variables   as string) : null,
   };
 };

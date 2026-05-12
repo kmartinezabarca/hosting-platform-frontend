@@ -1,8 +1,6 @@
 import apiClient from '@infrastructure/api/apiClient';
 
 const adminNotificationsService = {
-  // Lista (acepta filtros/paginación)
-  // Ej: { page, per_page, read: '0|1', type: 'system|billing|...' }
   async getNotifications(params: Record<string, any> = {}) {
     const qs = new URLSearchParams(
       Object.fromEntries(
@@ -13,39 +11,53 @@ const adminNotificationsService = {
     return res.data;
   },
 
-  // Stats (cuentas, etc.)
   async getStats() {
     const res = await apiClient.get('/admin/notifications/stats');
     return res.data;
   },
 
-  // Broadcast masivo
-  async broadcast(payload) {
+  async broadcast(payload: any) {
     const res = await apiClient.post('/admin/notifications/broadcast', payload);
     return res.data;
   },
 
-  // Enviar a usuario
-  async sendToUser(userId, payload) {
+  async sendToUser(userId: any, payload: any) {
     const res = await apiClient.post(`/admin/notifications/send-to-user/${userId}`, payload);
     return res.data;
   },
 
-  // Marcar como leída
-  async markAsRead(notificationId) {
+  async markAsRead(notificationId: string) {
     const res = await apiClient.put(`/admin/notifications/${notificationId}/read`);
     return res.data;
   },
 
-  // Marcar todas como leídas
   async markAllAsRead() {
     const res = await apiClient.put('/admin/notifications/mark-all-read');
     return res.data;
   },
 
-  // Eliminar
-  async delete(notificationId) {
+  async archive(notificationId: string) {
+    const res = await apiClient.put(`/admin/notifications/${notificationId}/archive`);
+    return res.data;
+  },
+
+  async unarchive(notificationId: string) {
+    const res = await apiClient.put(`/admin/notifications/${notificationId}/unarchive`);
+    return res.data;
+  },
+
+  async archiveAllRead() {
+    const res = await apiClient.put('/admin/notifications/archive-all-read');
+    return res.data;
+  },
+
+  async delete(notificationId: string) {
     const res = await apiClient.delete(`/admin/notifications/${notificationId}`);
+    return res.data;
+  },
+
+  async deleteAllArchived() {
+    const res = await apiClient.delete('/admin/notifications/archived');
     return res.data;
   },
 };

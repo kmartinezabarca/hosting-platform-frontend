@@ -9,11 +9,10 @@ const AdminLoginPage      = lazy(() => import('@presentation/pages/auth/AdminLog
 const NotFoundPage        = lazy(() => import('@presentation/pages/NotFoundPage'))
 const QuotationPublicPage = lazy(() => import('@presentation/pages/QuotationPublicPage'))
 
-const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-  </div>
-)
+// El bundle de AppAdmin se descarga muy rápido — sin fallback visual
+// para evitar el efecto de 3 skeletons en secuencia.
+// El skeleton real lo maneja ProtectedRoute (auth check) y AdminLayout (navegación entre páginas).
+const PageLoader = () => null
 
 export default function AppAdmin() {
   return (

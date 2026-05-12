@@ -40,12 +40,11 @@ const AdminSystemStatusPage   = lazy(() => import('@presentation/pages/admin/Adm
 const AdminGameServersPage    = lazy(() => import('@presentation/pages/admin/AdminGameServersPage'));
 const AdminCfdiPage           = lazy(() => import('@presentation/pages/admin/AdminCfdiPage'));
 const AdminQuotationsPage     = lazy(() => import('@presentation/pages/admin/AdminQuotationsPage'));
-const AdminQuotationDetailPage = lazy(() => import('@presentation/pages/admin/AdminQuotationDetailPage'));
-const NotFoundPage           = lazy(() => import('@presentation/pages/NotFoundPage'));
+const AdminQuotationDetailPage  = lazy(() => import('@presentation/pages/admin/AdminQuotationDetailPage'));
+const AdminNotificationsPage    = lazy(() => import('@presentation/pages/admin/AdminNotificationsPage'));
+const AdminProfilePage          = lazy(() => import('@presentation/pages/admin/AdminProfilePage'));
+const NotFoundPage              = lazy(() => import('@presentation/pages/NotFoundPage'));
 import logoROKE from "@presentation/assets/logo_v4.png"
-
-const SIDEBAR_WIDTH = "280px";
-const SIDEBAR_WIDTH_COLLAPSED = "72px";
 
 const navigationConfig = {
   overview: [
@@ -208,8 +207,6 @@ const AdminLayout = () => {
       console.error('Error al cerrar sesión:', error);
     }
   };
-
-  const isActiveRoute = (href) => location.pathname.startsWith(href);
   
   const isParentActive = (item) => {
     if (item.expandable && item.children) {
@@ -256,7 +253,7 @@ const AdminLayout = () => {
       </a>
 
       {/* Header Premium */}
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-border bg-background">
         <div className="container-premium">
           <div className="flex items-center justify-between h-16">
             {/* Logo y Brand */}
@@ -434,7 +431,7 @@ const AdminLayout = () => {
                           </div>
                           <div className="py-2">
                             <Link
-                              to="/client/profile"
+                              to="/admin/profile"
                               onClick={() => setIsProfileMenuOpen(false)}
                               className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent transition-colors"
                             >
@@ -465,8 +462,9 @@ const AdminLayout = () => {
       <div className="flex">
         {/* Sidebar Premium */}
         <aside
+          style={{ willChange: 'width' }}
           className={cn(
-            "fixed left-0 top-16 bottom-0 z-40 bg-card border-r border-border transition-all duration-300 ease-out overflow-hidden",
+            "fixed left-0 top-16 bottom-0 z-40 bg-card border-r border-border transition-[width] duration-150 ease-in-out overflow-hidden",
             "hidden lg:flex lg:flex-col",
             isSidebarCollapsed ? "w-[72px]" : "w-[280px]"
           )}
@@ -573,21 +571,14 @@ const AdminLayout = () => {
                           key={item.name}
                           to={item.href}
                           className={cn(
-                            "group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 relative",
-                            isActive 
-                              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" 
+                            "group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150 relative",
+                            isActive
+                              ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
                               : "hover:bg-accent text-muted-foreground hover:text-foreground",
                             isSidebarCollapsed && "justify-center px-2"
                           )}
                           title={isSidebarCollapsed ? item.name : undefined}
                         >
-                          {isActive && (
-                            <motion.div
-                              layoutId="activeNav"
-                              className="absolute inset-0 rounded-xl bg-primary -z-10"
-                              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                            />
-                          )}
                           <Icon className={cn("w-5 h-5 shrink-0", isActive ? "text-primary-foreground" : "")} />
                           {!isSidebarCollapsed ? (
                             <>
@@ -758,17 +749,33 @@ const AdminLayout = () => {
           id="admin-main-content"
           tabIndex={-1}
           className={cn(
-            "flex-1 min-h-[calc(100vh-4rem)] overflow-y-auto transition-all duration-300 pt-16 outline-none",
+            "flex-1 min-h-[calc(100vh-4rem)] overflow-y-auto pt-16 outline-none",
             isSidebarCollapsed ? "lg:ml-[72px]" : "lg:ml-[280px]"
           )}
         >
           <div className="container-premium section-padding">
             <SectionErrorBoundary name="admin-main" fallbackMsg="Ocurrió un error en esta sección del panel. Puedes reintentar sin perder el menú de navegación.">
-            <Suspense fallback={
-              <div className="flex items-center justify-center h-64">
-                <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-              </div>
-            }>
+              <Suspense fallback={
+                <div className="flex flex-col items-center justify-center min-h-[52vh] gap-8 select-none">
+                  <div className="relative">
+                    <div className="absolute -inset-6 rounded-3xl bg-primary/5 blur-2xl" />
+                    <img
+                      src={logoROKE}
+                      alt="ROKE Industries"
+                      className="relative h-12 w-auto object-contain drop-shadow-sm opacity-80"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {[0, 1, 2].map((i) => (
+                      <span
+                        key={i}
+                        className="block h-1.5 w-1.5 rounded-full bg-primary/50 animate-bounce"
+                        style={{ animationDelay: `${i * 180}ms`, animationDuration: '900ms' }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              }>
               <Routes>
                 <Route path="dashboard" element={<AdminDashboardPage />} />
                 <Route path="users" element={<AdminUsersPage />} />
@@ -788,9 +795,11 @@ const AdminLayout = () => {
                 <Route path="cfdi"          element={<AdminCfdiPage />} />
                 <Route path="quotations"           element={<AdminQuotationsPage />} />
                 <Route path="quotations/:uuid"    element={<AdminQuotationDetailPage />} />
+                <Route path="notifications"        element={<AdminNotificationsPage />} />
+                <Route path="profile"              element={<AdminProfilePage />} />
                 <Route path="*"             element={<NotFoundPage />} />
               </Routes>
-            </Suspense>
+              </Suspense>
             </SectionErrorBoundary>
           </div>
         </main>

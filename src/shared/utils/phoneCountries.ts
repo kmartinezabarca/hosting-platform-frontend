@@ -69,7 +69,7 @@ export const formatPhoneWithPrefix = (phoneNumber: string, countryCode: string):
   if (!prefix) return phoneNumber;
   
   // Remover espacios, guiones, paréntesis y cualquier prefijo existente
-  let cleanNumber = phoneNumber.replace(/[\s\-\(\)\+]/g, '');
+  const cleanNumber = phoneNumber.replace(/[\s\-\(\)\+]/g, '');
   
   // Si el número ya comienza con el prefijo (sin el +), no lo añadimos de nuevo
   if (cleanNumber.startsWith(prefix.replace('+', ''))) {

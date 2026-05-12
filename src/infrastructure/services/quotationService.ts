@@ -10,8 +10,16 @@ export interface QuotationItem {
   subtotal: number;
 }
 
-export type QuotationStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'rejected' | 'expired';
+export type QuotationStatus = 'draft' | 'sent' | 'viewed' | 'accepted' | 'rejected' | 'expired' | 'cancelled' | 'pending_revision';
 export type QuotationCurrency = 'MXN' | 'USD';
+
+export interface Activity {
+  id: number;
+  action: string;
+  description?: string | null;
+  user_id?: number | null;
+  created_at: string;
+}
 
 export interface Quotation {
   id: number;
@@ -32,6 +40,17 @@ export interface Quotation {
   notes?: string | null;
   terms?: string | null;
   status: QuotationStatus;
+  status_label: string;
+  revision_number: number;
+  parent_uuid?: string | null;
+  is_expired: boolean;
+  can_be_modified: boolean;
+  can_be_deleted: boolean;
+  can_be_sent: boolean;
+  can_be_accepted: boolean;
+  can_be_rejected: boolean;
+  can_be_reopened: boolean;
+  activities: Activity[];
   public_token: string;
   public_url: string;
   expires_at: string | null;
@@ -124,6 +143,30 @@ const quotationService = {
    */
   regenerateLink: async (uuid: string): Promise<any> => {
     const res = await ApiService.post(`/admin/quotations/${uuid}/regenerate-link`, {});
+    return res.data;
+  },
+
+  /** Accept quotation */
+  accept: async (uuid: string): Promise<any> => {
+    const res = await ApiService.post(`/admin/quotations/${uuid}/accept`, {});
+    return res.data;
+  },
+
+  /** Reject quotation */
+  reject: async (uuid: string): Promise<any> => {
+    const res = await ApiService.post(`/admin/quotations/${uuid}/reject`, {});
+    return res.data;
+  },
+
+  /** Reopen quotation (from rejected/expired/cancelled back to draft) */
+  reopen: async (uuid: string): Promise<any> => {
+    const res = await ApiService.post(`/admin/quotations/${uuid}/reopen`, {});
+    return res.data;
+  },
+
+  /** Create a revision (duplicate as new quotation with reference to original) */
+  createRevision: async (uuid: string): Promise<any> => {
+    const res = await ApiService.post(`/admin/quotations/${uuid}/revision`, {});
     return res.data;
   },
 

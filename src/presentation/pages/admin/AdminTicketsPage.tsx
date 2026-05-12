@@ -10,9 +10,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { Card, CardContent } from '@presentation/components/ui/card';
 import { Badge } from '@presentation/components/ui/badge';
 import { Textarea } from '@presentation/components/ui/textarea';
-import { Progress } from '@presentation/components/ui/progress';
 import { Skeleton } from '@presentation/components/ui/skeleton';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@presentation/components/ui/tooltip';
+import { StatCard } from '@presentation/components/ui/stat-card';
 import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
 import { AdminTicketSheet } from '@presentation/components/features/admin/AdminTicketSheet';
 import {
@@ -236,39 +236,10 @@ const AdminTicketsPage = () => {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-slate-100/80 to-slate-50/50 dark:from-slate-800/60 dark:to-slate-800/30 border-slate-200/50 dark:border-slate-700/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div><p className="text-xs font-medium text-slate-600 dark:text-slate-300">Total</p><p className="text-2xl font-semibold mt-1 text-slate-800 dark:text-slate-100">{stats.total}</p></div>
-              <div className="p-2.5 bg-slate-500/15 rounded-xl"><Ticket className="h-5 w-5 text-slate-600 dark:text-slate-300" /></div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-blue-50/80 to-blue-50/30 dark:from-blue-950/40 dark:to-blue-950/20 border-blue-200/50 dark:border-blue-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div><p className="text-xs font-medium text-blue-700 dark:text-blue-300">Abiertos</p><p className="text-2xl font-semibold mt-1 text-blue-800 dark:text-blue-100">{stats.open}</p></div>
-              <div className="p-2.5 bg-blue-500/15 rounded-xl"><HelpCircle className="h-5 w-5 text-blue-600" /></div>
-            </div>
-            <Progress value={getOpenPercentage()} className="h-1 mt-3 bg-blue-200/50 dark:bg-blue-800/50 [&>div]:bg-blue-500" />
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-red-50/80 to-red-50/30 dark:from-red-950/40 dark:to-red-950/20 border-red-200/50 dark:border-red-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div><p className="text-xs font-medium text-red-700 dark:text-red-300">Urgentes</p><p className="text-2xl font-semibold mt-1 text-red-800 dark:text-red-100">{stats.urgent}</p></div>
-              <div className="p-2.5 bg-red-500/15 rounded-xl"><Zap className="h-5 w-5 text-red-600" /></div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 dark:from-emerald-950/40 dark:to-emerald-950/20 border-emerald-200/50 dark:border-emerald-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div><p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Resueltos</p><p className="text-2xl font-semibold mt-1 text-emerald-800 dark:text-emerald-100">{stats.resolved}</p></div>
-              <div className="p-2.5 bg-emerald-500/15 rounded-xl"><CheckCircle className="h-5 w-5 text-emerald-600" /></div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard icon={Ticket} label="Total" value={stats.total} accent="slate" />
+        <StatCard icon={HelpCircle} label="Abiertos" value={stats.open} progress={getOpenPercentage()} accent="blue" />
+        <StatCard icon={Zap} label="Urgentes" value={stats.urgent} accent="red" />
+        <StatCard icon={CheckCircle} label="Resueltos" value={stats.resolved} accent="emerald" />
       </div>
 
       <Card className="bg-card border-border/50">
@@ -289,7 +260,7 @@ const AdminTicketsPage = () => {
                 </Button>
               )}
             </div>
-            <div className="text-sm text-muted-foreground"><span className="font-medium text-foreground">{tickets.length}</span> tickets</div>
+            <div className="text-sm text-muted-foreground"><span className="font-medium text-foreground">{tickets.length}</span> tickets{totalPages > 1 && <span className="ml-2 text-xs">(Página {currentPage} de {totalPages})</span>}</div>
           </div>
 
           {showFilters && (
@@ -368,25 +339,24 @@ const AdminTicketsPage = () => {
             </table>
           </div>
 
-          {tickets.length > 0 && totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-border dark:border-white/10">
-              <div className="text-sm text-muted-foreground">Página <span className="font-medium text-foreground">{currentPage}</span> de <span className="font-medium text-foreground">{totalPages}</span></div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1 || isLoadingState}>Anterior</Button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) pageNum = i + 1;
-                    else if (currentPage <= 3) pageNum = i + 1;
-                    else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-                    else pageNum = currentPage - 2 + i;
-                    return <Button key={pageNum} variant={currentPage === pageNum ? "default" : "ghost"} size="sm" onClick={() => setCurrentPage(pageNum)} disabled={isLoadingState} className="h-8 w-8 p-0">{pageNum}</Button>;
-                  })}
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || isLoadingState}>Siguiente</Button>
+          {/* Pagination (always visible) */}
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border dark:border-white/10">
+            <div className="text-sm text-muted-foreground">Página <span className="font-medium text-foreground">{currentPage}</span> de <span className="font-medium text-foreground">{totalPages}</span></div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1 || isLoadingState}>Anterior</Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) pageNum = i + 1;
+                  else if (currentPage <= 3) pageNum = i + 1;
+                  else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                  else pageNum = currentPage - 2 + i;
+                  return <Button key={pageNum} variant={currentPage === pageNum ? "default" : "ghost"} size="sm" onClick={() => setCurrentPage(pageNum)} disabled={isLoadingState} className="h-8 w-8 p-0">{pageNum}</Button>;
+                })}
               </div>
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || isLoadingState}>Siguiente</Button>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 

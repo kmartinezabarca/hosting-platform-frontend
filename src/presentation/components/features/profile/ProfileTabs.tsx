@@ -2,13 +2,14 @@ import React from 'react';
 import { User, Shield, MonitorSmartphone, Receipt } from 'lucide-react';
 import { cn } from '@shared/utils/utils';
 
-const ProfileTabs = ({ activeTab, onTabChange, children }) => {
-  const tabs = [
-    { id: 'profile',  label: 'Información Personal', icon: User },
-    { id: 'fiscal',   label: 'Facturación',           icon: Receipt },
-    { id: 'security', label: 'Seguridad',              icon: Shield },
-    { id: 'devices',  label: 'Dispositivos',           icon: MonitorSmartphone },
-  ];
+export const DEFAULT_PROFILE_TABS = [
+  { id: 'profile',  label: 'Información Personal', icon: User },
+  { id: 'fiscal',   label: 'Facturación',           icon: Receipt },
+  { id: 'security', label: 'Seguridad',              icon: Shield },
+  { id: 'devices',  label: 'Dispositivos',           icon: MonitorSmartphone },
+];
+
+const ProfileTabs = ({ activeTab, onTabChange, children, tabs = DEFAULT_PROFILE_TABS }) => {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[240px_1fr]">

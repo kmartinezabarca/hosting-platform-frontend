@@ -11,10 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetContent } from '@presentation/components/ui/sheet';
 import { Card, CardContent } from '@presentation/components/ui/card';
 import { Badge } from '@presentation/components/ui/badge';
-import { Progress } from '@presentation/components/ui/progress';
 import { Skeleton } from '@presentation/components/ui/skeleton';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@presentation/components/ui/tooltip';
 import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
+import { StatCard } from '@presentation/components/ui/stat-card';
 import {
   Plus, Edit, Trash2, Search, Server, Play, Pause, RefreshCw, Cloud, CheckCircle,
   Filter, X, Loader2, User, DollarSign, Settings2, Cpu, Code2, Shield, Headphones,
@@ -291,12 +291,16 @@ const AdminServicesPage = () => {
     setEditingService(service);
     setSelectedUser(service.user || null);
     setUserSearch(service.user ? `${service.user.first_name ?? ''} ${service.user.last_name ?? ''}`.trim() : '');
-    const found = (plansData?.data || plansData || []).find(p => p.id === service.service_plan_id);
+    const found = (plansData?.data || plansData || []).find(p => p.id === service.plan?.id);
     setSelectedPlan(found ?? null);
-    setConfiguration(service.configuration || {});
+    setConfiguration({
+      ...(service.configuration || {}),
+      ...(service.connection_details || {}),
+      ...(service.max_players != null ? { max_players: String(service.max_players) } : {}),
+    });
     reset({
       user_id: service.user_id?.toString() || '',
-      service_plan_id: service.service_plan_id?.toString() || '',
+      service_plan_id: service.plan?.id?.toString() || '',
       name: service.name || '',
       domain: service.domain || '',
       status: service.status || 'active',
@@ -319,8 +323,8 @@ const AdminServicesPage = () => {
         if (!editingService) {
           setValue('price', plan?.price?.toString() || '');
           setValue('billing_cycle', cycles[0]);
+          setConfiguration({});
         }
-        setConfiguration({});
       }
     }
   }, [watchServicePlanId, plansData, editingService, setValue]);
@@ -384,40 +388,10 @@ const AdminServicesPage = () => {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-slate-100/80 to-slate-50/50 dark:from-slate-800/60 dark:to-slate-800/30 border-slate-200/50 dark:border-slate-700/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div><p className="text-xs font-medium text-slate-600 dark:text-slate-300">Total</p><p className="text-2xl font-semibold mt-1 text-slate-800 dark:text-slate-100">{stats.total}</p></div>
-              <div className="p-2.5 bg-slate-500/15 rounded-xl"><Cloud className="h-5 w-5 text-slate-600 dark:text-slate-300" /></div>
-            </div>
-            <Progress value={100} className="h-1 mt-3 bg-slate-200/50 dark:bg-slate-700/50" />
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 dark:from-emerald-950/40 dark:to-emerald-950/20 border-emerald-200/50 dark:border-emerald-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div><p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Activos</p><p className="text-2xl font-semibold mt-1 text-emerald-800 dark:text-emerald-100">{stats.active}</p></div>
-              <div className="p-2.5 bg-emerald-500/15 rounded-xl"><CheckCircle className="h-5 w-5 text-emerald-600" /></div>
-            </div>
-            <Progress value={getActivePercentage()} className="h-1 mt-3 bg-emerald-200/50 dark:bg-emerald-800/50 [&>div]:bg-emerald-500" />
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-red-50/80 to-red-50/30 dark:from-red-950/40 dark:to-red-950/20 border-red-200/50 dark:border-red-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div><p className="text-xs font-medium text-red-700 dark:text-red-300">Suspendidos</p><p className="text-2xl font-semibold mt-1 text-red-800 dark:text-red-100">{stats.suspended}</p></div>
-              <div className="p-2.5 bg-red-500/15 rounded-xl"><Pause className="h-5 w-5 text-red-600" /></div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-amber-50/80 to-amber-50/30 dark:from-amber-950/40 dark:to-amber-950/20 border-amber-200/50 dark:border-amber-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div><p className="text-xs font-medium text-amber-700 dark:text-amber-300">Pendientes</p><p className="text-2xl font-semibold mt-1 text-amber-800 dark:text-amber-100">{stats.pending}</p></div>
-              <div className="p-2.5 bg-amber-500/15 rounded-xl"><Server className="h-5 w-5 text-amber-600" /></div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard icon={Cloud} label="Total" value={stats.total} accent="slate" loading={isLoadingState} />
+        <StatCard icon={CheckCircle} label="Activos" value={stats.active} progress={getActivePercentage()} accent="emerald" loading={isLoadingState} />
+        <StatCard icon={Pause} label="Suspendidos" value={stats.suspended} accent="red" loading={isLoadingState} />
+        <StatCard icon={Server} label="Pendientes" value={stats.pending} accent="amber" loading={isLoadingState} />
       </div>
 
       <Card className="bg-card border-border/50">
@@ -438,7 +412,6 @@ const AdminServicesPage = () => {
                 </Button>
               )}
             </div>
-            <div className="text-sm text-muted-foreground"><span className="font-medium text-foreground">{services.length}</span> servicios</div>
           </div>
 
           {showFilters && (
@@ -491,7 +464,7 @@ const AdminServicesPage = () => {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center"><Server className="h-5 w-5 text-primary" /></div>
-                          <div className="min-w-0"><p className="font-medium text-sm text-foreground truncate">{service.domain || 'Sin dominio'}</p><p className="text-xs text-muted-foreground truncate">{service.user?.email || 'Sin email'}</p></div>
+                          <div className="min-w-0"><p className="font-medium text-sm text-foreground truncate">{service.domain || service.name}</p><p className="text-xs text-muted-foreground truncate">{service.user?.email || 'Sin email'}</p></div>
                         </div>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell"><div className="flex items-center gap-2"><User className="h-4 w-4 text-muted-foreground" /><span className="text-sm text-foreground">{service.user?.first_name} {service.user?.last_name}</span></div></td>

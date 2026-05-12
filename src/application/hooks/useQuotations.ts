@@ -116,6 +116,54 @@ export const useRegenerateQuotationLink = () => {
   });
 };
 
+/** Accept quotation */
+export const useAcceptQuotation = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (uuid: string) => quotationService.accept(uuid),
+    onSuccess: (_res, uuid) => {
+      qc.invalidateQueries({ queryKey: quotationKeys.lists() });
+      qc.invalidateQueries({ queryKey: quotationKeys.detail(uuid) });
+    },
+  });
+};
+
+/** Reject quotation */
+export const useRejectQuotation = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (uuid: string) => quotationService.reject(uuid),
+    onSuccess: (_res, uuid) => {
+      qc.invalidateQueries({ queryKey: quotationKeys.lists() });
+      qc.invalidateQueries({ queryKey: quotationKeys.detail(uuid) });
+    },
+  });
+};
+
+/** Reopen quotation (from rejected/expired/cancelled back to draft) */
+export const useReopenQuotation = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (uuid: string) => quotationService.reopen(uuid),
+    onSuccess: (_res, uuid) => {
+      qc.invalidateQueries({ queryKey: quotationKeys.lists() });
+      qc.invalidateQueries({ queryKey: quotationKeys.detail(uuid) });
+    },
+  });
+};
+
+/** Create a revision (duplicate as new quotation) */
+export const useCreateQuotationRevision = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (uuid: string) => quotationService.createRevision(uuid),
+    onSuccess: (_res, uuid) => {
+      qc.invalidateQueries({ queryKey: quotationKeys.lists() });
+      qc.invalidateQueries({ queryKey: quotationKeys.detail(uuid) });
+    },
+  });
+};
+
 // ── Public hook ───────────────────────────────────────────────────────────────
 
 /** Fetch quotation by public token (no auth required) */

@@ -11,10 +11,10 @@ import { Card, CardContent } from '@presentation/components/ui/card';
 import { Badge } from '@presentation/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@presentation/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@presentation/components/ui/avatar';
-import { Progress } from '@presentation/components/ui/progress';
 import { Skeleton } from '@presentation/components/ui/skeleton';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@presentation/components/ui/tooltip';
 import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
+import { StatCard } from '@presentation/components/ui/stat-card';
 import { 
   Plus, 
   Edit, 
@@ -412,40 +412,10 @@ const AdminUsersPage = () => {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-slate-100/80 to-slate-50/50 dark:from-slate-800/60 dark:to-slate-800/30 border-slate-200/50 dark:border-slate-700/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div><p className="text-xs font-medium text-slate-600 dark:text-slate-300">Total</p><p className="text-2xl font-semibold mt-1 text-slate-800 dark:text-slate-100">{stats.total}</p></div>
-              <div className="p-2.5 bg-slate-500/15 rounded-xl"><Users className="h-5 w-5 text-slate-600 dark:text-slate-300" /></div>
-            </div>
-            <Progress value={100} className="h-1 mt-3 bg-slate-200/50 dark:bg-slate-700/50" />
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 dark:from-emerald-950/40 dark:to-emerald-950/20 border-emerald-200/50 dark:border-emerald-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div><p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Activos</p><p className="text-2xl font-semibold mt-1 text-emerald-800 dark:text-emerald-100">{stats.active}</p></div>
-              <div className="p-2.5 bg-emerald-500/15 rounded-xl"><UserCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" /></div>
-            </div>
-            <Progress value={getActivePercentage()} className="h-1 mt-3 bg-emerald-200/50 dark:bg-emerald-800/50 [&>div]:bg-emerald-500" />
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-red-50/80 to-red-50/30 dark:from-red-950/40 dark:to-red-950/20 border-red-200/50 dark:border-red-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div><p className="text-xs font-medium text-red-700 dark:text-red-300">Suspendidos</p><p className="text-2xl font-semibold mt-1 text-red-800 dark:text-red-100">{stats.suspended}</p></div>
-              <div className="p-2.5 bg-red-500/15 rounded-xl"><UserX className="h-5 w-5 text-red-600 dark:text-red-400" /></div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-amber-50/80 to-amber-50/30 dark:from-amber-950/40 dark:to-amber-950/20 border-amber-200/50 dark:border-amber-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div><p className="text-xs font-medium text-amber-700 dark:text-amber-300">Pendientes</p><p className="text-2xl font-semibold mt-1 text-amber-800 dark:text-amber-100">{stats.pending}</p></div>
-              <div className="p-2.5 bg-amber-500/15 rounded-xl"><Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" /></div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard icon={Users} label="Total" value={stats.total} accent="slate" loading={loading} />
+        <StatCard icon={UserCheck} label="Activos" value={stats.active} progress={getActivePercentage()} accent="emerald" loading={loading} />
+        <StatCard icon={UserX} label="Suspendidos" value={stats.suspended} accent="red" loading={loading} />
+        <StatCard icon={Clock} label="Pendientes" value={stats.pending} accent="amber" loading={loading} />
       </div>
 
       {/* Users Table */}
@@ -466,10 +436,6 @@ const AdminUsersPage = () => {
                   <X className="h-4 w-4" />
                 </Button>
               )}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{(currentPage - 1) * perPage + 1}-{Math.min(currentPage * perPage, sortedUsers.length)}</span> de {sortedUsers.length} usuarios
-              {totalPages > 1 && <span className="ml-2 text-xs">(Página {currentPage} de {totalPages})</span>}
             </div>
           </div>
           
@@ -554,25 +520,24 @@ const AdminUsersPage = () => {
             </table>
           </div>
           
-          {sortedUsers.length > 0 && totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-border dark:border-white/10">
-              <div className="text-sm text-muted-foreground">Página <span className="font-medium text-foreground">{currentPage}</span> de <span className="font-medium text-foreground">{totalPages}</span></div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1 || loading}>Anterior</Button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) pageNum = i + 1;
-                    else if (currentPage <= 3) pageNum = i + 1;
-                    else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-                    else pageNum = currentPage - 2 + i;
-                    return <Button key={pageNum} variant={currentPage === pageNum ? "default" : "ghost"} size="sm" onClick={() => setCurrentPage(pageNum)} disabled={loading} className="h-8 w-8 p-0">{pageNum}</Button>;
-                  })}
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || loading}>Siguiente</Button>
+          {/* Pagination (always visible) */}
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border dark:border-white/10">
+            <div className="text-sm text-muted-foreground">Página <span className="font-medium text-foreground">{currentPage}</span> de <span className="font-medium text-foreground">{totalPages}</span></div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1 || loading}>Anterior</Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) pageNum = i + 1;
+                  else if (currentPage <= 3) pageNum = i + 1;
+                  else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                  else pageNum = currentPage - 2 + i;
+                  return <Button key={pageNum} variant={currentPage === pageNum ? "default" : "ghost"} size="sm" onClick={() => setCurrentPage(pageNum)} disabled={loading} className="h-8 w-8 p-0">{pageNum}</Button>;
+                })}
               </div>
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || loading}>Siguiente</Button>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 

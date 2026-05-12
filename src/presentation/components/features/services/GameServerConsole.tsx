@@ -18,6 +18,8 @@ interface GameServerConsoleProps {
   onJavaVersionError?: (requiredJava: number) => void;
   onServerReady?: () => void;
   onEulaRequired?: () => void;
+  /** Override para obtener credenciales WS (ej. modo admin). Si no se pasa, usa el hook del cliente. */
+  fetchCredentials?: () => Promise<{ token: string; socket: string }>;
 }
 
 // Colores de línea según tema
@@ -35,7 +37,8 @@ const getLineColor = (text: string, dark: boolean) => {
 };
 
 export function GameServerConsole({
-  serviceUuid, serverName, className, enabled = true, onJavaVersionError, onServerReady, onEulaRequired
+  serviceUuid, serverName, className, enabled = true, onJavaVersionError, onServerReady, onEulaRequired,
+  fetchCredentials: fetchCredentialsProp,
 }: GameServerConsoleProps) {
   const [logs, setLogs]               = useState<ConsoleLog[]>([]);
   const [command, setCommand]         = useState("");
@@ -115,7 +118,8 @@ export function GameServerConsole({
   const onEulaRequiredRef = useRef(onEulaRequired);
   useEffect(() => { onEulaRequiredRef.current = onEulaRequired; }, [onEulaRequired]);
 
-  const fetchCredentials = useGameServerWebSocket(serviceUuid);
+  const fetchCredentialsDefault = useGameServerWebSocket(serviceUuid);
+  const fetchCredentials = fetchCredentialsProp ?? fetchCredentialsDefault;
 
   const handleScroll = () => {
     if (!scrollRef.current) return;

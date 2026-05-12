@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'react-router-dom';
 import authService from '@infrastructure/services/authService';
+import { disconnectEcho } from '@infrastructure/services/echoService';
 import { setSentryUser } from '@shared/utils/sentry';
 import {
   useLogin,
@@ -135,6 +136,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const enhancedLogout = async (...args: any[]) => {
     const result = await (logout as any)(...args);
+    disconnectEcho();
     queryClient.removeQueries({ queryKey: ['auth', 'me'] });
     setIsInitialized(false);
     return result;

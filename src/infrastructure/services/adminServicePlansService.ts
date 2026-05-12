@@ -51,6 +51,23 @@ const adminServicePlansService = {
   getBillingCycles: async () => {
     return billingCyclesService.getBillingCycles();
   },
+
+  // ── Bulk operations ─────────────────────────────────────────────────────────
+
+  bulkDelete: async (uuids: string[]) => {
+    const response = await apiClient.post('/admin/service-plans/bulk/delete', { uuids });
+    return response.data;
+  },
+
+  bulkActivate: async (uuids: string[]) => {
+    const response = await apiClient.post('/admin/service-plans/bulk/activate', { uuids });
+    return response.data;
+  },
+
+  bulkDeactivate: async (uuids: string[]) => {
+    const response = await apiClient.post('/admin/service-plans/bulk/deactivate', { uuids });
+    return response.data;
+  },
 };
 
 export default adminServicePlansService;

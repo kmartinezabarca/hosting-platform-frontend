@@ -11,9 +11,9 @@ import { Textarea } from '@presentation/components/ui/textarea';
 import { Separator } from '@presentation/components/ui/separator';
 import { Card, CardContent } from '@presentation/components/ui/card';
 import { Badge } from '@presentation/components/ui/badge';
-import { Progress } from '@presentation/components/ui/progress';
 import { Skeleton } from '@presentation/components/ui/skeleton';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@presentation/components/ui/tooltip';
+import { StatCard } from '@presentation/components/ui/stat-card';
 import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
 import { toast } from 'sonner';
 import { 
@@ -417,68 +417,10 @@ const AdminInvoicesPage = () => {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-slate-100/80 to-slate-50/50 dark:from-slate-800/60 dark:to-slate-800/30 border-slate-200/50 dark:border-slate-700/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-slate-600 dark:text-slate-300">Total</p>
-                <p className="text-2xl font-semibold mt-1 text-slate-800 dark:text-slate-100">{stats.total}</p>
-              </div>
-              <div className="p-2.5 bg-slate-500/15 rounded-xl">
-                <Receipt className="h-5 w-5 text-slate-600 dark:text-slate-300" />
-              </div>
-            </div>
-            <div className="mt-2 text-xs text-slate-600 dark:text-slate-400">
-              {formatCurrency(stats.totalAmount)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 dark:from-emerald-950/40 dark:to-emerald-950/20 border-emerald-200/50 dark:border-emerald-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Pagadas</p>
-                <p className="text-2xl font-semibold mt-1 text-emerald-800 dark:text-emerald-100">{stats.paid}</p>
-              </div>
-              <div className="p-2.5 bg-emerald-500/15 rounded-xl">
-                <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              </div>
-            </div>
-            <Progress value={getPaidPercentage()} className="h-1 mt-3 bg-emerald-200/50 dark:bg-emerald-800/50 [&>div]:bg-emerald-500" />
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-amber-50/80 to-amber-50/30 dark:from-amber-950/40 dark:to-amber-950/20 border-amber-200/50 dark:border-amber-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-amber-700 dark:text-amber-300">Pendientes</p>
-                <p className="text-2xl font-semibold mt-1 text-amber-800 dark:text-amber-100">{stats.pending}</p>
-              </div>
-              <div className="p-2.5 bg-amber-500/15 rounded-xl">
-                <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-              </div>
-            </div>
-            <div className="mt-2 text-xs text-amber-700 dark:text-amber-400">
-              {formatCurrency(stats.pendingAmount)}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-red-50/80 to-red-50/30 dark:from-red-950/40 dark:to-red-950/20 border-red-200/50 dark:border-red-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-red-700 dark:text-red-300">Vencidas</p>
-                <p className="text-2xl font-semibold mt-1 text-red-800 dark:text-red-100">{stats.overdue}</p>
-              </div>
-              <div className="p-2.5 bg-red-500/15 rounded-xl">
-                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard icon={Receipt} label="Total" value={stats.total} subtitle={formatCurrency(stats.totalAmount)} accent="slate" />
+        <StatCard icon={CheckCircle} label="Pagadas" value={stats.paid} progress={getPaidPercentage()} accent="emerald" />
+        <StatCard icon={Clock} label="Pendientes" value={stats.pending} subtitle={formatCurrency(stats.pendingAmount)} accent="amber" />
+        <StatCard icon={AlertTriangle} label="Vencidas" value={stats.overdue} accent="red" />
       </div>
 
       {/* Invoices Table */}

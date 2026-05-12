@@ -1,17 +1,80 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@application/context/AuthContext';
 import type { User } from '@core/entities/models';
+import logoROKE from '@presentation/assets/logo_v4.png';
 
-// Componente de carga
-const LoadingSpinner = (): React.ReactElement => (
-  <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
-      <p className="text-gray-600 dark:text-gray-400">Verificando autenticación...</p>
+// Pantalla de carga branded — se muestra mientras se verifica la sesión
+const LoadingSpinner = (): React.ReactElement => {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    // Barra de progreso animada que llega al ~85% y espera (el resto lo completa el render real)
+    const steps = [
+      { target: 30,  delay: 80  },
+      { target: 55,  delay: 160 },
+      { target: 72,  delay: 260 },
+      { target: 85,  delay: 400 },
+    ];
+    let timeout: ReturnType<typeof setTimeout>;
+    steps.forEach(({ target, delay }) => {
+      timeout = setTimeout(() => setProgress(target), delay);
+    });
+    return () => clearTimeout(timeout);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background">
+      {/* Subtle grid background */}
+      <div
+        className="absolute inset-0 opacity-[0.025] dark:opacity-[0.04] pointer-events-none"
+        style={{
+          backgroundImage: 'linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
+        }}
+      />
+
+      {/* Card central */}
+      <div className="relative flex flex-col items-center gap-8 px-12 py-10 rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm shadow-2xl shadow-black/10 dark:shadow-black/40 min-w-[300px]">
+
+        {/* Logo */}
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="absolute -inset-3 rounded-2xl bg-primary/5 dark:bg-primary/10 blur-xl" />
+            <img
+              src={logoROKE}
+              alt="ROKE Industries"
+              className="relative h-14 w-auto object-contain drop-shadow-sm"
+            />
+          </div>
+          <div className="text-center space-y-0.5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/70 select-none">
+              Panel de Administración
+            </p>
+          </div>
+        </div>
+
+        {/* Barra de progreso */}
+        <div className="w-full space-y-2">
+          <div className="h-0.5 w-full rounded-full bg-border overflow-hidden">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="text-[10px] text-center text-muted-foreground/50 font-medium tracking-wide select-none">
+            Verificando sesión…
+          </p>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <p className="absolute bottom-6 text-[10px] text-muted-foreground/30 tracking-widest uppercase select-none">
+        © {new Date().getFullYear()} ROKE Industries
+      </p>
     </div>
-  </div>
-);
+  );
+};
 
 interface AccessDeniedProps {
   user: User | null;

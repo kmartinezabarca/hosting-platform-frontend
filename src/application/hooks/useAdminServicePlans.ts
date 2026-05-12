@@ -121,3 +121,47 @@ export const useDeleteAdminServicePlan = () => {
   });
 };
 
+// ── Bulk mutations ─────────────────────────────────────────────────────────────
+
+export const useBulkDeleteAdminServicePlans = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (uuids: string[]) => adminServicePlansService.bulkDelete(uuids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminServicePlansKeys.all });
+    },
+    onError: (error) => {
+      console.error('Error bulk deleting service plans:', error);
+    },
+  });
+};
+
+export const useBulkActivateAdminServicePlans = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (uuids: string[]) => adminServicePlansService.bulkActivate(uuids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminServicePlansKeys.all });
+    },
+    onError: (error) => {
+      console.error('Error bulk activating service plans:', error);
+    },
+  });
+};
+
+export const useBulkDeactivateAdminServicePlans = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (uuids: string[]) => adminServicePlansService.bulkDeactivate(uuids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminServicePlansKeys.all });
+    },
+    onError: (error) => {
+      console.error('Error bulk deactivating service plans:', error);
+    },
+  });
+};
+

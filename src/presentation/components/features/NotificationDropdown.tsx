@@ -10,25 +10,36 @@ interface NotificationData {
 interface Notification {
   id: string;
   read_at: string | null;
+  archived_at?: string | null;
   created_at: string;
   data?: NotificationData;
 }
 
 interface NotificationItemProps {
   notification: Notification;
-  onMarkAsRead: (id: string) => void;
+  onMarkAsRead?: (id: string) => void;
+  onArchive?: (id: string) => void;
+  onUnarchive?: (id: string) => void;
   onDelete: (id: string) => void;
+  showArchive?: boolean;
+  isMarkingRead?: boolean;
+  isArchiving?: boolean;
+  isUnarchiving?: boolean;
+  isDeleting?: boolean;
 }
 
 interface NotificationDropdownProps {
   isAdmin?: boolean;
 }
+
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, X, CheckCircle, Trash2, AlertCircle, Info, DollarSign, Package, Wrench, ArrowRight } from 'lucide-react';
+import { Bell, X, CheckCircle, Trash2, AlertCircle, Info, DollarSign, Package, Wrench, ArrowRight, Archive, ArchiveRestore, Loader2 } from 'lucide-react';
 import { useClientNotifications, useUnreadNotificationCount } from '@application/hooks/useClientNotifications';
-import { useAdminNotificationsHub } from '@application/hooks/useAdminNotifications';
+import { useAdminNotificationsHub, useAdminNotifications } from '@application/hooks/useAdminNotifications';
 import { Skeleton } from '@presentation/components/ui/skeleton';
 import { useAuth } from '@application/context/AuthContext';
+
+type Tab = 'unread' | 'read' | 'archived';
 
 const toKey = (type) => (typeof type === 'string' ? type.replace(/\./g, '_').toLowerCase() : 'default');
 
@@ -58,9 +69,16 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-const NotificationItem = ({ notification, onMarkAsRead, onDelete }: NotificationItemProps): React.ReactElement => {
+const Spinner = () => <Loader2 className="w-4 h-4 animate-spin" />;
+
+const NotificationItem = ({
+  notification, onMarkAsRead, onArchive, onUnarchive, onDelete, showArchive = false,
+  isMarkingRead = false, isArchiving = false, isUnarchiving = false, isDeleting = false,
+}: NotificationItemProps): React.ReactElement => {
   const { icon: Icon, color: colorClass } = getNotificationStyle(notification?.data?.type);
   const isUnread = !notification.read_at;
+  const isArchived = !!notification.archived_at;
+  const anyPending = isMarkingRead || isArchiving || isUnarchiving || isDeleting;
 
   return (
     <motion.div
@@ -80,7 +98,7 @@ const NotificationItem = ({ notification, onMarkAsRead, onDelete }: Notification
               <p className="text-sm font-medium text-gray-800 dark:text-gray-100 line-clamp-1">
                 {notification?.data?.title || 'Notificación'}
               </p>
-              {isUnread && (
+              {isUnread && !isMarkingRead && (
                 <div className="flex-shrink-0 w-2.5 h-2.5 bg-blue-500 rounded-full ml-3 mt-1 shadow-[0_0_6px] shadow-blue-500/70" aria-label="No leída" />
               )}
             </div>
@@ -91,14 +109,44 @@ const NotificationItem = ({ notification, onMarkAsRead, onDelete }: Notification
               <p className="text-xs text-gray-400 dark:text-gray-500">
                 {formatDate(notification.created_at)}
               </p>
-              <div className="flex items-center space-x-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                {isUnread && (
-                  <button onClick={() => onMarkAsRead(notification.id)} className="text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 font-semibold">
-                    Leída
+              <div className={`flex items-center gap-2 transition-opacity duration-200 ${anyPending ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                {isUnread && onMarkAsRead && (
+                  <button
+                    onClick={() => !anyPending && onMarkAsRead(notification.id)}
+                    disabled={anyPending}
+                    className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Marcar como leída"
+                  >
+                    {isMarkingRead ? <Spinner /> : 'Leída'}
                   </button>
                 )}
-                <button onClick={() => onDelete(notification.id)} className="text-gray-400 hover:text-red-500 dark:hover:text-red-400">
-                  <Trash2 className="w-4 h-4" />
+                {showArchive && !isArchived && onArchive && (
+                  <button
+                    onClick={() => !anyPending && onArchive(notification.id)}
+                    disabled={anyPending}
+                    className="text-gray-400 hover:text-amber-500 dark:hover:text-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Archivar"
+                  >
+                    {isArchiving ? <Spinner /> : <Archive className="w-4 h-4" />}
+                  </button>
+                )}
+                {showArchive && isArchived && onUnarchive && (
+                  <button
+                    onClick={() => !anyPending && onUnarchive(notification.id)}
+                    disabled={anyPending}
+                    className="text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Restaurar"
+                  >
+                    {isUnarchiving ? <Spinner /> : <ArchiveRestore className="w-4 h-4" />}
+                  </button>
+                )}
+                <button
+                  onClick={() => !anyPending && onDelete(notification.id)}
+                  disabled={anyPending}
+                  className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Eliminar"
+                >
+                  {isDeleting ? <Spinner /> : <Trash2 className="w-4 h-4" />}
                 </button>
               </div>
             </div>
@@ -109,13 +157,28 @@ const NotificationItem = ({ notification, onMarkAsRead, onDelete }: Notification
   );
 };
 
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'unread',   label: 'No leídas' },
+  { id: 'read',     label: 'Leídas' },
+  { id: 'archived', label: 'Archivadas' },
+];
+
+const CLIENT_TABS: { id: Tab; label: string }[] = [
+  { id: 'unread', label: 'No leídas' },
+  { id: 'read',   label: 'Leídas' },
+];
+
 const NotificationDropdown = ({ isAdmin = false }: NotificationDropdownProps): React.ReactElement => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<Tab>('unread');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { isAuthenticated, isAuthReady, user } = useAuth();
 
-  // MEJORA: Hooks encapsulados para mayor claridad.
-  const useNotifications = isAdmin ? useAdminNotificationsHub : useClientNotifications;
+  const adminHub = useAdminNotificationsHub();
+  const clientHub = useClientNotifications();
+  const { unreadCount = 0, isReady: unreadReady } = useUnreadNotificationCount();
+
+  const hub = isAdmin ? adminHub : clientHub;
   const {
     notifications = [],
     isLoading,
@@ -124,10 +187,37 @@ const NotificationDropdown = ({ isAdmin = false }: NotificationDropdownProps): R
     markAllAsRead,
     deleteNotification,
     isReady,
-  } = useNotifications() || {};
-  
-  const { unreadCount = 0, isReady: unreadReady } = useUnreadNotificationCount();
-  const unreadCountForDisplay = isAdmin ? notifications.filter(n => !n.read_at).length : unreadCount;
+  } = hub;
+
+  const archiveNotification   = isAdmin ? (adminHub as any).archiveNotification   : undefined;
+  const unarchiveNotification = isAdmin ? (adminHub as any).unarchiveNotification : undefined;
+
+  // Archivados: solo se fetcha cuando el tab está activo (lazy)
+  const { data: archivedResp } = useAdminNotifications(
+    { archived: true },
+    { enabled: isAdmin && activeTab === 'archived' }
+  );
+  const archivedNotifications: any[] = isAdmin ? (archivedResp?.list ?? []) : [];
+
+  // Pending IDs for per-button spinners
+  const markingReadId:  string | null = (hub as any).markingReadId  ?? null;
+  const deletingId:     string | null = (hub as any).deletingId     ?? null;
+  const archivingId:    string | null = isAdmin ? ((adminHub as any).archivingId   ?? null) : null;
+  const unarchivingId:  string | null = isAdmin ? ((adminHub as any).unarchivingId ?? null) : null;
+
+  const unreadCountForDisplay = isAdmin
+    ? notifications.filter((n: any) => !n.read_at).length
+    : unreadCount;
+
+  const tabs = isAdmin ? TABS : CLIENT_TABS;
+
+  const filteredNotifications = activeTab === 'archived'
+    ? archivedNotifications
+    : notifications.filter((n: any) => {
+        if (activeTab === 'unread') return !n.read_at;
+        if (activeTab === 'read')   return !!n.read_at;
+        return true;
+      });
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -166,19 +256,38 @@ const NotificationDropdown = ({ isAdmin = false }: NotificationDropdownProps): R
         </div>
       );
     }
-    if (notifications.length === 0) {
+    if (filteredNotifications.length === 0) {
+      const emptyMessages: Record<Tab, string> = {
+        unread:   'No tienes notificaciones sin leer.',
+        read:     'No hay notificaciones leídas.',
+        archived: 'El archivo está vacío.',
+      };
       return (
         <div className="p-8 text-center">
           <Bell className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Todo al día</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">No tienes notificaciones nuevas.</p>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {activeTab === 'unread' ? 'Todo al día' : activeTab === 'read' ? 'Vacío' : 'Archivo vacío'}
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{emptyMessages[activeTab]}</p>
         </div>
       );
     }
     return (
       <AnimatePresence>
-        {notifications.map((n) => (
-          <NotificationItem key={n.id} notification={n} onMarkAsRead={markAsRead as (id: string) => void} onDelete={deleteNotification as (id: string) => void} />
+        {filteredNotifications.map((n: any) => (
+          <NotificationItem
+            key={n.id}
+            notification={n}
+            onMarkAsRead={activeTab === 'unread' ? markAsRead as (id: string) => void : undefined}
+            onArchive={isAdmin ? archiveNotification as (id: string) => void : undefined}
+            onUnarchive={isAdmin ? unarchiveNotification as (id: string) => void : undefined}
+            onDelete={deleteNotification as (id: string) => void}
+            showArchive={isAdmin}
+            isMarkingRead={markingReadId === n.id}
+            isArchiving={archivingId === n.id}
+            isUnarchiving={unarchivingId === n.id}
+            isDeleting={deletingId === n.id}
+          />
         ))}
       </AnimatePresence>
     );
@@ -209,25 +318,66 @@ const NotificationDropdown = ({ isAdmin = false }: NotificationDropdownProps): R
             className="absolute right-0 mt-3 w-96 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden flex flex-col"
             style={{ maxHeight: 'calc(100vh - 80px)', minHeight: '150px' }}
           >
-            <header className="p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
-              <div className="flex items-center justify-between">
+            {/* Header */}
+            <header className="px-4 pt-4 pb-0 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm z-10">
+              <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white">Notificaciones</h3>
-                <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {isReady && activeTab === 'unread' && unreadCountForDisplay > 0 && (
+                    <button
+                      onClick={() => markAllAsRead()}
+                      className="text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 font-semibold"
+                    >
+                      Marcar todas como leídas
+                    </button>
+                  )}
+                  <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
-              {isReady && notifications.length > 0 && unreadCountForDisplay > 0 && (
-                <button onClick={() => markAllAsRead()} className="text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 font-semibold mt-1">
-                  Marcar todas como leídas
-                </button>
-              )}
+
+              {/* Tabs */}
+              <div className="flex gap-1">
+                {tabs.map((tab) => {
+                  const count =
+                    tab.id === 'unread'   ? notifications.filter((n: any) => !n.read_at).length
+                    : tab.id === 'read'   ? notifications.filter((n: any) => !!n.read_at).length
+                    : archivedNotifications.length;
+
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-md transition-colors border-b-2 -mb-px ${
+                        activeTab === tab.id
+                          ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      {tab.label}
+                      {count > 0 && (
+                        <span className={`inline-flex items-center justify-center h-4 min-w-[1rem] px-1 rounded-full text-[10px] font-bold ${
+                          activeTab === tab.id
+                            ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                        }`}>
+                          {count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </header>
 
+            {/* List */}
             <div className="overflow-y-auto flex-1">
               {renderContent()}
             </div>
 
-            {isReady && notifications.length > 0 && (
+            {/* Footer */}
+            {isReady && (
               <footer className="p-2 border-t border-gray-200 dark:border-gray-700 sticky bottom-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
                 <button
                   onClick={() => {
