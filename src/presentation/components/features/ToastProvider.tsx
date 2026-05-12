@@ -10,8 +10,17 @@ export const ToastProvider = ({ children }: ToastProviderProps): React.ReactElem
     <>
       {children}
       <Toaster 
-        position="top-right" 
-        theme="light"
+        position="top-right"
+        options={{
+          fill: "#FFFFFF",
+          roundness: 16,
+          styles: {
+            title: "text-gray-900! font-semibold text-sm",
+            description: "text-gray-600! text-xs",
+            badge: "bg-gray-100!",
+            button: "bg-gray-100! hover:bg-gray-200! text-gray-900! text-xs font-medium",
+          },
+        }}
       />
     </>
   );
@@ -21,6 +30,13 @@ interface SileoOptions {
   title?: string;
   description?: string;
   duration?: number;
+  position?: "top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right";
+  icon?: React.ReactNode;
+  action?: { label: string; onClick: () => void };
+  roundness?: number;
+  fill?: string;
+  styles?: Record<string, string>;
+  autopilot?: boolean | { expand: number; collapse: number };
 }
 
 // Helper function to maintain compatibility with existing code or provide a clean API
