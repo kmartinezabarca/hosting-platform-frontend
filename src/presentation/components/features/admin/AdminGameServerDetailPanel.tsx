@@ -110,7 +110,7 @@ function InfoSection({ title, items }: { title: string; items: { label: string; 
   );
 }
 
-export default function AdminGameServerDetailPanel({ server, onClose, embedded = false }: Props) {
+export default function AdminGameServerDetailPanel({ server, onClose, embedded }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('console');
   const [pendingSignal, setPendingSignal] = useState<PowerSignal | null>(null);
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
@@ -159,19 +159,205 @@ export default function AdminGameServerDetailPanel({ server, onClose, embedded =
     { id: 'mods', label: 'Plugins/Mods', Icon: Puzzle },
   ];
 
+  if (embedded) {
+    return (
+      <div className="w-full bg-background border border-border rounded-lg flex flex-col overflow-hidden">
+        {/* Header compacto */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-card shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Gamepad2 className="w-4 h-4 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold text-foreground truncate">{server.name}</h2>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className={cn('w-2 h-2 rounded-full', isRunning ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400')} />
+                <span className={cn('text-xs font-medium', STATE_COLORS[serverState] ?? 'text-slate-400')}>
+                  {serverState}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Control bar */}
+        <div className="px-5 py-2.5 border-b border-border bg-muted/30 shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="grid grid-cols-4 gap-1.5 flex-1">
+              <PowerButton signal="start" label="Iniciar" icon={Play} variant="green" disabled={isRunning || isSuspended} loading={pendingSignal === 'start'} onClick={() => handlePower('start')} />
+              <PowerButton signal="stop" label="Detener" icon={Square} variant="red" disabled={!isRunning} loading={pendingSignal === 'stop'} onClick={() => handlePower('stop')} />
+              <PowerButton signal="restart" label="Reiniciar" icon={RotateCcw} variant="amber" disabled={!isRunning} loading={pendingSignal === 'restart'} onClick={() => handlePower('restart')} />
+              <PowerButton signal="kill" label="Forzar" icon={Zap} variant="orange" disabled={!isRunning} loading={pendingSignal === 'kill'} onClick={() => handlePower('kill')} />
+            </div>
+            {isSuspended && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20 text-xs text-orange-600 dark:text-orange-400 shrink-0">
+                <AlertCircle className="w-3.5 h-3.5" />
+                <span>Suspendido</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-px border-b border-border px-5 shrink-0">
+          {tabs.map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-b-2 -mb-px transition-colors',
+                activeTab === id
+                  ? 'border-primary text-foreground'
+                  : 'border-transparent text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <Icon className="w-3.5 h-3.5" /> {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Contenido principal con sidebar */}
+        <div className="flex-1 overflow-hidden flex relative">
+          {/* Sidebar derecho (colapsable) */}
+          <AnimatePresence>
+            {sidebarExpanded && (
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 280, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className="border-l border-border bg-card overflow-y-auto shrink-0"
+              >
+                <div className="p-4 space-y-4">
+                  {/* Estado del servidor */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground px-1">Estado en Tiempo Real</p>
+                    <div className="space-y-1.5">
+                      <MetricCard icon={Cpu} label="CPU" value={((usage as any)?.cpu ?? 0).toFixed(1)} unit="%" />
+                      <MetricCard icon={MemoryStick} label="RAM" value={fmtBytes((usage as any)?.memory_bytes)} />
+                      <MetricCard icon={HardDrive} label="Disco" value={fmtBytes((usage as any)?.disk_bytes)} />
+                      <MetricCard icon={Clock} label="Uptime" value={fmtUptime((usage as any)?.uptime ?? 0)} />
+                    </div>
+                  </div>
+
+                  {/* Información del cliente */}
+                  <InfoSection
+                    title="Cliente"
+                    items={[
+                      { label: 'Nombre', value: ownerName },
+                      { label: 'Email', value: <span className="text-xs break-all">{ownerEmail}</span> },
+                    ]}
+                  />
+
+                  {/* Información del servidor */}
+                  <InfoSection
+                    title="Servidor"
+                    items={[
+                      { label: 'Plan', value: planName },
+                      { label: 'Software', value: eggName },
+                      { label: 'ID Pterodactyl', value: <code className="text-xs">{String(serverId)}</code> },
+                      { label: 'Dirección', value: displayAddr ? <code className="text-xs break-all">{displayAddr}</code> : '—' },
+                    ]}
+                  />
+
+                  {/* Límites del plan */}
+                  {server.plan?.limits && (
+                    <InfoSection
+                      title="Límites del Plan"
+                      items={Object.entries(server.plan.limits as Record<string, number>).map(([key, val]) => ({
+                        label: key.replace(/_/g, ' '),
+                        value: <span className="font-mono">{val}</span>,
+                      }))}
+                    />
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Área principal */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Botón toggle sidebar */}
+            <button
+              onClick={() => setSidebarExpanded(!sidebarExpanded)}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-1.5 rounded-l-lg bg-muted border-l border-border hover:bg-muted/80 transition-colors"
+              title={sidebarExpanded ? 'Ocultar información' : 'Mostrar información'}
+            >
+              {sidebarExpanded ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            </button>
+
+            {/* Contenido de tabs */}
+            <div className="flex-1 overflow-auto">
+              {activeTab === 'console' && (
+                <div className="h-full flex flex-col p-4 gap-3">
+                  {!isActive ? (
+                    <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                      <WifiOff className="w-10 h-10 opacity-20" />
+                      <p className="text-sm font-medium">Consola no disponible</p>
+                      <p className="text-xs">El servidor está en estado <code className="bg-muted px-1 rounded">{server.status}</code></p>
+                    </div>
+                  ) : !identifier ? (
+                    <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                      <WifiOff className="w-10 h-10 opacity-20" />
+                      <p className="text-sm">Sin identificador de Pterodactyl asignado.</p>
+                    </div>
+                  ) : (
+                    <GameServerConsole
+                      serviceUuid={server.uuid ?? String(server.id)}
+                      serverName={server.name}
+                      enabled={isActive}
+                      className="flex-1 min-h-[400px]"
+                      fetchCredentials={fetchCredentials}
+                    />
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'mods' && (
+                <div className="h-full flex flex-col p-4">
+                  {!isActive ? (
+                    <div className="flex-1 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                      <WifiOff className="w-10 h-10 opacity-20" />
+                      <p className="text-sm font-medium">Gestor no disponible</p>
+                      <p className="text-xs">El servidor debe estar activo para gestionar plugins/mods.</p>
+                    </div>
+                  ) : (
+                    <FileManager
+                      serviceUuid={String(server.id)}
+                      eggName={eggName}
+                      hooksOverride={{
+                        files: adminFiles,
+                        isLoading: filesLoading,
+                        error: filesError,
+                        refetch: filesRefetch,
+                        deleteFiles: adminDelete,
+                        downloadFile: adminDownload,
+                        upload: adminUpload,
+                        progress: adminProgress,
+                        powerAction: (signal) => powerMutation.mutateAsync(signal),
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex" onClick={onClose}>
-      {/* Backdrop */}
       <div className="flex-1 bg-black/50 backdrop-blur-sm" />
 
-      {/* Panel */}
       <motion.div
-        initial={embedded ? false : { x: '100%' }}
-        animate={embedded ? undefined : { x: 0 }}
-        exit={embedded ? undefined : { x: '100%' }}
-        transition={embedded ? undefined : { type: 'spring', stiffness: 300, damping: 30 }}
+        initial={{ x: '100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '100%' }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-3xl bg-background border-l border-border flex flex-col shadow-2xl overflow-hidden"
+        className="w-full max-w-6xl bg-background border-l border-border flex flex-col shadow-2xl overflow-hidden"
       >
         {/* Header compacto */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-card shrink-0">
@@ -189,7 +375,7 @@ export default function AdminGameServerDetailPanel({ server, onClose, embedded =
               </div>
             </div>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg hover:bg-muted">
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-muted">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -231,7 +417,7 @@ export default function AdminGameServerDetailPanel({ server, onClose, embedded =
         </div>
 
         {/* Contenido principal con sidebar */}
-        <div className="flex-1 overflow-hidden flex">
+        <div className="flex-1 overflow-hidden flex relative">
           {/* Sidebar derecho (colapsable) */}
           <AnimatePresence>
             {sidebarExpanded && (
