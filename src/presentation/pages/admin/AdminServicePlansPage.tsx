@@ -38,6 +38,7 @@ import {
   Gamepad2,
   AlertTriangle,
   CheckCheck,
+  FileText,
 } from 'lucide-react';
 import {
   useAdminServicePlans,
@@ -58,7 +59,8 @@ const planSchema = z.object({
   slug: z.string().min(1, 'El slug es requerido'),
   name: z.string().min(1, 'El nombre es requerido'),
   description: z.string().optional(),
-  base_price: z.string().min(1, 'El precio es requerido').refine(val => parseFloat(val) > 0, 'El precio debe ser mayor a 0'),
+  // base_price es opcional a nivel campo; superRefine lo requiere solo para planes de pago
+  base_price: z.string().optional().default(''),
   setup_fee: z.string().optional(),
   stripe_price_id: z.string().optional(),
   is_popular: z.boolean().optional(),
@@ -77,7 +79,30 @@ const planSchema = z.object({
   provisioner:             z.string().optional(),
   pterodactyl_egg:         z.string().optional(),
   pterodactyl_version:     z.string().optional(),
-  pterodactyl_environment: z.record(z.string()).optional(),
+  // Laravel serializa arrays PHP vacíos como [] en JSON; normalizar a {} antes de validar
+  pterodactyl_environment: z.preprocess(
+    (val) => (Array.isArray(val) || val === null || val === undefined ? {} : val),
+    z.record(z.string()).optional()
+  ),
+  // ── Claves SAT para CFDI ─────────────────────────────────────────────────
+  sat_clave_prod_serv:     z.string().max(10).optional(),
+  sat_clave_unidad:        z.string().max(3).optional(),
+  // ── Tipo de plan ─────────────────────────────────────────────────────────
+  plan_type:               z.enum(['paid', 'free', 'trial']).default('paid'),
+  trial_days:              z.string().optional(),
+  converts_to_plan_id:     z.string().optional(),
+}).superRefine((data, ctx) => {
+  // base_price solo es requerido para planes de pago
+  if (data.plan_type === 'paid' && (!data.base_price || data.base_price.trim() === '')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.too_small,
+      minimum: 1,
+      type: 'string',
+      inclusive: true,
+      message: 'El precio es requerido para planes de pago',
+      path: ['base_price'],
+    });
+  }
 });
 
 // ── Egg options ───────────────────────────────────────────────────────────────
@@ -281,12 +306,19 @@ const AdminServicePlansPage = () => {
       pterodactyl_egg: '',
       pterodactyl_version: 'latest',
       pterodactyl_environment: {},
+      sat_clave_prod_serv: '81161501',
+      sat_clave_unidad: 'E48',
+      plan_type: 'paid' as const,
+      trial_days: '',
+      converts_to_plan_id: '',
     }
   });
 
   const features = watch('features') || [];
   const pricing = watch('pricing') || [];
   const specifications = watch('specifications') || [];
+  const planType = watch('plan_type');
+
 
   const filters = useMemo(() => {
     const params: Record<string, any> = { page: currentPage, per_page: perPage };
@@ -354,6 +386,11 @@ const AdminServicePlansPage = () => {
         pterodactyl_egg:          plan.pterodactyl_egg || '',
         pterodactyl_version:      plan.pterodactyl_version || 'latest',
         pterodactyl_environment:  plan.pterodactyl_environment || {},
+        sat_clave_prod_serv:      plan.sat_clave_prod_serv || '81161501',
+        sat_clave_unidad:         plan.sat_clave_unidad || 'E48',
+        plan_type:                (plan.plan_type as 'paid' | 'free' | 'trial') || 'paid',
+        trial_days:               plan.trial_days?.toString() || '',
+        converts_to_plan_id:      plan.converts_to_plan_id?.toString() || '',
       });
     });
   }, [planDetailRaw, editingPlanUuid, reset]);
@@ -377,6 +414,13 @@ const AdminServicePlansPage = () => {
       const payload = {
         ...data,
         specifications: Object.keys(specsObject).length > 0 ? specsObject : null,
+        // Convertir sentinels a null para el backend
+        converts_to_plan_id: data.converts_to_plan_id && data.converts_to_plan_id !== 'none'
+          ? Number(data.converts_to_plan_id)
+          : null,
+        trial_days: data.trial_days ? Number(data.trial_days) : null,
+        // Para free/trial, forzar base_price a 0
+        base_price: (data.plan_type === 'free' || data.plan_type === 'trial') ? '0' : data.base_price,
       };
       if (editingPlan) {
         await updatePlanMutation.mutateAsync({ uuid: editingPlan.uuid, planData: payload });
@@ -690,11 +734,21 @@ const AdminServicePlansPage = () => {
                             {plan.is_popular ? <Star className="h-5 w-5 text-violet-600 dark:text-violet-400" /> : <Package className="h-5 w-5 text-slate-600 dark:text-slate-400" />}
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-medium text-sm text-foreground truncate">{plan.name}</p>
                               {plan.is_popular && (
                                 <Badge variant="secondary" className="text-xs bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
                                   <Star className="h-3 w-3 mr-1" />Popular
+                                </Badge>
+                              )}
+                              {plan.plan_type === 'free' && (
+                                <Badge variant="secondary" className="text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">
+                                  Gratis
+                                </Badge>
+                              )}
+                              {plan.plan_type === 'trial' && (
+                                <Badge variant="secondary" className="text-xs bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20">
+                                  Trial {plan.trial_days}d
                                 </Badge>
                               )}
                             </div>
@@ -708,11 +762,20 @@ const AdminServicePlansPage = () => {
                         </Badge>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="h-4 w-4 text-emerald-600" />
-                          <span className="font-semibold text-sm text-foreground">{plan.base_price}</span>
-                          <span className="text-xs text-muted-foreground">MXN</span>
-                        </div>
+                        {plan.plan_type === 'free' || plan.plan_type === 'trial' ? (
+                          <div className="flex items-center gap-1">
+                            <span className="font-semibold text-sm text-blue-500">$0</span>
+                            <span className="text-xs text-muted-foreground">
+                              {plan.plan_type === 'trial' ? `· ${plan.trial_days}d trial` : '· Gratis'}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="h-4 w-4 text-emerald-600" />
+                            <span className="font-semibold text-sm text-foreground">{plan.base_price}</span>
+                            <span className="text-xs text-muted-foreground">MXN</span>
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         {plan.is_active ? (
@@ -726,7 +789,15 @@ const AdminServicePlansPage = () => {
                         )}
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
-                        <span className="text-xs text-muted-foreground">{plan.features_count || 0} características</span>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs text-muted-foreground">{plan.features_count || 0} características</span>
+                          {plan.sat_clave_prod_serv && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-mono text-blue-500/80">
+                              <FileText className="h-2.5 w-2.5" />
+                              {plan.sat_clave_prod_serv} / {plan.sat_clave_unidad || 'E48'}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
@@ -800,7 +871,17 @@ const AdminServicePlansPage = () => {
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
             ) : (
-            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <form
+              onSubmit={handleSubmit(onSubmit, (formErrors) => {
+                // Mostrar el primer error de validación que haya fallado
+                const msgs = Object.values(formErrors)
+                  .map((e: any) => e?.message)
+                  .filter(Boolean);
+                toast.error(msgs[0] || 'Revisa los campos marcados en rojo');
+                console.error('[PlanForm] Validation errors:', formErrors);
+              })}
+              className="flex flex-col flex-1 min-h-0"
+            >
               <div className="flex-1 overflow-y-auto px-6 py-4">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-5 mb-4 shrink-0 bg-muted dark:bg-[#1a1a1a]">
@@ -854,22 +935,52 @@ const AdminServicePlansPage = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label className="text-sm font-medium text-foreground">Categoría *</Label>
-                        <Select value={watch('category_id')} onValueChange={(v) => setValue('category_id', v)}>
-                          <SelectTrigger className="h-10 bg-background dark:bg-[#0f1115] border-border dark:border-white/10 text-foreground">
-                            <SelectValue placeholder="Seleccionar categoría" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map(cat => (
-                              <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Controller
+                          name="category_id"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              value={field.value ?? ''}
+                              onValueChange={field.onChange}
+                              disabled={categoriesLoading}
+                            >
+                              <SelectTrigger className="h-10 bg-background dark:bg-[#0f1115] border-border dark:border-white/10 text-foreground">
+                                <SelectValue placeholder={categoriesLoading ? 'Cargando…' : 'Seleccionar categoría'} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {categories.map(cat => (
+                                  <SelectItem key={cat.id} value={cat.id.toString()}>
+                                    <span>{cat.name}</span>
+                                    {cat.is_active === false && (
+                                      <span className="ml-2 text-xs text-muted-foreground">(inactiva)</span>
+                                    )}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
                         {errors.category_id && <p className="text-xs text-red-500">{errors.category_id.message}</p>}
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="base_price" className="text-sm font-medium text-foreground">Precio Base (MXN) *</Label>
-                        <Input id="base_price" type="number" {...register('base_price')} className="h-10 bg-background dark:bg-[#0f1115] border-border dark:border-white/10 text-foreground" placeholder="99.00" />
-                        {errors.base_price && <p className="text-xs text-red-500">{errors.base_price.message}</p>}
+                        <Label htmlFor="base_price" className="text-sm font-medium text-foreground">
+                          Precio Base (MXN)
+                          {planType !== 'paid'
+                            ? <span className="ml-2 text-xs font-normal text-blue-500">(fijo en $0)</span>
+                            : <span className="text-red-500"> *</span>
+                          }
+                        </Label>
+                        <Input
+                          id="base_price"
+                          type="number"
+                          {...register('base_price')}
+                          disabled={planType !== 'paid'}
+                          className="h-10 bg-background dark:bg-[#0f1115] border-border dark:border-white/10 text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                          placeholder="99.00"
+                        />
+                        {watch('plan_type') === 'paid' && errors.base_price && (
+                          <p className="text-xs text-red-500">{errors.base_price.message}</p>
+                        )}
                       </div>
                     </div>
 
@@ -916,6 +1027,198 @@ const AdminServicePlansPage = () => {
                           )}
                         />
                         <Label htmlFor="is_active" className="text-sm font-medium cursor-pointer text-foreground">Plan Activo</Label>
+                      </div>
+                    </div>
+
+                    {/* ── Tipo de plan ── */}
+                    {(() => {
+                      const planType = watch('plan_type') || 'paid';
+                      const allPlans = servicePlans.filter(p => p.plan_type === 'paid' || !p.plan_type);
+                      return (
+                        <div className="rounded-xl border border-border/70 bg-muted/20 p-4 space-y-4">
+                          <div className="flex items-center gap-2">
+                            <Zap className="h-4 w-4 text-amber-500" />
+                            <p className="text-sm font-medium text-foreground">Tipo de plan</p>
+                          </div>
+
+                          {/* Selector tipo */}
+                          <div className="grid grid-cols-3 gap-2">
+                            {([
+                              { value: 'paid',  label: 'De pago',  desc: 'Requiere tarjeta', color: 'emerald' },
+                              { value: 'free',  label: 'Gratuito', desc: 'Siempre $0',       color: 'blue'    },
+                              { value: 'trial', label: 'Trial',    desc: 'X días gratis',    color: 'violet'  },
+                            ] as const).map(opt => {
+                              const active = planType === opt.value;
+                              const colors: Record<string, string> = {
+                                emerald: active ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-border/60 text-muted-foreground hover:border-emerald-500/40',
+                                blue:    active ? 'bg-blue-500/10 border-blue-500 text-blue-600 dark:text-blue-400'             : 'border-border/60 text-muted-foreground hover:border-blue-500/40',
+                                violet:  active ? 'bg-violet-500/10 border-violet-500 text-violet-600 dark:text-violet-400'      : 'border-border/60 text-muted-foreground hover:border-violet-500/40',
+                              };
+                              return (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  onClick={() => setValue('plan_type', opt.value)}
+                                  className={`flex flex-col items-center gap-1 rounded-lg border-2 py-3 px-2 transition-all ${colors[opt.color]}`}
+                                >
+                                  <span className="text-sm font-semibold">{opt.label}</span>
+                                  <span className="text-[10px] opacity-70">{opt.desc}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Aviso de precio $0 */}
+                          {(planType === 'free' || planType === 'trial') && (
+                            <div className="flex items-start gap-2 rounded-lg bg-blue-500/8 border border-blue-500/20 p-3 text-xs text-blue-600 dark:text-blue-400">
+                              <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                              <span>
+                                {planType === 'free'
+                                  ? 'Plan gratuito: el precio se enviará como $0. No se procesará ningún cobro.'
+                                  : 'Plan trial: gratuito durante el periodo definido. Al vencer, el servicio se suspende automáticamente.'}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Trial: días y plan de conversión */}
+                          {planType === 'trial' && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                              <div className="space-y-1.5">
+                                <Label className="text-xs font-medium text-foreground">Duración del trial (días) *</Label>
+                                <Input
+                                  {...register('trial_days')}
+                                  type="number"
+                                  min="1"
+                                  max="365"
+                                  placeholder="14"
+                                  className="h-9 bg-background dark:bg-[#0f1115] border-border dark:border-white/10 text-foreground"
+                                />
+                                <p className="text-[10px] text-muted-foreground">Al vencer se suspende y se notifica al usuario.</p>
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs font-medium text-foreground">Convierte a plan</Label>
+                                <Controller
+                                  name="converts_to_plan_id"
+                                  control={control}
+                                  render={({ field }) => (
+                                    <Select
+                                      value={field.value || 'none'}
+                                      onValueChange={(v) => field.onChange(v === 'none' ? '' : v)}
+                                    >
+                                      <SelectTrigger className="h-9 bg-background dark:bg-[#0f1115] border-border dark:border-white/10 text-foreground text-xs">
+                                        <SelectValue placeholder="Ninguno (solo suspende)" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="none">Ninguno — solo suspende</SelectItem>
+                                        {allPlans.map(p => (
+                                          <SelectItem key={p.id} value={p.id.toString()}>
+                                            {p.name} — ${p.base_price}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                />
+                                <p className="text-[10px] text-muted-foreground">Plan de pago sugerido al usuario al expirar.</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* ── Claves SAT ── */}
+                    <div className="rounded-xl border border-border/70 bg-muted/20 p-4 space-y-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <FileText className="h-4 w-4 text-blue-500" />
+                        <p className="text-sm font-medium text-foreground">Facturación SAT (CFDI)</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground -mt-1">
+                        Estas claves se graban en cada concepto del CFDI al contratar este plan.
+                        Se heredan a los add-ons del mismo contrato.
+                      </p>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* ClaveProdServ */}
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-medium text-foreground">ClaveProdServ</Label>
+                          <div className="flex flex-wrap gap-1 mb-1">
+                            {[
+                              { code: '81161501', label: 'Hosting' },
+                              { code: '81161500', label: 'VPS / Game' },
+                              { code: '81111501', label: 'Sysadmin' },
+                              { code: '43232100', label: 'Software' },
+                            ].map(({ code, label }) => {
+                              const active = watch('sat_clave_prod_serv') === code;
+                              return (
+                                <button
+                                  key={code}
+                                  type="button"
+                                  onClick={() => setValue('sat_clave_prod_serv', code)}
+                                  className={`px-2 py-0.5 rounded text-[10px] font-mono border transition-colors ${
+                                    active
+                                      ? 'bg-blue-500/15 border-blue-500/40 text-blue-500'
+                                      : 'bg-muted/40 border-border/60 text-muted-foreground hover:border-blue-500/30 hover:text-blue-500/70'
+                                  }`}
+                                >
+                                  {code}
+                                  <span className="ml-1 font-sans not-italic opacity-60">{label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <Input
+                            {...register('sat_clave_prod_serv')}
+                            placeholder="81161501"
+                            maxLength={10}
+                            className="h-9 text-sm font-mono bg-background dark:bg-[#0f1115] border-border dark:border-white/10 text-foreground"
+                          />
+                        </div>
+
+                        {/* ClaveUnidad */}
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-medium text-foreground">ClaveUnidad</Label>
+                          <div className="flex flex-wrap gap-1 mb-1">
+                            {[
+                              { code: 'E48', label: 'Servicio' },
+                              { code: 'ACT', label: 'Actividad' },
+                              { code: 'MTH', label: 'Mes' },
+                              { code: 'DAY', label: 'Día' },
+                            ].map(({ code, label }) => {
+                              const active = watch('sat_clave_unidad') === code;
+                              return (
+                                <button
+                                  key={code}
+                                  type="button"
+                                  onClick={() => setValue('sat_clave_unidad', code)}
+                                  className={`px-2 py-0.5 rounded text-[10px] font-mono border transition-colors ${
+                                    active
+                                      ? 'bg-blue-500/15 border-blue-500/40 text-blue-500'
+                                      : 'bg-muted/40 border-border/60 text-muted-foreground hover:border-blue-500/30 hover:text-blue-500/70'
+                                  }`}
+                                >
+                                  {code}
+                                  <span className="ml-1 font-sans not-italic opacity-60">{label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <Input
+                            {...register('sat_clave_unidad')}
+                            placeholder="E48"
+                            maxLength={3}
+                            className="h-9 text-sm font-mono bg-background dark:bg-[#0f1115] border-border dark:border-white/10 text-foreground"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Preview */}
+                      <div className="flex items-center gap-2 mt-1 p-2 rounded-lg bg-blue-500/5 border border-blue-500/15 text-[10px] font-mono text-muted-foreground">
+                        <span className="text-blue-500">ClaveProdServ:</span>
+                        <span className="text-foreground">{watch('sat_clave_prod_serv') || '81161501'}</span>
+                        <span className="mx-1 opacity-40">·</span>
+                        <span className="text-blue-500">ClaveUnidad:</span>
+                        <span className="text-foreground">{watch('sat_clave_unidad') || 'E48'}</span>
                       </div>
                     </div>
                   </TabsContent>

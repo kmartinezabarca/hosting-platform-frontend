@@ -8,9 +8,16 @@ interface CfdiItem {
   [key: string]: unknown;
 }
 
+interface PaginationMeta {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
 interface CfdiListResult {
   data: CfdiItem[];
-  meta: unknown | null;
+  pagination: PaginationMeta | null;
 }
 
 type CfdiStats = Record<string, unknown>;
@@ -39,9 +46,21 @@ export function useAdminCfdis(params: Record<string, unknown> = {}): UseQueryRes
     queryFn: () => adminCfdiService.getCfdis(params),
     select: (data: unknown) => {
       const d = data as Record<string, unknown>;
+      if (d?.success && d?.data) {
+        const inner = d.data as Record<string, unknown>;
+        return {
+          data: (inner.data || []) as CfdiItem[],
+          pagination: {
+            current_page: inner.current_page as number ?? 1,
+            last_page: inner.last_page as number ?? 1,
+            per_page: inner.per_page as number ?? 20,
+            total: inner.total as number ?? 0,
+          },
+        };
+      }
       return {
-        data: (d?.data as Record<string, unknown>)?.data as CfdiItem[] ?? d?.data as CfdiItem[] ?? [],
-        meta: (d?.data as Record<string, unknown>)?.meta ?? null,
+        data: Array.isArray(d?.data) ? (d.data as CfdiItem[]) : Array.isArray(d) ? (d as CfdiItem[]) : [],
+        pagination: null,
       };
     },
     staleTime: 30_000,
@@ -59,6 +78,20 @@ export function useAdminCfdiStats(): UseQueryResult<CfdiStats> {
     },
     staleTime: 60_000,
     refetchInterval: 60_000,
+  });
+}
+
+/** Detalle completo de un CFDI (con receipt.items y emisor) */
+export function useAdminCfdiDetail(id: number | string | null) {
+  return useQuery({
+    queryKey: CFDI_KEYS.detail(id!),
+    queryFn: () => adminCfdiService.getCfdi(id!),
+    enabled: id != null,
+    select: (data: unknown) => {
+      const d = data as Record<string, unknown>;
+      return (d?.data ?? data) as Record<string, unknown>;
+    },
+    staleTime: 30_000,
   });
 }
 

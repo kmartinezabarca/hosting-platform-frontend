@@ -13,6 +13,8 @@ import NotificationDropdown from '@presentation/components/features/Notification
 import { useTheme } from '@application/context/ThemeContext';
 import { useAuth } from '@application/context/AuthContext';
 import { useCurrentUser } from '@application/hooks/useCurrentUser';
+import { useSessionManager } from '@application/hooks/useSessionManager';
+import { SessionTimeoutModal } from '@presentation/components/features/SessionTimeoutModal';
 import UserAvatar from '@presentation/components/features/UserAvatar';
 import { Skeleton } from '@presentation/components/ui/skeleton';
 import logoROKE from "@presentation/assets/logo_v4.png"
@@ -53,7 +55,7 @@ const iconVariants = {
 const ClientLayout = () => {
   const { t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
-  const { logout, isLoading }  = useAuth();
+  const { logout, isLoading, isAuthenticated }  = useAuth();
   const { data: user, isLoading: meLoading, isFetching: meFetching } = useCurrentUser();
   const location = useLocation();
   const navigate = useNavigate();
@@ -112,6 +114,7 @@ const ClientLayout = () => {
 
   const handleSearchSelect = (href: string) => { navigate(href); setSearchQuery(''); setSearchFocused(false); searchInputRef.current?.blur(); };
   const handleLogout = async () => { try { await logout(); navigate('/login'); } catch (e) { console.error(e); } };
+  const { showWarning: sessionWarning, remainingSeconds: sessionRemaining, extendSession, forceLogout } = useSessionManager(isAuthenticated, handleLogout);
   const isActive = (href: string) => location.pathname === href || (href === '/client/dashboard' && location.pathname === '/client');
   const userName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || (user as any)?.name || 'Usuario';
 
@@ -126,6 +129,13 @@ const ClientLayout = () => {
       >
         {t('a11y.skipToContent')}
       </a>
+
+      <SessionTimeoutModal
+        open={sessionWarning}
+        remainingSeconds={sessionRemaining}
+        onExtend={extendSession}
+        onLogout={forceLogout}
+      />
 
       {/* ── HEADER ─────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 h-16 border-b border-border/50 bg-background/95 supports-[backdrop-filter]:backdrop-blur-xl flex items-center">

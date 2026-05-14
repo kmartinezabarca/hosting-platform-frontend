@@ -149,7 +149,23 @@ class InvoicesService {
     const response = await apiClient.get<Blob>(`/invoices/${uuid}/${format}`, {
       responseType: 'blob',
     });
-    return response.data; // Blob
+    return response.data;
+  }
+
+  /** Descarga el comprobante de pago (PDF interno). Devuelve un Blob. */
+  async downloadReceipt(uuid: string): Promise<Blob> {
+    const response = await apiClient.get<Blob>(`/invoices/${uuid}/receipt`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  }
+
+  /** Descarga el comprobante de pago desde el panel admin (sin restricción de user_id). */
+  async adminDownloadReceipt(uuid: string): Promise<Blob> {
+    const response = await apiClient.get<Blob>(`/admin/invoices/${uuid}/receipt`, {
+      responseType: 'blob',
+    });
+    return response.data;
   }
 }
 

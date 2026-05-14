@@ -4,9 +4,9 @@ import { Button } from '@presentation/components/ui/button';
 import { Input } from '@presentation/components/ui/input';
 import { Card, CardContent } from '@presentation/components/ui/card';
 import { Badge } from '@presentation/components/ui/badge';
-import { Progress } from '@presentation/components/ui/progress';
 import { Skeleton } from '@presentation/components/ui/skeleton';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@presentation/components/ui/tooltip';
+import { StatCard } from '@presentation/components/ui/stat-card';
 import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
 import {
   Plus,
@@ -220,13 +220,7 @@ const AdminBlogPage = () => {
     total: posts.length,
     featured: posts.filter(p => p.is_featured).length,
     published: posts.filter(p => p.is_published).length,
-    withImage: posts.filter(p => p.image).length
   }), [posts]);
-
-  const getImagePercentage = () => {
-    if (stats.total === 0) return 0;
-    return (stats.withImage / stats.total) * 100;
-  };
 
   const activeFilters = [selectedCategory !== 'all', statusFilter !== 'all'].filter(Boolean).length;
 
@@ -261,63 +255,10 @@ const AdminBlogPage = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-slate-100/80 to-slate-50/50 dark:from-slate-800/60 dark:to-slate-800/30 border-slate-200/50 dark:border-slate-700/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-slate-600 dark:text-slate-300">Total</p>
-                <p className="text-2xl font-semibold mt-1 text-slate-800 dark:text-slate-100">{stats.total}</p>
-              </div>
-              <div className="p-2.5 bg-slate-500/15 rounded-xl">
-                <FileText className="h-5 w-5 text-slate-600 dark:text-slate-300" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 dark:from-emerald-950/40 dark:to-emerald-950/20 border-emerald-200/50 dark:border-emerald-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Publicados</p>
-                <p className="text-2xl font-semibold mt-1 text-emerald-800 dark:text-emerald-100">{stats.published}</p>
-              </div>
-              <div className="p-2.5 bg-emerald-500/15 rounded-xl">
-                <Eye className="h-5 w-5 text-emerald-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-amber-50/80 to-amber-50/30 dark:from-amber-950/40 dark:to-amber-950/20 border-amber-200/50 dark:border-amber-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-amber-700 dark:text-amber-300">Destacados</p>
-                <p className="text-2xl font-semibold mt-1 text-amber-800 dark:text-amber-100">{stats.featured}</p>
-              </div>
-              <div className="p-2.5 bg-amber-500/15 rounded-xl">
-                <Star className="h-5 w-5 text-amber-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-violet-50/80 to-violet-50/30 dark:from-violet-950/40 dark:to-violet-950/20 border-violet-200/50 dark:border-violet-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-violet-700 dark:text-violet-300">Con Imagen</p>
-                <p className="text-2xl font-semibold mt-1 text-violet-800 dark:text-violet-100">{stats.withImage}</p>
-              </div>
-              <div className="p-2.5 bg-violet-500/15 rounded-xl">
-                <ImageIcon className="h-5 w-5 text-violet-600" />
-              </div>
-            </div>
-            <Progress value={getImagePercentage()} className="h-1 mt-3 bg-violet-200/50 dark:bg-violet-800/50 [&>div]:bg-violet-500" />
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <StatCard icon={FileText} label="Total"       value={stats.total}                accent="slate"   loading={loading} />
+        <StatCard icon={Eye}     label="Publicados"   value={stats.published}             accent="emerald" loading={loading} />
+        <StatCard icon={Star}    label="Destacados"   value={stats.featured}              accent="amber"   loading={loading} />
       </div>
 
       {/* Posts Table */}
@@ -359,10 +300,6 @@ const AdminBlogPage = () => {
                   <X className="h-4 w-4" />
                 </Button>
               )}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{posts.length}</span> artículos
-              {totalPages > 1 && <span className="ml-2 text-xs">(Página {currentPage} de {totalPages})</span>}
             </div>
           </div>
 
@@ -572,9 +509,8 @@ const AdminBlogPage = () => {
             </table>
           </div>
 
-          {/* Pagination */}
-          {posts.length > 0 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t">
+          {/* Pagination (always visible) */}
+          <div className="flex items-center justify-between px-4 py-3 border-t">
               <div className="text-sm text-muted-foreground">
                 Página <span className="font-medium">{currentPage}</span> de <span className="font-medium">{totalPages}</span>
               </div>
@@ -621,9 +557,8 @@ const AdminBlogPage = () => {
                 >
                   Siguiente
                 </Button>
-              </div>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 

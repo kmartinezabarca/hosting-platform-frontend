@@ -22,6 +22,7 @@ interface OrderSummaryProps {
   selectedAddOns?: (string | number)[];
   addons?: any[];
   isGameServer?: boolean;
+  isNoCharge?: boolean;
 }
 
 export default function OrderSummary({
@@ -38,7 +39,10 @@ export default function OrderSummary({
   selectedAddOns = [],
   addons = [],
   isGameServer = false,
+  isNoCharge = false,
 }: OrderSummaryProps) {
+  const isFree  = plan?.is_free  || plan?.plan_type === 'free';
+  const isTrial = plan?.is_trial || plan?.plan_type === 'trial';
   const items: { key: string; name: string; price: any }[] = [];
   if (plan) {
     const price = plan.price?.[billingCycle] ?? 0;
@@ -90,36 +94,56 @@ export default function OrderSummary({
             <div key={item.key} className="flex justify-between items-start gap-3 text-sm">
               <span className="text-slate-600 dark:text-slate-300 leading-snug">{item.name}</span>
               <span className="text-foreground font-medium shrink-0">
-                ${parseFloat(item.price)?.toFixed(2) ?? "0.00"}
+                {isNoCharge ? '$0.00' : `$${parseFloat(item.price)?.toFixed(2) ?? "0.00"}`}
               </span>
             </div>
           ))}
         </div>
 
         {/* Totals breakdown */}
-        <div className="border-t border-slate-200 pt-3 space-y-1.5 dark:border-white/10">
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-600 dark:text-slate-300">Subtotal</span>
-            <span className="text-foreground">${totals.subtotal.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-slate-600 dark:text-slate-300">IVA 16%</span>
-            <span className="text-foreground">${totals.iva.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between items-end pt-2">
-            <span className="text-base font-bold text-foreground">Total</span>
-            <div className="text-right">
-              <span className="text-3xl font-bold tracking-tight text-foreground">
-                ${totals.total.toFixed(2)}
-              </span>
-              <span className="block text-xs font-medium text-slate-500 dark:text-slate-400">
-                MXN/{cycle.label}
-              </span>
+        {isNoCharge ? (
+          <div className="border-t border-slate-200 pt-3 dark:border-white/10">
+            <div className="flex justify-between items-end">
+              <span className="text-base font-bold text-foreground">Total</span>
+              <div className="text-right">
+                <span className="text-3xl font-bold tracking-tight text-foreground">$0.00</span>
+                <span className={[
+                  'ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold',
+                  isFree
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+                ].join(' ')}>
+                  {isFree ? 'Gratis' : `Trial ${plan?.trial_days ?? ''}d`}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="border-t border-slate-200 pt-3 space-y-1.5 dark:border-white/10">
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-600 dark:text-slate-300">Subtotal</span>
+              <span className="text-foreground">${totals.subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-600 dark:text-slate-300">IVA 16%</span>
+              <span className="text-foreground">${totals.iva.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-end pt-2">
+              <span className="text-base font-bold text-foreground">Total</span>
+              <div className="text-right">
+                <span className="text-3xl font-bold tracking-tight text-foreground">
+                  ${totals.total.toFixed(2)}
+                </span>
+                <span className="block text-xs font-medium text-slate-500 dark:text-slate-400">
+                  MXN/{cycle.label}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
-        {/* Auto-renewal toggle */}
+        {/* Auto-renewal toggle — hidden for free/trial plans */}
+        {!isNoCharge && (
         <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer transition-colors hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-white/20">
           <div className="shrink-0 relative">
             <div
@@ -154,6 +178,7 @@ export default function OrderSummary({
             </p>
           </div>
         </label>
+        )}
 
         {/* Plan features */}
         {plan.features?.length > 0 && (
@@ -186,7 +211,9 @@ export default function OrderSummary({
     onClick={onNext}
     className="w-full mt-1 rounded-xl px-5 py-3 bg-[#222] text-white font-semibold hover:brightness-110 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2 dark:bg-white dark:text-[#101214]"
   >
-    {step === (isGameServer ? 2 : 1) ? "Continuar al Pago" : "Continuar"}
+    {step === (isGameServer ? 2 : 1)
+      ? (isNoCharge ? 'Revisar y confirmar' : 'Continuar al Pago')
+      : 'Continuar'}
     <ArrowRight className="w-4 h-4" />
   </button>
 ) : (

@@ -118,10 +118,15 @@ export interface Invoice {
   total: number;
   subtotal?: number;
   tax?: number;
+  tax_amount?: number;
+  tax_rate?: number;
   currency?: string;
   status: InvoiceStatus;
   due_date?: string | null;
   paid_at?: string | null;
+  payment_method?: string | null;
+  payment_reference?: string | null;
+  gateway?: string | null;
   created_at: string;
   updated_at: string;
   cfdi_status?: CfdiStatus;

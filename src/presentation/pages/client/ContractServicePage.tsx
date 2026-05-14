@@ -115,6 +115,12 @@ const ContractServicePage = () => {
         popular: plan.is_popular || false,
         features,
         specs: plan.specifications || {},
+        // Plan type fields for free/trial detection in checkout
+        plan_type: plan.plan_type ?? 'paid',
+        is_free: plan.is_free ?? false,
+        is_trial: plan.is_trial ?? false,
+        trial_days: plan.trial_days ?? null,
+        converts_to_plan_id: plan.converts_to_plan_id ?? null,
       });
 
       return acc;
@@ -374,16 +380,37 @@ const ContractServicePage = () => {
                         </div>
 
                         <div>
-                          <div className="flex items-baseline gap-1">
-                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">$</span>
-                            <p className="text-3xl font-bold tracking-tight text-foreground">{formatPrice(price.final)}</p>
-                          </div>
-                          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                            MXN / {getBillingPeriodLabel(billingCycle)}
-                          </p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400">No incluye IVA</p>
-                          {currentDiscount > 0 && price.base > 0 && (
-                            <p className="text-xs text-slate-500 line-through dark:text-slate-400">${formatPrice(price.base)}</p>
+                          {plan.is_free || plan.is_trial ? (
+                            <>
+                              <div className="flex items-baseline gap-1">
+                                <p className="text-3xl font-bold tracking-tight text-foreground">$0</p>
+                              </div>
+                              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                {plan.is_free ? 'Plan gratuito' : `${plan.trial_days ?? 0} días de prueba`}
+                              </p>
+                              <span className={[
+                                'mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold',
+                                plan.is_free
+                                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                  : 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+                              ].join(' ')}>
+                                {plan.is_free ? 'Gratis' : `Trial · ${plan.trial_days}d`}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">$</span>
+                                <p className="text-3xl font-bold tracking-tight text-foreground">{formatPrice(price.final)}</p>
+                              </div>
+                              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                MXN / {getBillingPeriodLabel(billingCycle)}
+                              </p>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400">No incluye IVA</p>
+                              {currentDiscount > 0 && price.base > 0 && (
+                                <p className="text-xs text-slate-500 line-through dark:text-slate-400">${formatPrice(price.base)}</p>
+                              )}
+                            </>
                           )}
                         </div>
 
@@ -431,16 +458,41 @@ const ContractServicePage = () => {
                         </span>
                       )}
                     </div>
-                    <div className="mt-4 flex items-end gap-2">
-                      <span className="pb-1 text-lg font-semibold text-slate-500 dark:text-slate-400">$</span>
-                      <p className="text-5xl font-bold tracking-tight text-foreground">{formatPrice(selectedPlanPrice?.final ?? 0)}</p>
-                    </div>
-                    <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-300">
-                      MXN / {getBillingPeriodLabel(billingCycle)}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      No incluye IVA. Se calcula en el checkout.
-                    </p>
+                    {selectedPlan.is_free || selectedPlan.is_trial ? (
+                      <div className="mt-4">
+                        <div className="flex items-end gap-2">
+                          <p className="text-5xl font-bold tracking-tight text-foreground">$0</p>
+                        </div>
+                        <div className="mt-1.5 flex items-center gap-2">
+                          <span className={[
+                            'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold',
+                            selectedPlan.is_free
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                              : 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+                          ].join(' ')}>
+                            {selectedPlan.is_free ? '🎁 Gratuito' : `⏱ ${selectedPlan.trial_days} días de prueba`}
+                          </span>
+                        </div>
+                        {selectedPlan.is_trial && (
+                          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                            Sin cargos durante el período de prueba. Cancela cuando quieras.
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mt-4 flex items-end gap-2">
+                          <span className="pb-1 text-lg font-semibold text-slate-500 dark:text-slate-400">$</span>
+                          <p className="text-5xl font-bold tracking-tight text-foreground">{formatPrice(selectedPlanPrice?.final ?? 0)}</p>
+                        </div>
+                        <p className="mt-1 text-sm font-medium text-slate-600 dark:text-slate-300">
+                          MXN / {getBillingPeriodLabel(billingCycle)}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          No incluye IVA. Se calcula en el checkout.
+                        </p>
+                      </>
+                    )}
                   </div>
 
                   <div className="rounded-lg bg-slate-50 p-3 ring-1 ring-slate-200 dark:bg-white/5 dark:ring-white/10">
@@ -483,7 +535,11 @@ const ContractServicePage = () => {
                     onClick={handleProceedToCheckout}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#222] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-110 dark:bg-white dark:text-[#101214]"
                   >
-                    Continuar al checkout
+                    {selectedPlan.is_free
+                      ? 'Activar gratis'
+                      : selectedPlan.is_trial
+                        ? `Iniciar ${selectedPlan.trial_days} días de prueba`
+                        : 'Continuar al checkout'}
                     <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>

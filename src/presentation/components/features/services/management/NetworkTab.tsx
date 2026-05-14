@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Globe, ShieldCheck, Hash, Copy, Check, Network } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { toast } from '@presentation/components/features/ToastProvider';
 
 const NetworkTab = ({ service }) => {
   const [copied, setCopied] = useState<string | null>(null);

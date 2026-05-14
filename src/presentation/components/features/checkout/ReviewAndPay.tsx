@@ -1,8 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import StripeCheckout from '@presentation/components/features/StripeCheckout';
 import PaymentMethodSelector from '@presentation/components/features/payments/PaymentMethodSelector';
 import { useFiscalRegimes, useCfdiUses } from "@application/hooks/useFiscal";
-import { Plus, CheckCircle2, User, Package, CreditCard, FileText } from "lucide-react";
+import { Plus, CheckCircle2, User, Package, CreditCard, FileText, Gift, Timer, Rocket, ShieldCheck } from "lucide-react";
+import { servicesService } from "@infrastructure/services/serviceService";
 
 function ReviewCard({ icon: Icon, label, children }) {
   return (
@@ -36,6 +37,157 @@ function Row({ label, value }) {
   );
 }
 
+// ─── Free/Trial activation section ────────────────────────────────────────────
+
+function FreeActivationSection({
+  plan,
+  formData,
+  selectedAddOns,
+  billingCycle,
+  onSuccess,
+  onError,
+}: {
+  plan: any;
+  formData: any;
+  selectedAddOns: any[];
+  billingCycle: string;
+  onSuccess: (result: any) => void;
+  onError: (msg: string) => void;
+}) {
+  const [activating, setActivating] = useState(false);
+
+  const isFree   = plan?.is_free || plan?.plan_type === 'free';
+  const isTrial  = plan?.is_trial || plan?.plan_type === 'trial';
+  const trialDays = plan?.trial_days ?? 0;
+
+  const buildInvoice = () => {
+    if (!formData?.requireInvoice) return null;
+    if (formData.invoiceProfileUuid) return { fiscal_profile_uuid: formData.invoiceProfileUuid };
+    return {
+      person_type: formData.invoicePersonType || 'fisica',
+      rfc:         formData.invoiceRfc,
+      name:        formData.invoiceName,
+      zip:         formData.invoiceZip,
+      regimen:     formData.invoiceRegimen,
+      uso_cfdi:    formData.invoiceUsoCfdi || 'G03',
+      constancia:  formData.invoiceConstanciaB64
+        ? { filename: formData.invoiceConstanciaName, mime: formData.invoiceConstanciaMime, content_b64: formData.invoiceConstanciaB64 }
+        : null,
+    };
+  };
+
+  const handleActivate = async () => {
+    setActivating(true);
+    try {
+      const response: any = await servicesService.contractService({
+        plan_id:         plan.id,
+        billing_cycle:   billingCycle,
+        service_name:    formData.serviceName,
+        domain:          formData.domain || undefined,
+        egg_id:          formData.selectedEggId ?? undefined,
+        add_ons:         selectedAddOns as any,
+        additional_options: { auto_renew: false },
+        invoice:         buildInvoice(),
+        // No payment fields — backend detects free/trial via plan.plan_type
+      } as any);
+
+      if (response?.success) {
+        onSuccess({ service: response.data });
+      } else {
+        throw new Error(response?.message || 'Error al activar el servicio.');
+      }
+    } catch (err: any) {
+      console.error('Free activation error:', err);
+      onError(err?.response?.data?.message || err?.message || 'Error al activar el servicio.');
+    } finally {
+      setActivating(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      {/* Info banner */}
+      <div className={[
+        'rounded-2xl border overflow-hidden',
+        isFree
+          ? 'border-emerald-500/25 bg-emerald-500/[0.06]'
+          : 'border-violet-500/25 bg-violet-500/[0.06]',
+      ].join(' ')}>
+        <div className={[
+          'flex items-center gap-3 px-5 py-4 border-b',
+          isFree
+            ? 'border-emerald-500/15 bg-emerald-500/[0.06]'
+            : 'border-violet-500/15 bg-violet-500/[0.06]',
+        ].join(' ')}>
+          {isFree
+            ? <Gift className="w-5 h-5 text-emerald-500 shrink-0" />
+            : <Timer className="w-5 h-5 text-violet-500 shrink-0" />
+          }
+          <div>
+            <p className={[
+              'text-sm font-bold',
+              isFree ? 'text-emerald-700 dark:text-emerald-300' : 'text-violet-700 dark:text-violet-300',
+            ].join(' ')}>
+              {isFree ? 'Plan Gratuito' : `Prueba gratuita · ${trialDays} días`}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {isFree
+                ? 'No se requiere tarjeta de crédito ni ningún pago.'
+                : `Sin cargos durante ${trialDays} días. Cancela en cualquier momento antes de que termine.`
+              }
+            </p>
+          </div>
+        </div>
+
+        <div className="px-5 py-4 space-y-2.5">
+          <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+            <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+            <span>Sin cargos ocultos ni compromisos</span>
+          </div>
+          {isTrial && (
+            <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+              <span>Se te notificará antes de que el período de prueba termine</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+            <span>Acceso inmediato tras la activación</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Activate button */}
+      <button
+        type="button"
+        onClick={handleActivate}
+        disabled={activating}
+        className={[
+          'w-full rounded-xl px-5 py-3.5 font-semibold text-white transition inline-flex items-center justify-center gap-2',
+          isFree
+            ? 'bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400'
+            : 'bg-violet-600 hover:bg-violet-700 disabled:bg-violet-400',
+          'disabled:opacity-70',
+        ].join(' ')}
+      >
+        {activating ? (
+          <>
+            <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+            Activando servicio...
+          </>
+        ) : (
+          <>
+            <Rocket className="w-4 h-4" />
+            {isFree ? 'Activar gratis ahora' : `Iniciar ${trialDays} días de prueba`}
+          </>
+        )}
+      </button>
+    </div>
+  );
+}
+
+// ─── Main component ────────────────────────────────────────────────────────────
+
 export default function ReviewAndPay({
   plan,
   billingCycle,
@@ -50,6 +202,7 @@ export default function ReviewAndPay({
   setSelectedPaymentMethodId,
   onAddMethod,
   selectedAddOns = [],
+  isNoCharge = false,
 }) {
   // Catálogos SAT para mostrar nombres en la revisión
   const { data: regimes = [] } = useFiscalRegimes();
@@ -65,21 +218,29 @@ export default function ReviewAndPay({
   const cfdiUseName = cfdiUseObj ? getItemName(cfdiUseObj) : (formData.invoiceUsoCfdi ?? '—');
 
   useEffect(() => {
-    if (paymentMethods.length > 0 && !selectedPaymentMethodId) {
+    if (!isNoCharge && paymentMethods.length > 0 && !selectedPaymentMethodId) {
       const def = paymentMethods.find((m) => m.is_default) || paymentMethods[0];
       if (def) setSelectedPaymentMethodId(def.stripe_payment_method_id);
     }
-  }, [paymentMethods, selectedPaymentMethodId, setSelectedPaymentMethodId]);
+  }, [paymentMethods, selectedPaymentMethodId, setSelectedPaymentMethodId, isNoCharge]);
+
+  const isFree  = plan?.is_free || plan?.plan_type === 'free';
+  const isTrial = plan?.is_trial || plan?.plan_type === 'trial';
 
   return (
     <div className="space-y-6">
       {/* Section title */}
       <div>
         <h2 className="text-2xl font-semibold text-foreground">
-          Revisar y confirmar
+          {isNoCharge ? 'Revisar y confirmar' : 'Revisar y confirmar'}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Verifica los datos antes de procesar el pago.
+          {isNoCharge
+            ? isFree
+              ? 'Confirma los datos de tu servicio para activarlo gratis.'
+              : `Confirma los datos para iniciar tu prueba gratuita de ${plan?.trial_days ?? ''} días.`
+            : 'Verifica los datos antes de procesar el pago.'
+          }
         </p>
       </div>
 
@@ -88,8 +249,14 @@ export default function ReviewAndPay({
         <ReviewCard icon={Package} label="Servicio">
           <Row label="Plan" value={plan.name} />
           <Row label="Nombre" value={formData.serviceName} />
-          <Row label="Ciclo" value={billingCycles[billingCycle]?.name} />
+          {!isNoCharge && <Row label="Ciclo" value={billingCycles[billingCycle]?.name} />}
           {formData.domain && <Row label="Dominio" value={formData.domain} />}
+          {isNoCharge && (
+            <Row
+              label="Tipo"
+              value={isFree ? 'Gratuito' : `Trial · ${plan?.trial_days ?? 0} días`}
+            />
+          )}
         </ReviewCard>
 
         <ReviewCard icon={User} label="Contacto">
@@ -138,88 +305,100 @@ export default function ReviewAndPay({
         )}
       </div>
 
-      {/* Payment method */}
-      <div className="rounded-2xl border border-black/10 dark:border-white/10 overflow-hidden">
-        <div className="flex items-start justify-between gap-3 px-5 py-4 bg-foreground/[0.025] dark:bg-white/[0.025] border-b border-black/8 dark:border-white/8">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-foreground/10 dark:bg-white/10 flex items-center justify-center shrink-0">
-              <CreditCard className="w-3.5 h-3.5 text-foreground" />
+      {/* Payment section — paid plans only */}
+      {isNoCharge ? (
+        <FreeActivationSection
+          plan={plan}
+          formData={formData}
+          selectedAddOns={selectedAddOns}
+          billingCycle={billingCycle}
+          onSuccess={onSuccess}
+          onError={onError}
+        />
+      ) : (
+        <>
+          {/* Payment method */}
+          <div className="rounded-2xl border border-black/10 dark:border-white/10 overflow-hidden">
+            <div className="flex items-start justify-between gap-3 px-5 py-4 bg-foreground/[0.025] dark:bg-white/[0.025] border-b border-black/8 dark:border-white/8">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-md bg-foreground/10 dark:bg-white/10 flex items-center justify-center shrink-0">
+                  <CreditCard className="w-3.5 h-3.5 text-foreground" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-foreground uppercase tracking-widest">
+                    Método de Pago
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Tarjeta guardada o ingresa una nueva
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onAddMethod}
+                className="shrink-0 inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-black/10 dark:border-white/10 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] font-medium transition"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Nueva tarjeta
+              </button>
             </div>
-            <div>
-              <p className="text-xs font-bold text-foreground uppercase tracking-widest">
-                Método de Pago
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Tarjeta guardada o ingresa una nueva
-              </p>
+
+            <div className="px-5 py-4">
+              <PaymentMethodSelector
+                methods={paymentMethods}
+                selectedStripePmId={selectedPaymentMethodId || ""}
+                onSelect={(pmId) => setSelectedPaymentMethodId(pmId)}
+                onChooseNew={() => setSelectedPaymentMethodId("")}
+                onAddSaved={onAddMethod}
+              />
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onAddMethod}
-            className="shrink-0 inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-black/10 dark:border-white/10 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] font-medium transition"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Nueva tarjeta
-          </button>
-        </div>
 
-        <div className="px-5 py-4">
-          <PaymentMethodSelector
-            methods={paymentMethods}
-            selectedStripePmId={selectedPaymentMethodId || ""}
-            onSelect={(pmId) => setSelectedPaymentMethodId(pmId)}
-            onChooseNew={() => setSelectedPaymentMethodId("")}
-            onAddSaved={onAddMethod}
+          {/* Stripe Checkout */}
+          <StripeCheckout
+            amount={totals.total}
+            currency="mxn"
+            payRef={payRef}
+            showPayButton
+            paymentMethodId={selectedPaymentMethodId}
+            serviceData={{
+              plan_id: plan.id,
+              serviceName: formData.serviceName,
+              billingCycle,
+              domain: formData.domain,
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              email: formData.email,
+              phone: formData.phone,
+              egg_id: formData.selectedEggId ?? null,
+              requireInvoice: formData.requireInvoice,
+              invoice: (formData.requireInvoice
+                ? formData.invoiceProfileUuid
+                  ? { fiscal_profile_uuid: formData.invoiceProfileUuid }
+                  : {
+                      person_type: formData.invoicePersonType || "fisica",
+                      rfc: formData.invoiceRfc,
+                      name: formData.invoiceName,
+                      zip: formData.invoiceZip,
+                      regimen: formData.invoiceRegimen,
+                      usoCfdi: formData.invoiceUsoCfdi,
+                      constancia: formData.invoiceConstanciaB64
+                        ? {
+                            filename: formData.invoiceConstanciaName,
+                            mime: formData.invoiceConstanciaMime,
+                            content_b64: formData.invoiceConstanciaB64,
+                          }
+                        : null,
+                    }
+                : null) as Record<string, unknown> | undefined,
+              autoRenew: formData.autoRenew,
+            }}
+            onSuccess={onSuccess}
+            onError={onError}
+            addOns={selectedAddOns}
           />
-        </div>
-      </div>
-
-      {/* Stripe Checkout — logic untouched */}
-      <StripeCheckout
-        amount={totals.total}
-        currency="mxn"
-        payRef={payRef}
-        showPayButton
-        paymentMethodId={selectedPaymentMethodId}
-        serviceData={{
-          plan_id: plan.id,
-          serviceName: formData.serviceName,
-          billingCycle,
-          domain: formData.domain,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          egg_id: formData.selectedEggId ?? null,
-          requireInvoice: formData.requireInvoice,
-          invoice: (formData.requireInvoice
-            ? formData.invoiceProfileUuid
-              // User picked a saved fiscal profile — send only the UUID
-              ? { fiscal_profile_uuid: formData.invoiceProfileUuid }
-              // Manual entry — send expanded fields
-              : {
-                  person_type: formData.invoicePersonType || "fisica",
-                  rfc: formData.invoiceRfc,
-                  name: formData.invoiceName,
-                  zip: formData.invoiceZip,
-                  regimen: formData.invoiceRegimen,
-                  usoCfdi: formData.invoiceUsoCfdi,
-                  constancia: formData.invoiceConstanciaB64
-                    ? {
-                        filename: formData.invoiceConstanciaName,
-                        mime: formData.invoiceConstanciaMime,
-                        content_b64: formData.invoiceConstanciaB64,
-                      }
-                    : null,
-                }
-            : null) as Record<string, unknown> | undefined,
-          autoRenew: formData.autoRenew,
-        }}
-        onSuccess={onSuccess}
-        onError={onError}
-        addOns={selectedAddOns}
-      />
+        </>
+      )}
     </div>
   );
 }

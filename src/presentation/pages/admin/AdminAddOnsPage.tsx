@@ -10,14 +10,17 @@ import { Switch } from '@presentation/components/ui/switch';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@presentation/components/ui/sheet';
 import { Card, CardContent } from '@presentation/components/ui/card';
 import { Badge } from '@presentation/components/ui/badge';
-import { Progress } from '@presentation/components/ui/progress';
+
 import { Skeleton } from '@presentation/components/ui/skeleton';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@presentation/components/ui/tooltip';
 import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
 import {
-  Plus, Edit, Trash2, Search, Eye, EyeOff, DollarSign, Package, RefreshCw, Sparkles, Filter, X, Loader2
+  Plus, Edit, Trash2, Search, Eye, EyeOff, DollarSign, Package, RefreshCw, Sparkles, Filter, X, Loader2,
+  ChevronUp, ChevronDown,
 } from 'lucide-react';
 import { useAdminAddOns, useAdminServicePlans, useAdminCreateAddOn, useAdminUpdateAddOn, useAdminDeleteAddOn } from '@application/hooks/useAdminAddOns';
+import { StatCard } from '@presentation/components/ui/stat-card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@presentation/components/ui/select';
 import { toast } from '@presentation/components/features/ToastProvider';
 
 const addOnSchema = z.object({
@@ -30,6 +33,11 @@ const addOnSchema = z.object({
   service_plans: z.array(z.number()).default([]),
 });
 
+const SortIcon = ({ column, sortConfig }: { column: string; sortConfig: { key: string; direction: string } }) => {
+  if (sortConfig.key !== column) return <ChevronUp className="h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity" />;
+  return sortConfig.direction === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />;
+};
+
 const AdminAddOnsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -38,6 +46,7 @@ const AdminAddOnsPage = () => {
   const [perPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' as 'asc' | 'desc' });
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [editingAddOn, setEditingAddOn] = useState<any>(null);
@@ -161,6 +170,37 @@ const AdminAddOnsPage = () => {
     avg: addOns.length > 0 ? addOns.reduce((sum, a) => sum + (parseFloat(a.price) || 0), 0) / addOns.length : 0
   }), [addOns, pagination]);
 
+  const sortedAddOns = useMemo(() => {
+    const sorted = [...addOns];
+    sorted.sort((a, b) => {
+      let aValue: any, bValue: any;
+      if (sortConfig.key === 'name') {
+        aValue = (a.name ?? '').toLowerCase();
+        bValue = (b.name ?? '').toLowerCase();
+      } else if (sortConfig.key === 'price') {
+        aValue = parseFloat(a.price) || 0;
+        bValue = parseFloat(b.price) || 0;
+      } else if (sortConfig.key === 'is_active') {
+        aValue = a.is_active ? 1 : 0;
+        bValue = b.is_active ? 1 : 0;
+      } else if (sortConfig.key === 'description') {
+        aValue = (a.description ?? '').toLowerCase();
+        bValue = (b.description ?? '').toLowerCase();
+      }
+      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return sorted;
+  }, [addOns, sortConfig]);
+
+  const handleSort = (key: string) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
   const getActivePercentage = () => stats.total === 0 ? 0 : (stats.activos / stats.total) * 100;
 
   const activeFilters = [statusFilter !== 'all'].filter(Boolean).length;
@@ -196,49 +236,11 @@ const AdminAddOnsPage = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Statistics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="bg-gradient-to-br from-slate-100/80 to-slate-50/50 dark:from-slate-800/60 dark:to-slate-800/30 border-slate-200/50 dark:border-slate-700/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-slate-600 dark:text-slate-300">Total</p>
-                <p className="text-2xl font-semibold mt-1 text-slate-800 dark:text-slate-100">{stats.total}</p>
-              </div>
-              <div className="p-2.5 bg-slate-500/15 rounded-xl">
-                <Package className="h-5 w-5 text-slate-600 dark:text-slate-300" />
-              </div>
-            </div>
-            <Progress value={100} className="h-1 mt-3 bg-slate-200/50 dark:bg-slate-700/50" />
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 dark:from-emerald-950/40 dark:to-emerald-950/20 border-emerald-200/50 dark:border-emerald-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Activos</p>
-                <p className="text-2xl font-semibold mt-1 text-emerald-800 dark:text-emerald-100">{stats.activos}</p>
-              </div>
-              <div className="p-2.5 bg-emerald-500/15 rounded-xl">
-                <Eye className="h-5 w-5 text-emerald-600" />
-              </div>
-            </div>
-            <Progress value={getActivePercentage()} className="h-1 mt-3 bg-emerald-200/50 dark:bg-emerald-800/50 [&>div]:bg-emerald-500" />
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-violet-50/80 to-violet-50/30 dark:from-violet-950/40 dark:to-violet-950/20 border-violet-200/50 dark:border-violet-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-violet-700 dark:text-violet-300">Precio Prom.</p>
-                <p className="text-2xl font-semibold mt-1 text-violet-800 dark:text-violet-100">${stats.avg.toFixed(0)}</p>
-              </div>
-              <div className="p-2.5 bg-violet-500/15 rounded-xl">
-                <DollarSign className="h-5 w-5 text-violet-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard icon={Package} label="Total" value={stats.total} subtitle={`${stats.activos} activos`} accent="slate" loading={isFetching} />
+        <StatCard icon={Eye} label="Activos" value={stats.activos} progress={getActivePercentage()} accent="emerald" loading={isFetching} />
+        <StatCard icon={DollarSign} label="Precio Prom." value={`$${stats.avg.toFixed(0)}`} accent="violet" loading={isFetching} />
       </div>
 
       {/* Add-ons Table */}
@@ -288,34 +290,59 @@ const AdminAddOnsPage = () => {
 
           {/* Filter dropdowns inline */}
           {showFilters && (
-            <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b border-border dark:border-white/10">
-              <select
-                value={statusFilter}
-                onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-                className="h-8 px-3 text-xs rounded-md border border-input bg-background text-foreground"
-              >
-                <option value="all">Todos</option>
-                <option value="active">Activos</option>
-                <option value="inactive">Inactivos</option>
-              </select>
+            <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b">
+              <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}>
+                <SelectTrigger className="w-36 h-8 text-xs">
+                  <SelectValue placeholder="Estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="active">Activos</SelectItem>
+                  <SelectItem value="inactive">Inactivos</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
 
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border dark:border-white/10">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Complemento
+                <tr className="border-b">
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/50 transition-colors group"
+                    onClick={() => handleSort('name')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Complemento
+                      <SortIcon column="name" sortConfig={sortConfig} />
+                    </div>
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Precio
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/50 transition-colors group"
+                    onClick={() => handleSort('price')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Precio
+                      <SortIcon column="price" sortConfig={sortConfig} />
+                    </div>
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">
-                    Descripción
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/50 transition-colors group hidden md:table-cell"
+                    onClick={() => handleSort('description')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Descripción
+                      <SortIcon column="description" sortConfig={sortConfig} />
+                    </div>
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Estado
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/50 transition-colors group"
+                    onClick={() => handleSort('is_active')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Estado
+                      <SortIcon column="is_active" sortConfig={sortConfig} />
+                    </div>
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Acciones
@@ -323,7 +350,7 @@ const AdminAddOnsPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border dark:divide-white/10">
-                {isLoadingState ? (
+                {isFetching ? (
                   Array.from({ length: 5 }).map((_, index) => (
                     <tr key={`skeleton-${index}`} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3">
@@ -352,7 +379,7 @@ const AdminAddOnsPage = () => {
                       </td>
                     </tr>
                   ))
-                ) : addOns.length === 0 ? (
+                ) : sortedAddOns.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-4 py-12 text-center">
                       <Package className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40" />
@@ -360,7 +387,7 @@ const AdminAddOnsPage = () => {
                     </td>
                   </tr>
                 ) : (
-                  addOns.map((addOn) => (
+                  sortedAddOns.map((addOn) => (
                     <tr key={addOn.id || addOn.uuid} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
@@ -437,7 +464,7 @@ const AdminAddOnsPage = () => {
           </div>
 
           {/* Pagination */}
-          {addOns.length > 0 && totalPages > 1 && (
+          {totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-border dark:border-white/10">
               <div className="text-sm text-muted-foreground">
                 Página <span className="font-medium text-foreground">{currentPage}</span> de <span className="font-medium text-foreground">{totalPages}</span>

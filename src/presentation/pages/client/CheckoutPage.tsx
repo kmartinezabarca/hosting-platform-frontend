@@ -24,6 +24,14 @@ export default function CheckoutPage() {
   const { user } = useAuth();
 
   const { plan, category, billingCycle } = location.state || {};
+
+  // Detect free / trial plans — no payment needed for these
+  const isNoCharge = !!(
+    plan?.is_free ||
+    plan?.is_trial ||
+    plan?.plan_type === 'free' ||
+    plan?.plan_type === 'trial'
+  );
   const [step, setStep] = useState(1);
   const payRef = useRef<HTMLButtonElement>(null);
 
@@ -96,6 +104,8 @@ export default function CheckoutPage() {
 
   const calculateTotals = () => {
     if (!plan) return { subtotal: 0, iva: 0, total: 0 };
+    // Free / trial plans always cost $0
+    if (isNoCharge) return { subtotal: 0, iva: 0, total: 0 };
 
     let subtotal = getPriceWithDiscount(plan.price[billingCycle], billingCycle);
 
@@ -440,6 +450,7 @@ export default function CheckoutPage() {
                   setSelectedPaymentMethodId={setSelectedPaymentMethodId}
                   onAddMethod={() => setShowAddMethodModal(true)}
                   selectedAddOns={selectedAddOns as any}
+                  isNoCharge={isNoCharge}
                 />
               </motion.div>
             )}
@@ -461,6 +472,7 @@ export default function CheckoutPage() {
               addons={addons}
               selectedAddOns={selectedAddOns}
               isGameServer={isGameServer}
+              isNoCharge={isNoCharge}
             />
           </aside>
         </div>

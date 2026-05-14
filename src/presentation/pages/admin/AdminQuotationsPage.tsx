@@ -458,7 +458,7 @@ export default function AdminQuotationsPage() {
 
   const deleteMutation = useDeleteQuotation();
 
-  const { data, isLoading, isError, refetch } = useQuotations({
+  const { data, isLoading, isFetching, isError, refetch } = useQuotations({
     search:   search || undefined,
     status:   statusFilter !== 'all' ? statusFilter : undefined,
     page,
@@ -570,19 +570,6 @@ export default function AdminQuotationsPage() {
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0 }).format(amount);
 
-  // ── Loading state ──────────────────────────────────────────────────────────
-
-  if (isLoading && quotations.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Cargando cotizaciones...</p>
-        </div>
-      </div>
-    );
-  }
-
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -595,8 +582,8 @@ export default function AdminQuotationsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
-            {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+          <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isFetching}>
+            {isFetching ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Actualizar
           </Button>
           <Button onClick={() => { setEditingQ(null); setSheetOpen(true); }} size="sm">
@@ -608,10 +595,10 @@ export default function AdminQuotationsPage() {
 
       {/* ── Statistics Cards ────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Receipt} label="Total" value={stats.total} subtitle={formatCurrency(stats.totalAmount)} accent="slate" />
-        <StatCard icon={Send} label="Enviadas" value={stats.sent} accent="blue" />
-        <StatCard icon={CheckCircle} label="Aceptadas" value={stats.accepted} subtitle={formatCurrency(stats.acceptedAmount)} progress={stats.total > 0 ? (stats.accepted / stats.total) * 100 : 0} accent="emerald" />
-        <StatCard icon={Clock} label="Vencidas" value={stats.expired} accent="amber" />
+        <StatCard icon={Receipt} label="Total" value={stats.total} subtitle={formatCurrency(stats.totalAmount)} accent="slate" loading={isFetching} />
+        <StatCard icon={Send} label="Enviadas" value={stats.sent} accent="blue" loading={isFetching} />
+        <StatCard icon={CheckCircle} label="Aceptadas" value={stats.accepted} progress={stats.total > 0 ? (stats.accepted / stats.total) * 100 : 0} accent="emerald" loading={isFetching} />
+        <StatCard icon={Clock} label="Vencidas" value={stats.expired} accent="amber" loading={isFetching} />
       </div>
 
       {/* ── Quotations Table Card ───────────────────────────────────────── */}
@@ -653,10 +640,6 @@ export default function AdminQuotationsPage() {
                   <X className="h-4 w-4" />
                 </Button>
               )}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{sortedQuotations.length}</span> cotizaciones
-              {totalPages > 1 && <span className="ml-2 text-xs">(Página {page} de {totalPages})</span>}
             </div>
           </div>
 
@@ -741,7 +724,7 @@ export default function AdminQuotationsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {isLoading ? (
+                {isFetching ? (
                   Array.from({ length: 5 }).map((_, index) => (
                     <tr key={`skeleton-${index}`} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3"><Skeleton className="h-10 w-10 rounded-lg" /></td>
@@ -912,7 +895,7 @@ export default function AdminQuotationsPage() {
               Página <span className="font-medium">{page}</span> de <span className="font-medium">{totalPages}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || isLoading}>Anterior</Button>
+              <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || isFetching}>Anterior</Button>
               <div className="flex items-center gap-1">
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let pageNum;
@@ -921,11 +904,11 @@ export default function AdminQuotationsPage() {
                   else if (page >= totalPages - 2) pageNum = totalPages - 4 + i;
                   else pageNum = page - 2 + i;
                   return (
-                    <Button key={pageNum} variant={page === pageNum ? "default" : "ghost"} size="sm" onClick={() => setPage(pageNum)} disabled={isLoading} className="h-8 w-8 p-0">{pageNum}</Button>
+                    <Button key={pageNum} variant={page === pageNum ? "default" : "ghost"} size="sm" onClick={() => setPage(pageNum)} disabled={isFetching} className="h-8 w-8 p-0">{pageNum}</Button>
                   );
                 })}
               </div>
-              <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || isLoading}>Siguiente</Button>
+              <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages || isFetching}>Siguiente</Button>
             </div>
           </div>
         </CardContent>

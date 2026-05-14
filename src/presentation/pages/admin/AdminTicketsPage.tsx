@@ -167,13 +167,13 @@ const AdminTicketsPage = () => {
   const openEditSheet = (ticket) => {
     setEditingTicket(ticket);
     resetTicket({
-      user_id: ticket.user_id?.toString() || '',
-      subject: ticket.subject || '',
-      description: ticket.description || '',
-      priority: ticket.priority || 'medium',
-      category: ticket.category || '',
-      status: ticket.status || 'open',
-      assigned_to: ticket.assigned_to || ''
+      user_id: ticket.user_id?.toString() ?? '',
+      subject: ticket.subject ?? '',
+      description: ticket.description ?? '',
+      priority: ticket.priority ?? 'medium',
+      category: ticket.category ?? '',
+      status: ticket.status ?? 'open',
+      assigned_to: ticket.assigned_to ?? ''
     });
     setIsSheetOpen(true);
   };
@@ -236,10 +236,10 @@ const AdminTicketsPage = () => {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Ticket} label="Total" value={stats.total} accent="slate" />
-        <StatCard icon={HelpCircle} label="Abiertos" value={stats.open} progress={getOpenPercentage()} accent="blue" />
-        <StatCard icon={Zap} label="Urgentes" value={stats.urgent} accent="red" />
-        <StatCard icon={CheckCircle} label="Resueltos" value={stats.resolved} accent="emerald" />
+        <StatCard icon={Ticket} label="Total" value={stats.total} accent="slate" loading={isLoadingState}/>
+        <StatCard icon={HelpCircle} label="Abiertos" value={stats.open} progress={getOpenPercentage()} accent="blue" loading={isLoadingState}/>
+        <StatCard icon={Zap} label="Urgentes" value={stats.urgent} accent="red" loading={isLoadingState} />
+        <StatCard icon={CheckCircle} label="Resueltos" value={stats.resolved} accent="emerald" loading={isLoadingState} />
       </div>
 
       <Card className="bg-card border-border/50">
@@ -260,7 +260,6 @@ const AdminTicketsPage = () => {
                 </Button>
               )}
             </div>
-            <div className="text-sm text-muted-foreground"><span className="font-medium text-foreground">{tickets.length}</span> tickets{totalPages > 1 && <span className="ml-2 text-xs">(Página {currentPage} de {totalPages})</span>}</div>
           </div>
 
           {showFilters && (

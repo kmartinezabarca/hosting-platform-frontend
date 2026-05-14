@@ -26,7 +26,8 @@ type PowerSignal = 'start' | 'stop' | 'restart' | 'kill';
 
 interface Props {
   server: any;
-  onClose: () => void;
+  onClose?: () => void;
+  embedded?: boolean;
 }
 
 const STATE_COLORS: Record<string, string> = {
@@ -79,7 +80,7 @@ function PowerButton({
   );
 }
 
-export default function AdminGameServerDetailPanel({ server, onClose }: Props) {
+export default function AdminGameServerDetailPanel({ server, onClose, embedded = false }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('console');
   const [pendingSignal, setPendingSignal] = useState<PowerSignal | null>(null);
 
@@ -130,18 +131,24 @@ export default function AdminGameServerDetailPanel({ server, onClose }: Props) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex" onClick={onClose}>
-      {/* Backdrop */}
-      <div className="flex-1 bg-black/50 backdrop-blur-sm" />
+    <div
+      className={embedded ? 'w-full' : 'fixed inset-0 z-50 flex'}
+      onClick={!embedded && onClose ? onClose : undefined}
+    >
+      {!embedded && <div className="flex-1 bg-black/50 backdrop-blur-sm" />}
 
-      {/* Panel */}
       <motion.div
-        initial={{ x: '100%' }}
-        animate={{ x: 0 }}
-        exit={{ x: '100%' }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        initial={embedded ? false : { x: '100%' }}
+        animate={embedded ? undefined : { x: 0 }}
+        exit={embedded ? undefined : { x: '100%' }}
+        transition={embedded ? undefined : { type: 'spring', stiffness: 300, damping: 30 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-3xl bg-background border-l border-border flex flex-col shadow-2xl overflow-hidden"
+        className={cn(
+          'bg-background flex flex-col overflow-hidden',
+          embedded
+            ? 'w-full border border-border rounded-2xl shadow-sm'
+            : 'w-full max-w-3xl border-l border-border shadow-2xl',
+        )}
       >
         {/* Header */}
         <div className="flex items-start gap-3 px-5 py-4 border-b border-border bg-card shrink-0">
@@ -166,9 +173,11 @@ export default function AdminGameServerDetailPanel({ server, onClose }: Props) {
               )}
             </div>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg hover:bg-muted">
-            <X className="w-5 h-5" />
-          </button>
+          {!embedded && onClose && (
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg hover:bg-muted">
+              <X className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* Power strip */}

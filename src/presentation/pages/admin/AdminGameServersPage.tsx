@@ -98,7 +98,7 @@ export default function AdminGameServersPage() {
   const [modal, setModal]              = useState<any>(null);
   const [detailServer, setDetailServer] = useState<any>(null);
 
-  const { data, isLoading, isError, refetch } = useAdminGameServers({
+  const { data, isLoading, isFetching, isError, refetch } = useAdminGameServers({
     search:   search || undefined,
     status:   statusFilter !== 'all' ? statusFilter : undefined,
     page:     currentPage,
@@ -199,19 +199,6 @@ export default function AdminGameServersPage() {
     pending: servers.filter((s: any) => s.status === 'pending').length,
   }), [servers]);
 
-  // ── Loading ────────────────────────────────────────────────────────────────
-
-  if (isLoading && servers.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Cargando servidores...</p>
-        </div>
-      </div>
-    );
-  }
-
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -226,8 +213,8 @@ export default function AdminGameServersPage() {
           <p className="text-sm text-muted-foreground mt-1">{stats.total} servidores en el sistema</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
-            {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+          <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isFetching}>
+            {isFetching ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Actualizar
           </Button>
         </div>
@@ -272,10 +259,6 @@ export default function AdminGameServersPage() {
                   <X className="h-4 w-4" />
                 </Button>
               )}
-            </div>
-            <div className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{sortedServers.length}</span> servidores
-              {totalPages > 1 && <span className="ml-2 text-xs">(Página {currentPage} de {totalPages})</span>}
             </div>
           </div>
 
@@ -348,7 +331,7 @@ export default function AdminGameServersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border dark:divide-white/10">
-                {isLoading ? (
+                {isFetching ? (
                   Array.from({ length: 5 }).map((_, index) => (
                     <tr key={`skeleton-${index}`} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3"><div className="flex items-center gap-3"><Skeleton className="h-10 w-10 rounded-lg" /><div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-24" /></div></div></td>
@@ -446,7 +429,7 @@ export default function AdminGameServersPage() {
               Página <span className="font-medium text-foreground">{currentPage}</span> de <span className="font-medium text-foreground">{totalPages}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1 || isLoading}>Anterior</Button>
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1 || isFetching}>Anterior</Button>
               <div className="flex items-center gap-1">
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let pageNum;
@@ -454,10 +437,10 @@ export default function AdminGameServersPage() {
                   else if (currentPage <= 3) pageNum = i + 1;
                   else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
                   else pageNum = currentPage - 2 + i;
-                  return <Button key={pageNum} variant={currentPage === pageNum ? "default" : "ghost"} size="sm" onClick={() => setCurrentPage(pageNum)} disabled={isLoading} className="h-8 w-8 p-0">{pageNum}</Button>;
+                   return <Button key={pageNum} variant={currentPage === pageNum ? "default" : "ghost"} size="sm" onClick={() => setCurrentPage(pageNum)} disabled={isFetching} className="h-8 w-8 p-0">{pageNum}</Button>;
                 })}
               </div>
-              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || isLoading}>Siguiente</Button>
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || isFetching}>Siguiente</Button>
             </div>
           </div>
         </CardContent>

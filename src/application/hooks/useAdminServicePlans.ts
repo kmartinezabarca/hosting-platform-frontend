@@ -55,6 +55,11 @@ export const useAdminServicePlanCategories = () => {
     queryKey: adminServicePlansKeys.categories(),
     queryFn: () => adminServicePlansService.getCategories(),
     ...queryConfigs.static,
+    select: (raw: any) => {
+      // Admin endpoint: { success, data: [...], meta: {...} }
+      const items = raw?.data ?? raw ?? [];
+      return { data: Array.isArray(items) ? items : [] };
+    },
   });
 };
 

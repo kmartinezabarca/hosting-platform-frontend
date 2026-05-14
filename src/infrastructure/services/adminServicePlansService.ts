@@ -1,5 +1,4 @@
 import apiClient from '@infrastructure/api/apiClient';
-import categoriesService from '@infrastructure/services/categoriesService';
 import billingCyclesService from '@infrastructure/services/billingCyclesService';
 
 const adminServicePlansService = {
@@ -42,9 +41,10 @@ const adminServicePlansService = {
     return response.data;
   },
 
-  // Obtener categorías de planes de servicio
+  // Obtener categorías de planes de servicio (admin — incluye inactivas)
   getCategories: async () => {
-    return categoriesService.getCategories();
+    const response = await apiClient.get('/admin/categories?per_page=100');
+    return response.data;
   },
 
   // Obtener ciclos de facturación

@@ -56,17 +56,18 @@ const generateSecurePassword = (options: { length?: number; uppercase?: boolean;
 };
 
 const userSchema = z.object({
-  first_name: z.string().min(1, 'El nombre es requerido'),
-  last_name: z.string().min(1, 'El apellido es requerido'),
-  email: z.string().min(1, 'El email es requerido').email('El email no es válido'),
-  password: z.string().optional(),
-  role: z.string().min(1, 'El rol es requerido'),
-  status: z.string().min(1, 'El estado es requerido'),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  country: z.string().default('MX'),
+  // invalid_type_error reemplaza el mensaje inglés "Expected string, received null/undefined"
+  first_name:  z.string({ invalid_type_error: 'El nombre es requerido' }).min(1, 'El nombre es requerido'),
+  last_name:   z.string({ invalid_type_error: 'El apellido es requerido' }).min(1, 'El apellido es requerido'),
+  email:       z.string({ invalid_type_error: 'El email es requerido' }).min(1, 'El email es requerido').email('El email no es válido'),
+  password:    z.string().optional(),
+  role:        z.string({ invalid_type_error: 'El rol es requerido' }).min(1, 'El rol es requerido'),
+  status:      z.string({ invalid_type_error: 'El estado es requerido' }).min(1, 'El estado es requerido'),
+  phone:       z.string().optional(),
+  address:     z.string().optional(),
+  city:        z.string().optional(),
+  state:       z.string().optional(),
+  country:     z.string().default('MX'),
   postal_code: z.string().optional(),
 }).refine((data) => {
   if (!data.password || data.password.length === 0) return true;
@@ -247,18 +248,18 @@ const AdminUsersPage = () => {
   const openEditSheet = (user) => {
     setEditingUser(user);
     reset({
-      first_name: user.first_name,
-      last_name: user.last_name,
-      email: user.email,
-      password: '',
-      role: user.role,
-      status: user.status,
-      phone: user.phone || '',
-      address: user.address || '',
-      city: user.city || '',
-      state: user.state || '',
-      country: user.country || 'MX',
-      postal_code: user.postal_code || ''
+      first_name:  user.first_name  ?? '',
+      last_name:   user.last_name   ?? '',
+      email:       user.email       ?? '',
+      password:    '',
+      role:        user.role        ?? 'client',
+      status:      user.status      ?? 'active',
+      phone:       user.phone       ?? '',
+      address:     user.address     ?? '',
+      city:        user.city        ?? '',
+      state:       user.state       ?? '',
+      country:     user.country     ?? 'MX',
+      postal_code: user.postal_code ?? '',
     });
     setShowPassword(false);
     setShowPasswordOptions(false);

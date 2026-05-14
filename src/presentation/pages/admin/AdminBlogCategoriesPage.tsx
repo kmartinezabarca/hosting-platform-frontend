@@ -6,10 +6,12 @@ import { Button } from '@presentation/components/ui/button';
 import { Input } from '@presentation/components/ui/input';
 import { Label } from '@presentation/components/ui/label';
 import { Switch } from '@presentation/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@presentation/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@presentation/components/ui/sheet';
 import { Card, CardContent } from '@presentation/components/ui/card';
 import { Badge } from '@presentation/components/ui/badge';
 import { Skeleton } from '@presentation/components/ui/skeleton';
+import { StatCard } from '@presentation/components/ui/stat-card';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@presentation/components/ui/tooltip';
 import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
 import { Plus, Edit, Trash2, Search, Tag, RefreshCw, Filter, X, Loader2 } from 'lucide-react';
@@ -36,6 +38,8 @@ const AdminBlogCategoriesPage = () => {
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; category: any }>({ isOpen: false, category: null });
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const perPage = 10;
 
   const { register, handleSubmit, control, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(categorySchema),
@@ -43,6 +47,7 @@ const AdminBlogCategoriesPage = () => {
   });
 
   useEffect(() => { fetchCategories(); }, []);
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, statusFilter]);
   useEffect(() => { if (!dataLoaded) { setDataLoaded(true); return; } fetchCategories(); }, [statusFilter]);
 
   const fetchCategories = async () => {
@@ -112,9 +117,9 @@ const AdminBlogCategoriesPage = () => {
   const openEditSheet = (category) => {
     setEditingCategory(category);
     reset({
-      name: category.name || '',
-      slug: category.slug || '',
-      description: category.description || '',
+      name: category.name ?? '',
+      slug: category.slug ?? '',
+      description: category.description ?? '',
       is_active: category.isActive ?? category.is_active ?? true,
       sort_order: category.sortOrder ?? category.sort_order ?? 0,
     });
@@ -126,6 +131,14 @@ const AdminBlogCategoriesPage = () => {
     const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' && category.isActive) || (statusFilter === 'inactive' && !category.isActive);
     return matchesSearch && matchesStatus;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredCategories.length / perPage));
+  const paginatedCategories = filteredCategories.slice((currentPage - 1) * perPage, currentPage * perPage);
+
+  const handleFilterChange = (value: string) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
 
   const stats = { total: categories.length, active: categories.filter(c => c.isActive || c.is_active).length, inactive: categories.filter(c => !c.isActive && !c.is_active).length };
   const activeFilters = [statusFilter !== 'all'].filter(Boolean).length;
@@ -149,30 +162,9 @@ const AdminBlogCategoriesPage = () => {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="bg-gradient-to-br from-slate-100/80 to-slate-50/50 dark:from-slate-800/60 dark:to-slate-800/30 border-slate-200/50 dark:border-slate-700/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div><p className="text-xs font-medium text-slate-600 dark:text-slate-300">Total</p><p className="text-2xl font-semibold mt-1 text-slate-800 dark:text-slate-100">{stats.total}</p></div>
-              <div className="p-2.5 bg-slate-500/15 rounded-xl"><Tag className="h-5 w-5 text-slate-600 dark:text-slate-300" /></div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 dark:from-emerald-950/40 dark:to-emerald-950/20 border-emerald-200/50 dark:border-emerald-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div><p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Activas</p><p className="text-2xl font-semibold mt-1 text-emerald-800 dark:text-emerald-100">{stats.active}</p></div>
-              <div className="p-2.5 bg-emerald-500/15 rounded-xl"><Tag className="h-5 w-5 text-emerald-600" /></div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-slate-50/80 to-slate-50/30 dark:from-slate-950/40 dark:to-slate-950/20 border-slate-200/50 dark:border-slate-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div><p className="text-xs font-medium text-slate-700 dark:text-slate-300">Inactivas</p><p className="text-2xl font-semibold mt-1 text-slate-800 dark:text-slate-100">{stats.inactive}</p></div>
-              <div className="p-2.5 bg-slate-500/15 rounded-xl"><Tag className="h-5 w-5 text-slate-500" /></div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard icon={Tag} label="Total"     value={stats.total}    accent="slate"   loading={loading} />
+        <StatCard icon={Tag} label="Activas"   value={stats.active}   accent="emerald" loading={loading} />
+        <StatCard icon={Tag} label="Inactivas" value={stats.inactive}  accent="red"     loading={loading} />
       </div>
 
       <Card className="bg-card border-border/50">
@@ -191,14 +183,20 @@ const AdminBlogCategoriesPage = () => {
                 <Button variant="ghost" size="sm" onClick={() => setStatusFilter('all')} className="h-9 text-muted-foreground px-2"><X className="h-4 w-4" /></Button>
               )}
             </div>
-            <div className="text-sm text-muted-foreground"><span className="font-medium text-foreground">{filteredCategories.length}</span> categorías</div>
           </div>
 
           {showFilters && (
-            <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b border-border dark:border-white/10">
-              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-8 px-3 text-xs rounded-md border border-input bg-background text-foreground">
-                <option value="all">Todos</option><option value="active">Activas</option><option value="inactive">Inactivas</option>
-              </select>
+            <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b">
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v)}>
+                <SelectTrigger className="w-36 h-8 text-xs">
+                  <SelectValue placeholder="Estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="active">Activas</SelectItem>
+                  <SelectItem value="inactive">Inactivas</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
 
@@ -226,10 +224,10 @@ const AdminBlogCategoriesPage = () => {
                       <td className="px-4 py-3"><div className="flex items-center justify-end gap-1"><Skeleton className="h-8 w-8 rounded" /><Skeleton className="h-8 w-8 rounded" /></div></td>
                     </tr>
                   ))
-                ) : filteredCategories.length === 0 ? (
+                ) : paginatedCategories.length === 0 ? (
                   <tr><td colSpan={6} className="px-4 py-12 text-center"><Tag className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40" /><p className="text-sm text-muted-foreground">No se encontraron categorías</p></td></tr>
                 ) : (
-                  filteredCategories.map((category) => (
+                  paginatedCategories.map((category) => (
                     <tr key={category.id} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
@@ -258,6 +256,29 @@ const AdminBlogCategoriesPage = () => {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Pagination (always visible) */}
+          <div className="flex items-center justify-between px-4 py-3 border-t">
+            <div className="text-sm text-muted-foreground">
+              Página <span className="font-medium">{currentPage}</span> de <span className="font-medium">{totalPages}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1 || loading}>Anterior</Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) pageNum = i + 1;
+                  else if (currentPage <= 3) pageNum = i + 1;
+                  else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                  else pageNum = currentPage - 2 + i;
+                  return (
+                    <Button key={pageNum} variant={currentPage === pageNum ? "default" : "ghost"} size="sm" onClick={() => setCurrentPage(pageNum)} disabled={loading} className="h-8 w-8 p-0">{pageNum}</Button>
+                  );
+                })}
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || loading}>Siguiente</Button>
+            </div>
           </div>
         </CardContent>
       </Card>

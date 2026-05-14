@@ -11,6 +11,7 @@ import { Card, CardContent } from "@presentation/components/ui/card";
 import { Badge } from "@presentation/components/ui/badge";
 import { Skeleton } from "@presentation/components/ui/skeleton";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@presentation/components/ui/tooltip";
+import { StatCard } from "@presentation/components/ui/stat-card";
 import ConfirmationModal from "@presentation/components/features/modals/ConfirmationModal";
 import { Plus, Edit, Trash2, Search, RefreshCw, Server, CheckCircle, Clock, AlertTriangle, XCircle, Loader2, Filter, X, ArrowLeft, Save } from "lucide-react";
 import { toast } from "@presentation/components/features/ToastProvider";
@@ -137,18 +138,6 @@ export default function AdminSystemStatusPage() {
   const stats = { total: statuses.length, operational: statuses.filter(s => s.status === "operational").length, issues: statuses.filter(s => s.status !== "operational").length };
   const getHealthPercentage = () => stats.total === 0 ? 100 : (stats.operational / stats.total) * 100;
   const activeFilters = [statusTypeFilter !== "all"].filter(Boolean).length;
-
-  if (loading && statuses.length === 0) {
-    return (
-      <div className="space-y-6 p-6 max-w-[1600px] mx-auto">
-        <div className="h-8 w-48 bg-muted rounded animate-pulse" />
-        <div className="grid grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
-        </div>
-        <Skeleton className="h-96 rounded-xl" />
-      </div>
-    );
-  }
 
   if (showForm) {
     return (
@@ -278,48 +267,9 @@ export default function AdminSystemStatusPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-gradient-to-br from-slate-100/80 to-slate-50/50 dark:from-slate-800/60 dark:to-slate-800/30 border-slate-200/50 dark:border-slate-700/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-slate-600 dark:text-slate-300">Servicios Totales</p>
-                <p className="text-2xl font-semibold mt-1 text-slate-800 dark:text-slate-100">{stats.total}</p>
-              </div>
-              <div className="p-2.5 bg-slate-500/15 rounded-xl">
-                <Server className="h-5 w-5 text-slate-600 dark:text-slate-300" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-emerald-50/80 to-emerald-50/30 dark:from-emerald-950/40 dark:to-emerald-950/20 border-emerald-200/50 dark:border-emerald-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Operacionales</p>
-                <p className="text-2xl font-semibold mt-1 text-emerald-800 dark:text-emerald-100">{stats.operational}</p>
-                <p className="text-xs text-emerald-600 dark:text-emerald-400">{getHealthPercentage().toFixed(0)}% saludable</p>
-              </div>
-              <div className="p-2.5 bg-emerald-500/15 rounded-xl">
-                <CheckCircle className="h-5 w-5 text-emerald-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-orange-50/80 to-orange-50/30 dark:from-orange-950/40 dark:to-orange-950/20 border-orange-200/50 dark:border-orange-800/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-orange-700 dark:text-orange-300">Con Problemas</p>
-                <p className="text-2xl font-semibold mt-1 text-orange-800 dark:text-orange-100">{stats.issues}</p>
-              </div>
-              <div className="p-2.5 bg-orange-500/15 rounded-xl">
-                <AlertTriangle className="h-5 w-5 text-orange-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard icon={Server}       label="Servicios"      value={stats.total}      accent="slate"   loading={loading} />
+        <StatCard icon={CheckCircle}  label="Operacionales"  value={stats.operational} accent="emerald" subtitle={`${getHealthPercentage().toFixed(0)}% saludable`} loading={loading} />
+        <StatCard icon={AlertTriangle} label="Con Problemas"  value={stats.issues}     accent="red"     loading={loading} />
       </div>
 
       <Card className="bg-card border-border/50">

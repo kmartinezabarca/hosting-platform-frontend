@@ -9,10 +9,11 @@ const AUTH_ENDPOINTS = ['/login', '/user', '/sanctum/csrf-cookie'];
 
 let isAuthRedirecting = false;
 
-const redirectToLogin = (): void => {
+const redirectToLogin = (reason?: string): void => {
   if (!isAuthRedirecting && window.location.pathname !== '/login') {
     isAuthRedirecting = true;
-    window.location.replace('/login');
+    const url = reason ? `/login?reason=${reason}` : '/login';
+    window.location.replace(url);
   }
 };
 
@@ -46,7 +47,10 @@ const createApiClient = (baseURL: string): AxiosInstance => {
       const requestUrl: string = config?.url ?? '';
       const isAuthRoute = AUTH_ENDPOINTS.some((ep) => requestUrl.includes(ep));
 
-      if (status === 401 && !isAuthRoute) redirectToLogin();
+      if (status === 401 && !isAuthRoute) {
+        const errorCode = response?.data?.error_code as string | undefined;
+        redirectToLogin(errorCode === 'SESSION_EXPIRED' ? 'session_expired' : undefined);
+      }
       if (status === 419) window.location.reload(); // CSRF mismatch
 
       return Promise.reject(error);

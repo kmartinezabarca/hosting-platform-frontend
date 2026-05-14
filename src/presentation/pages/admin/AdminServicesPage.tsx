@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -109,6 +110,7 @@ const ProfessionalProjectFields = ({ cfg, setCfg, addTag, removeTag, extraFields
 );
 
 const AdminServicesPage = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [planFilter, setPlanFilter] = useState('all');
@@ -234,15 +236,15 @@ const AdminServicesPage = () => {
 
     setConfiguration(cfgMerged);
     reset({
-      user_id: svc.user_id?.toString() || '',
-      service_plan_id: svc.plan?.id?.toString() || '',
-      name: svc.name || '',
-      domain: svc.domain || '',
-      status: svc.status || 'active',
-      billing_cycle: svc.billing_cycle || 'monthly',
-      price: svc.price?.toString() || '',
-      setup_fee: svc.setup_fee?.toString() || '0',
-      notes: svc.notes || '',
+      user_id: svc.user_id?.toString() ?? '',
+      service_plan_id: svc.plan?.id?.toString() ?? '',
+      name: svc.name ?? '',
+      domain: svc.domain ?? '',
+      status: svc.status ?? 'active',
+      billing_cycle: svc.billing_cycle ?? 'monthly',
+      price: svc.price?.toString() ?? '',
+      setup_fee: svc.setup_fee?.toString() ?? '0',
+      notes: svc.notes ?? '',
     });
     setIsSheetReady(true);
   }, [serviceDetailRaw, editingServiceId, reset, plansData]);
@@ -551,7 +553,7 @@ const AdminServicesPage = () => {
                       <td className="px-4 py-3 hidden sm:table-cell"><div className="flex items-center gap-1"><DollarSign className="h-4 w-4 text-emerald-600" /><span className="font-semibold text-sm text-foreground">{service.price}</span></div></td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
-                          <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditSheet(service)}><Edit className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Editar servicio</TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/admin/services/${service.uuid || service.id}`)}><Edit className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Ver detalle</TooltipContent></Tooltip>
                           {service.status === 'active' ? (
                             <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => handleSuspend(service)} disabled={suspendServiceMutation.isPending}>{suspendServiceMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pause className="h-4 w-4" />}</Button></TooltipTrigger><TooltipContent>Suspender servicio</TooltipContent></Tooltip>
                           ) : service.status === 'suspended' ? (

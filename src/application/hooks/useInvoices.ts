@@ -120,3 +120,34 @@ export const useDownloadCfdi = () => {
     },
   });
 };
+
+const triggerBlobDownload = (blob: Blob, filename: string) => {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+/** Descarga el comprobante de pago (PDF interno) — panel cliente */
+export const useDownloadReceipt = () => {
+  return useMutation({
+    mutationFn: async ({ uuid, invoiceNumber }: { uuid: string; invoiceNumber?: string }) => {
+      const blob = await invoicesService.downloadReceipt(uuid);
+      triggerBlobDownload(blob, `comprobante-${invoiceNumber ?? uuid}.pdf`);
+    },
+  });
+};
+
+/** Descarga el comprobante de pago (PDF interno) — panel admin */
+export const useAdminDownloadReceipt = () => {
+  return useMutation({
+    mutationFn: async ({ uuid, invoiceNumber }: { uuid: string; invoiceNumber?: string }) => {
+      const blob = await invoicesService.adminDownloadReceipt(uuid);
+      triggerBlobDownload(blob, `comprobante-${invoiceNumber ?? uuid}.pdf`);
+    },
+  });
+};

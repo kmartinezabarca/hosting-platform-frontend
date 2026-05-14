@@ -23,7 +23,7 @@ import {
   Search,
   FileText,
   CheckCircle,
-  Clock,
+  Clock, Calendar,
   AlertTriangle,
   XCircle,
   RefreshCw,
@@ -39,6 +39,7 @@ import {
   Calculator
 } from 'lucide-react';
 import { useAdminInvoices, useCreateAdminInvoice, useUpdateAdminInvoice, useDeleteAdminInvoice, useMarkInvoiceAsPaid } from '@application/hooks/useAdminInvoices';
+import { useAdminDownloadReceipt } from '@application/hooks/useInvoices';
 import usersService from '@infrastructure/services/userService';
 
 const invoiceItemSchema = z.object({
@@ -79,7 +80,7 @@ const AdminInvoicesPage = () => {
   const userSearchRef = useRef<HTMLInputElement>(null);
   const userDropdownRef = useRef<HTMLDivElement>(null);
 
-  const { data: invoicesData, isLoading, refetch } = useAdminInvoices({
+  const { data: invoicesData, isLoading, isFetching, refetch } = useAdminInvoices({
     search: searchTerm,
     status: statusFilter !== 'all' ? statusFilter : undefined,
     page: currentPage,
@@ -90,6 +91,8 @@ const AdminInvoicesPage = () => {
   const updateInvoice = useUpdateAdminInvoice();
   const deleteInvoice = useDeleteAdminInvoice();
   const markAsPaid = useMarkInvoiceAsPaid();
+  const downloadReceipt = useAdminDownloadReceipt();
+  const [downloadingUuid, setDownloadingUuid] = useState<string | null>(null);
 
   const invoices = invoicesData?.data || [];
   const pagination = invoicesData?.pagination;
@@ -201,18 +204,29 @@ const AdminInvoicesPage = () => {
     const paid = invoices.filter(i => i.status === 'paid').length;
     const pending = invoices.filter(i => i.status === 'pending').length;
     const overdue = invoices.filter(i => i.status === 'overdue').length;
-    const totalAmount = invoices.reduce((sum, i) => sum + (parseFloat((i as any).total_amount) || 0), 0);
+    const totalAmount = invoices.reduce((sum, i) => sum + (parseFloat((i as any).total) || 0), 0);
     const pendingAmount = invoices.filter(i => i.status === 'pending' || i.status === 'overdue').reduce((sum, i) => sum + (parseFloat((i as any).total_amount) || 0), 0);
-    return { total, paid, pending, overdue, totalAmount, pendingAmount };
+    const now = new Date();
+    const paidThisMonth = invoices.filter(i => {
+      if (i.status !== 'paid') return false;
+      const paidAt = (i as any).paid_at;
+      if (!paidAt) return false;
+      const d = new Date(paidAt);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).length;
+    const totalCollected = invoices
+      .filter(i => i.status === 'paid')
+      .reduce((sum, i) => sum + (parseFloat((i as any).total) || 0), 0);
+    return { total, paid, pending, overdue, totalAmount, pendingAmount, paidThisMonth, totalCollected };
   }, [invoices]);
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      paid: { label: 'Pagada', className: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20', icon: CheckCircle },
+      paid: { label: 'Pagado', className: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20', icon: CheckCircle },
       pending: { label: 'Pendiente', className: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20', icon: Clock },
       overdue: { label: 'Vencida', className: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20', icon: AlertTriangle },
-      cancelled: { label: 'Cancelada', className: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20', icon: XCircle },
-      draft: { label: 'Borrador', className: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20', icon: FileText }
+      cancelled: { label: 'Cancelado', className: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20', icon: XCircle },
+      refunded: { label: 'Reembolsado', className: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20', icon: XCircle },
     };
     
     const config = statusConfig[status] || statusConfig.pending;
@@ -223,6 +237,43 @@ const AdminInvoicesPage = () => {
         {config.label}
       </Badge>
     );
+  };
+
+  const getPaymentMethodBadge = (invoice) => {
+    if (invoice.status !== 'paid') {
+      return getStatusBadge(invoice.status);
+    }
+    const method = (invoice.payment_method || '').toLowerCase();
+    let config: { label: string; className: string };
+    if (method.includes('crédito') || method.includes('credito') || method === 'credit') {
+      config = { label: invoice.payment_method, className: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20' };
+    } else if (method.includes('débito') || method.includes('debito') || method === 'debit') {
+      config = { label: invoice.payment_method, className: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20' };
+    } else if (method.includes('prepago') || method.includes('prepaid')) {
+      config = { label: invoice.payment_method, className: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' };
+    } else if (method.includes('transferencia') || method.includes('transfer')) {
+      config = { label: invoice.payment_method, className: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20' };
+    } else if (method.includes('efectivo') || method === 'cash') {
+      config = { label: 'Efectivo', className: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' };
+    } else if (method === 'paypal') {
+      config = { label: 'PayPal', className: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20' };
+    } else if (method === 'cheque') {
+      config = { label: 'Cheque', className: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20' };
+    } else {
+      config = { label: invoice.payment_method || 'Pagado', className: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' };
+    }
+    return (
+      <Badge variant="outline" className={`${config.className} px-2.5 py-1 text-xs font-medium`}>
+        {getStatusBadgeIcon(invoice.status)}
+        <span className="ml-1">{config.label}</span>
+      </Badge>
+    );
+  };
+
+  const getStatusBadgeIcon = (status) => {
+    const icons = { paid: CheckCircle, pending: Clock, overdue: AlertTriangle, cancelled: XCircle, refunded: XCircle };
+    const Icon = icons[status] || Clock;
+    return <Icon className="h-3 w-3" />;
   };
 
   const getPaidPercentage = () => stats.total === 0 ? 0 : (stats.paid / stats.total) * 100;
@@ -361,8 +412,18 @@ const AdminInvoicesPage = () => {
     setConfirmModal({ isOpen: false, action: null, invoice: null });
   };
 
-  const handleDownloadPdf = async (_invoiceId: any) => {
-    toast.error('Funcionalidad de descarga de PDF en desarrollo');
+  const handleDownloadPdf = (invoice: any) => {
+    setDownloadingUuid(invoice.uuid);
+    downloadReceipt.mutate(
+      { uuid: invoice.uuid, invoiceNumber: invoice.invoice_number },
+      {
+        onSuccess: () => setDownloadingUuid(null),
+        onError: () => {
+          setDownloadingUuid(null);
+          toast.error('No se pudo descargar el comprobante. Inténtalo de nuevo.');
+        },
+      },
+    );
   };
 
   const handleSelectUser = (user) => {
@@ -381,16 +442,7 @@ const AdminInvoicesPage = () => {
     setTimeout(() => userSearchRef.current?.focus(), 50);
   };
 
-  if (isLoading && invoices.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Cargando facturas...</p>
-        </div>
-      </div>
-    );
-  }
+
 
   const isSubmitting = form.formState.isSubmitting || createInvoice.isPending || updateInvoice.isPending;
 
@@ -399,28 +451,28 @@ const AdminInvoicesPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Facturas</h1>
-          <p className="text-sm text-muted-foreground mt-1">{stats.total} facturas en el sistema</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Comprobantes de Pago</h1>
+          <p className="text-sm text-muted-foreground mt-1">{stats.total} comprobantes registrados</p>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
-            {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+          <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isFetching}>
+            {isFetching ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Actualizar
           </Button>
           <Button onClick={openCreateSheet} size="sm" disabled={isLoading}>
             <Plus className="h-4 w-4 mr-2" />
-            Nueva Factura
+            Nuevo Comprobante
           </Button>
         </div>
       </div>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Receipt} label="Total" value={stats.total} subtitle={formatCurrency(stats.totalAmount)} accent="slate" />
-        <StatCard icon={CheckCircle} label="Pagadas" value={stats.paid} progress={getPaidPercentage()} accent="emerald" />
-        <StatCard icon={Clock} label="Pendientes" value={stats.pending} subtitle={formatCurrency(stats.pendingAmount)} accent="amber" />
-        <StatCard icon={AlertTriangle} label="Vencidas" value={stats.overdue} accent="red" />
+        <StatCard icon={Receipt} label="Total" value={stats.total} subtitle={formatCurrency(stats.totalAmount)} accent="slate" loading={isFetching} />
+        <StatCard icon={CheckCircle} label="Pagadas" value={stats.paid} progress={getPaidPercentage()} accent="emerald" loading={isFetching} />
+        <StatCard icon={Calendar} label="Pagos este mes" value={stats.paidThisMonth} accent="blue" loading={isFetching} />
+        <StatCard icon={DollarSign} label="Total Recaudado" value={formatCurrency(stats.totalCollected)} accent="violet" loading={isFetching} />
       </div>
 
       {/* Invoices Table */}
@@ -432,7 +484,7 @@ const AdminInvoicesPage = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground dark:text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="Buscar facturas..."
+                  placeholder="Buscar comprobante..."
                   value={searchTerm}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-9 h-9 w-48 sm:w-64"
@@ -463,10 +515,6 @@ const AdminInvoicesPage = () => {
                 </Button>
               )}
             </div>
-            <div className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">{sortedInvoices.length}</span> facturas
-              {totalPages > 1 && <span className="ml-2 text-xs">(Página {currentPage} de {totalPages})</span>}
-            </div>
           </div>
           
           {/* Filter dropdowns inline */}
@@ -478,11 +526,9 @@ const AdminInvoicesPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="paid">Pagadas</SelectItem>
-                  <SelectItem value="pending">Pendientes</SelectItem>
-                  <SelectItem value="overdue">Vencidas</SelectItem>
-                  <SelectItem value="cancelled">Canceladas</SelectItem>
-                  <SelectItem value="draft">Borradores</SelectItem>
+                  <SelectItem value="paid">Pagados</SelectItem>
+                  <SelectItem value="refunded">Reembolsados</SelectItem>
+                  <SelectItem value="cancelled">Cancelados</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={dateFilter} onValueChange={setDateFilter}>
@@ -509,7 +555,7 @@ const AdminInvoicesPage = () => {
                     onClick={() => handleSort('invoice_number')}
                   >
                     <div className="flex items-center gap-1">
-                      Factura
+                      Comprobante
                       <SortIcon column="invoice_number" />
                     </div>
                   </th>
@@ -523,7 +569,7 @@ const AdminInvoicesPage = () => {
                     </div>
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Estado
+                    Método de Pago
                   </th>
                   <th 
                     className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/50 transition-colors group hidden md:table-cell"
@@ -549,7 +595,7 @@ const AdminInvoicesPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {isLoading ? (
+                {isFetching ? (
                   Array.from({ length: 5 }).map((_, index) => (
                     <tr key={`skeleton-${index}`} className="hover:bg-muted/30 transition-colors">
                       <td className="px-4 py-3"><Skeleton className="h-10 w-10 rounded-lg" /></td>
@@ -582,11 +628,10 @@ const AdminInvoicesPage = () => {
                           <p className="text-xs text-muted-foreground truncate">{invoice.user?.email}</p>
                         </div>
                       </td>
-                      <td className="px-4 py-3">{getStatusBadge(invoice.status)}</td>
+                      <td className="px-4 py-3">{getPaymentMethodBadge(invoice)}</td>
                       <td className="px-4 py-3 hidden md:table-cell">
                         <div className="flex items-center gap-1.5 text-sm font-semibold">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
-                          {formatCurrency(parseFloat(invoice.total_amount || 0))}
+                          {formatCurrency(parseFloat(invoice.total || 0))}
                         </div>
                       </td>
                       <td className="px-4 py-3 hidden lg:table-cell">
@@ -599,12 +644,12 @@ const AdminInvoicesPage = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
-                          <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditSheet(invoice)}><Edit className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Editar factura</TooltipContent></Tooltip>
-                          <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownloadPdf(invoice.id)}><Download className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Descargar PDF</TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditSheet(invoice)}><Edit className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Editar comprobante</TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownloadPdf(invoice)} disabled={downloadingUuid === invoice.uuid}>{downloadingUuid === invoice.uuid ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}</Button></TooltipTrigger><TooltipContent>Descargar comprobante</TooltipContent></Tooltip>
                           {invoice.status === 'pending' && (
                             <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" onClick={() => handleMarkAsPaid(invoice)}><CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /></Button></TooltipTrigger><TooltipContent>Marcar como pagada</TooltipContent></Tooltip>
                           )}
-                          <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(invoice)}><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Eliminar factura</TooltipContent></Tooltip>
+                          <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(invoice)}><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Eliminar comprobante</TooltipContent></Tooltip>
                         </div>
                       </td>
                     </tr>
@@ -613,10 +658,10 @@ const AdminInvoicesPage = () => {
               </tbody>
             </table>
             
-            {sortedInvoices.length === 0 && !isLoading && (
+            {sortedInvoices.length === 0 && !isFetching && (
               <div className="text-center py-12">
                 <Receipt className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40" />
-                <p className="text-sm text-muted-foreground">No se encontraron facturas</p>
+                <p className="text-sm text-muted-foreground">No se encontraron comprobantes</p>
               </div>
             )}
           </div>
@@ -628,7 +673,7 @@ const AdminInvoicesPage = () => {
                 Página <span className="font-medium">{currentPage}</span> de <span className="font-medium">{totalPages}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1 || isLoading}>Anterior</Button>
+                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1 || isFetching}>Anterior</Button>
                 <div className="flex items-center gap-1">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let pageNum;
@@ -637,11 +682,11 @@ const AdminInvoicesPage = () => {
                     else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
                     else pageNum = currentPage - 2 + i;
                     return (
-                      <Button key={pageNum} variant={currentPage === pageNum ? "default" : "ghost"} size="sm" onClick={() => setCurrentPage(pageNum)} disabled={isLoading} className="h-8 w-8 p-0">{pageNum}</Button>
+                      <Button key={pageNum} variant={currentPage === pageNum ? "default" : "ghost"} size="sm" onClick={() => setCurrentPage(pageNum)} disabled={isFetching} className="h-8 w-8 p-0">{pageNum}</Button>
                     );
                   })}
                 </div>
-                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || isLoading}>Siguiente</Button>
+                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages || isFetching}>Siguiente</Button>
               </div>
             </div>
           )}
@@ -660,7 +705,7 @@ const AdminInvoicesPage = () => {
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold leading-none">
-                    {isEditMode ? 'Editar Factura' : 'Nueva Factura'}
+                    {isEditMode ? 'Editar Comprobante' : 'Nuevo Comprobante'}
                   </h2>
                   <p className="text-sm text-muted-foreground mt-1">
                     {isEditMode ? `Editando ${editingInvoice?.invoice_number ?? '—'}` : 'El folio se genera automáticamente'}

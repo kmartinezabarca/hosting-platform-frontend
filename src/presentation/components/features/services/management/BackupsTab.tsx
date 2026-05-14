@@ -1,7 +1,7 @@
 import React from 'react';
 import { HardDrive, Clock, RefreshCw, Database, Zap } from 'lucide-react';
 import { useServiceBackups, useCreateBackup, useRestoreBackup } from '@application/hooks/useServices';
-import { toast } from 'react-hot-toast';
+import { toast } from '@presentation/components/features/ToastProvider';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -14,24 +14,15 @@ const BackupsTab = ({ service }) => {
     const name = `Backup ${format(new Date(), 'dd/MM/yyyy HH:mm')}`;
     toast.promise(
       createBackup.mutateAsync({ serviceId: service.uuid, name }),
-      {
-        loading: 'Creando backup...',
-        success: 'Backup creado exitosamente',
-        error: 'Error al crear el backup',
-      }
+      { loading: 'Creando backup…', success: 'Backup creado exitosamente', error: 'Error al crear el backup' }
     );
   };
 
   const handleRestore = (backupId) => {
     if (!window.confirm('¿Estás seguro de restaurar este backup? El estado actual del servidor se perderá.')) return;
-    
     toast.promise(
       restoreBackup.mutateAsync({ serviceId: service.uuid, backupId }),
-      {
-        loading: 'Restaurando backup...',
-        success: 'Restauración iniciada',
-        error: 'Error al restaurar el backup',
-      }
+      { loading: 'Restaurando backup…', success: 'Restauración iniciada', error: 'Error al restaurar el backup' }
     );
   };
 

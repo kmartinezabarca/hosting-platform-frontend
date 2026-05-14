@@ -3,19 +3,22 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { 
-  ArrowLeft, Save, Eye, Image as ImageIcon, 
-  Loader2, Trash2, 
+import {
+  ArrowLeft, Save, Eye, Image as ImageIcon,
+  Loader2, Trash2, Star,
   Clock, User, Layout, FileText, Calendar, Upload, X
 } from 'lucide-react';
+import { Skeleton } from '@presentation/components/ui/skeleton';
 import { Button } from '@presentation/components/ui/button';
 import { Input } from '@presentation/components/ui/input';
-import { 
-  Card, CardContent, CardHeader, CardTitle 
+import {
+  Card, CardContent, CardHeader, CardTitle
 } from '@presentation/components/ui/card';
 import { Label } from '@presentation/components/ui/label';
 import { Switch } from '@presentation/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@presentation/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@presentation/components/ui/dialog';
+import ConfirmationModal from '@presentation/components/features/modals/ConfirmationModal';
 import { toast } from '@presentation/components/features/ToastProvider';
 import BlogService from '@infrastructure/services/blogService';
 import BlogEditor from '@presentation/components/features/admin/BlogEditor';
@@ -31,6 +34,7 @@ const blogPostSchema = z.object({
   is_featured: z.boolean().default(false),
   read_time: z.number().min(1, 'El tiempo de lectura debe ser al menos 1 minuto').max(120, 'El tiempo de lectura no puede exceder 120 minutos'),
   published_at: z.string().optional(),
+  is_published: z.number().default(0),
 });
 
 const AdminBlogEditorPage = () => {
@@ -44,6 +48,7 @@ const AdminBlogEditorPage = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const { register, handleSubmit, control, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(blogPostSchema),
@@ -57,7 +62,8 @@ const AdminBlogEditorPage = () => {
       author_name: 'ROKE Industries',
       is_featured: false,
       read_time: 5,
-      published_at: new Date().toISOString().split('T')[0]
+      published_at: new Date().toISOString().split('T')[0],
+      is_published: 0,
     }
   });
 
@@ -88,20 +94,21 @@ const AdminBlogEditorPage = () => {
     try {
       const res = await BlogService.adminGetPost(uuid as string);
       const post: any = (res.data as any).data;
-      
+
       reset({
-        title: post.title || '',
-        slug: post.slug || '',
-        excerpt: post.excerpt || '',
-        content: post.content || '',
-        image: post.image || '',
-        blog_category_id: post.category?.uuid || '',
-        author_name: post.authorName || 'ROKE Industries',
+        title: post.title ?? '',
+        slug: post.slug ?? '',
+        excerpt: post.excerpt ?? '',
+        content: post.content ?? '',
+        image: post.image ?? '',
+        blog_category_id: post.category?.id ?? '',
+        author_name: post.authorName ?? 'ROKE Industries',
         is_featured: post.isFeatured || false,
         read_time: post.readTime || 5,
-        published_at: post.publishedAt ? post.publishedAt.split(' ')[0] : new Date().toISOString().split('T')[0]
+        published_at: post.publishedAt ? post.publishedAt.split(' ')[0] : new Date().toISOString().split('T')[0],
+        is_published: post.isPublished ? 1 : 0,
       });
-      
+
       if (post.image) {
         setImagePreview(post.image);
       }
@@ -141,7 +148,7 @@ const AdminBlogEditorPage = () => {
         toast.error('Por favor selecciona una imagen válida');
         return;
       }
-      
+
       if (file.size > 5 * 1024 * 1024) {
         toast.error('La imagen no debe superar 5MB');
         return;
@@ -165,10 +172,10 @@ const AdminBlogEditorPage = () => {
     try {
       const formDataImage = new FormData();
       formDataImage.append('image', imageFile);
-      
+
       const res = await BlogService.uploadImage(formDataImage);
       const imageUrl = (res.data as any).url;
-      
+
       setValue('image', imageUrl, { shouldValidate: true });
       setShowImageUpload(false);
       setImageFile(null);
@@ -180,27 +187,18 @@ const AdminBlogEditorPage = () => {
   };
 
   const onSubmit = async (data) => {
-    console.log('onSubmit called - data:', data);
     try {
       const payload = {
-        title: data.title,
-        slug: data.slug,
-        excerpt: data.excerpt,
-        content: data.content,
-        image: data.image,
-        blog_category_id: data.blog_category_id,
-        author_name: data.author_name || 'ROKE Industries',
-        is_featured: data.is_featured,
-        read_time: data.read_time,
-        published_at: data.published_at
+        ...data,
+        published_at: data.published_at,
       };
 
       if (isEdit) {
         await BlogService.adminUpdatePost(uuid, payload);
-        toast.success('Artículo actualizado correctamente');
+        toast.success('Artículo actualizado', { description: 'Los cambios se han guardado correctamente' });
       } else {
         await BlogService.adminCreatePost(payload);
-        toast.success('Artículo creado correctamente');
+        toast.success('Artículo creado', { description: 'El nuevo artículo se ha creado correctamente' });
       }
 
       navigate('/admin/blog');
@@ -209,33 +207,73 @@ const AdminBlogEditorPage = () => {
       if (err?.response?.data?.errors) {
         const errorMessages = Object.values(err.response.data.errors).flat().join(', ');
         toast.error(`Error: ${errorMessages}`);
-} else {
+      } else {
         toast.error('Error al guardar el artículo');
       }
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar este artículo?')) {
-      return;
-    }
+  const saveAsDraft = handleSubmit((data) => onSubmit({ ...data, is_published: 0 }));
+  const saveAndPublish = handleSubmit((data) => onSubmit({ ...data, is_published: 1 }));
 
+  const handleDelete = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
     try {
       await BlogService.adminDeletePost(uuid as string);
-      toast.success('Artículo eliminado correctamente');
+      toast.success('Artículo eliminado', { description: 'El artículo se ha eliminado correctamente' });
       navigate('/admin/blog');
     } catch (err) {
       console.error('Error deleting post:', err);
       toast.error('Error al eliminar el artículo');
+    } finally {
+      setShowDeleteConfirm(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Cargando artículo...</p>
+      <div className="min-h-screen bg-background">
+        <div className="border-b bg-card">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-10 w-10 rounded-lg" />
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-9 w-24 rounded-lg" />
+              <Skeleton className="h-9 w-24 rounded-lg" />
+            </div>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+              <div className="rounded-xl border p-6 space-y-4">
+                <Skeleton className="h-5 w-48" />
+                <Skeleton className="h-10 w-full rounded-lg" />
+                <Skeleton className="h-10 w-full rounded-lg" />
+                <Skeleton className="h-20 w-full rounded-lg" />
+                <Skeleton className="h-64 w-full rounded-lg" />
+              </div>
+            </div>
+            <div className="space-y-6">
+              <div className="rounded-xl border p-6 space-y-4">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-10 w-full rounded-lg" />
+                <Skeleton className="h-10 w-full rounded-lg" />
+                <Skeleton className="h-10 w-full rounded-lg" />
+                <Skeleton className="h-10 w-24 rounded-lg" />
+                <Skeleton className="h-10 w-full rounded-lg" />
+                <Skeleton className="h-12 w-full rounded-lg" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -278,33 +316,43 @@ const AdminBlogEditorPage = () => {
               size="sm"
               onClick={() => setShowPreview(true)}
               variant="outline"
+              type="button"
             >
               <Eye className="h-4 w-4 mr-2" />
               Previsualizar
             </Button>
             <Button
               size="sm"
-              type="button"
-              onClick={() => document.querySelector('form')?.requestSubmit()}
+              onClick={saveAsDraft}
               disabled={isSubmitting}
+              variant="outline"
+              type="button"
             >
               {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Guardando...
-                </>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Guardar
-                </>
+                <Save className="h-4 w-4 mr-2" />
               )}
+              Borrador
+            </Button>
+            <Button
+              size="sm"
+              onClick={saveAndPublish}
+              disabled={isSubmitting}
+              type="button"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Eye className="h-4 w-4 mr-2" />
+              )}
+              Publicar
             </Button>
           </div>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <form className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -318,9 +366,9 @@ const AdminBlogEditorPage = () => {
                 <div className="space-y-2">
                   <Label htmlFor="title">Título <span className="text-destructive">*</span></Label>
                   <div className="flex gap-2">
-                    <Input 
-                      id="title" 
-                      placeholder="Ej: Cómo optimizar tu servidor..." 
+                    <Input
+                      id="title"
+                      placeholder="Ej: Cómo optimizar tu servidor..."
                       {...register('title')}
                       onBlur={generateSlug}
                     />
@@ -329,12 +377,12 @@ const AdminBlogEditorPage = () => {
                     <p className="text-sm text-destructive">{errors.title.message}</p>
                   )}
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="slug">Slug (URL amigable)</Label>
-                  <Input 
-                    id="slug" 
-                    placeholder="ej-como-optimizar-tu-servidor" 
+                  <Input
+                    id="slug"
+                    placeholder="ej-como-optimizar-tu-servidor"
                     {...register('slug')}
                   />
                   {errors.slug && (
@@ -344,7 +392,7 @@ const AdminBlogEditorPage = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="excerpt">Extracto / Resumen <span className="text-destructive">*</span></Label>
-                  <textarea 
+                  <textarea
                     id="excerpt"
                     className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     placeholder="Una breve descripción que aparecerá en el listado..."
@@ -357,9 +405,9 @@ const AdminBlogEditorPage = () => {
 
                 <div className="space-y-2">
                   <Label>Contenido del Artículo <span className="text-destructive">*</span></Label>
-                  <BlogEditor 
-                    content={watch('content')} 
-                    onChange={handleContentChange} 
+                  <BlogEditor
+                    content={watch('content')}
+                    onChange={handleContentChange}
                   />
                   {errors.content && (
                     <p className="text-sm text-destructive">{errors.content.message}</p>
@@ -380,23 +428,24 @@ const AdminBlogEditorPage = () => {
               <CardContent className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="blog_category_id">Categoría <span className="text-destructive">*</span></Label>
-                  <select
-                    className="flex w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none bg-no-repeat"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                      backgroundPosition: 'right 0.5rem center',
-                      backgroundSize: '1.5em 1.5em',
-                      paddingRight: '2.5rem'
-                    }}
-                    {...register('blog_category_id')}
-                  >
-                    <option key="select-default" value="">Seleccionar categoría</option>
-                    {categories.map(cat => (
-                      <option key={cat.uuid} value={cat.uuid}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
+                  <Controller
+                    name="blog_category_id"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className="w-full h-10">
+                          <SelectValue placeholder="Seleccionar categoría" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map(cat => (
+                            <SelectItem key={cat.uuid ?? cat.id} value={cat.uuid ?? cat.id}>
+                              {cat.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                   {errors.blog_category_id && (
                     <p className="text-sm text-destructive">{errors.blog_category_id.message}</p>
                   )}
@@ -404,9 +453,9 @@ const AdminBlogEditorPage = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="author_name">Autor</Label>
-                  <Input 
-                    id="author_name" 
-                    placeholder="Ej: ROKE Industries" 
+                  <Input
+                    id="author_name"
+                    placeholder="Ej: ROKE Industries"
                     {...register('author_name')}
                   />
                   <p className="text-xs text-muted-foreground">Por defecto: ROKE Industries</p>
@@ -416,10 +465,10 @@ const AdminBlogEditorPage = () => {
                   <Label>Imagen Destacada</Label>
                   <div className="space-y-3">
                     <div className="flex gap-2">
-                      <Input 
-                        id="image" 
+                      <Input
+                        id="image"
                         type="url"
-                        placeholder="Ej: https://ejemplo.com/imagen.jpg" 
+                        placeholder="Ej: https://ejemplo.com/imagen.jpg"
                         {...register('image')}
                       />
                       <Button
@@ -434,9 +483,9 @@ const AdminBlogEditorPage = () => {
 
                     {imagePreview && (
                       <div className="relative w-full h-40 rounded-lg overflow-hidden border border-input">
-                        <img 
-                          src={imagePreview} 
-                          alt="Preview" 
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
                           className="w-full h-full object-cover"
                         />
                         <Button
@@ -458,8 +507,8 @@ const AdminBlogEditorPage = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="read_time">Tiempo de Lectura (minutos)</Label>
-                  <Input 
-                    id="read_time" 
+                  <Input
+                    id="read_time"
                     type="number"
                     min="1"
                     max="120"
@@ -472,8 +521,8 @@ const AdminBlogEditorPage = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="published_at">Fecha de Publicación</Label>
-                  <Input 
-                    id="published_at" 
+                  <Input
+                    id="published_at"
                     type="date"
                     {...register('published_at')}
                   />
@@ -490,7 +539,7 @@ const AdminBlogEditorPage = () => {
                     name="is_featured"
                     control={control}
                     render={({ field }) => (
-                      <Switch 
+                      <Switch
                         id="is_featured"
                         checked={field.value}
                         onCheckedChange={field.onChange}
@@ -560,8 +609,8 @@ const AdminBlogEditorPage = () => {
           </DialogHeader>
           <div className="space-y-6">
             {imagePreview && (
-              <img 
-                src={imagePreview} 
+              <img
+                src={imagePreview}
                 alt={watch('title')}
                 className="w-full h-64 object-cover rounded-lg"
               />
@@ -586,15 +635,19 @@ const AdminBlogEditorPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Artículo"
+        confirmText="Eliminar"
+        isConfirming={false}
+      >
+        <p>¿Estás seguro de que deseas eliminar este artículo? Esta acción no se puede deshacer.</p>
+      </ConfirmationModal>
     </div>
   );
 };
-
-// Importar Star icon si no está disponible
-const Star = ({ className }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 20 20">
-    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-  </svg>
-);
 
 export default AdminBlogEditorPage;

@@ -12,7 +12,7 @@ import {
   XCircle,
   Loader2,
 } from 'lucide-react';
-import { useDownloadCfdi } from '@application/hooks/useInvoices';
+import { useDownloadCfdi, useDownloadReceipt } from '@application/hooks/useInvoices';
 import UpdateFiscalDataModal from '@presentation/components/features/invoices/UpdateFiscalDataModal';
 import {
   getStatusColor,
@@ -131,6 +131,8 @@ function CfdiStatusBadge({ invoice, onAddFiscal }) {
 
 const InvoicesList = ({ invoices, filters, setFilters, onSelectInvoice, onPayInvoice }) => {
   const [fiscalDataInvoice, setFiscalDataInvoice] = useState<any>(null);
+  const [downloadingReceiptUuid, setDownloadingReceiptUuid] = useState<string | null>(null);
+  const downloadReceiptMut = useDownloadReceipt();
   // Apply text search and status filters. Ignore dateRange for now (could be added later).
   const filteredInvoices = invoices.filter((inv) => {
     const matchesSearch =
@@ -255,6 +257,22 @@ const InvoicesList = ({ invoices, filters, setFilters, onSelectInvoice, onPayInv
                       <Eye className="w-4 h-4" />
                       Ver Detalles
                     </button>
+                    {invoice.status === 'paid' && (
+                      <button
+                        onClick={() => {
+                          setDownloadingReceiptUuid(invoice.uuid);
+                          downloadReceiptMut.mutate(
+                            { uuid: invoice.uuid, invoiceNumber: invoice.invoice_number },
+                            { onSuccess: () => setDownloadingReceiptUuid(null), onError: () => setDownloadingReceiptUuid(null) },
+                          );
+                        }}
+                        disabled={downloadingReceiptUuid === invoice.uuid}
+                        className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground border border-border hover:bg-accent rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {downloadingReceiptUuid === invoice.uuid ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                        Comprobante
+                      </button>
+                    )}
                     {(invoice.status === "sent" || invoice.status === "overdue") ? (
                       <button
                         onClick={() => onPayInvoice(invoice)}
